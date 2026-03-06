@@ -728,7 +728,7 @@ a {
 
 /* Explanation panel — pill tags inline */
 .explanation-panel {
-  margin-top: 10px;
+  margin-top: 18px;
   display: flex;
   flex-direction: column;
   gap: 5px;

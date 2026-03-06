@@ -726,16 +726,12 @@ a {
   color: var(--c-red);
 }
 
-/* Explanation panel — compact */
+/* Explanation panel — clean rows */
 .explanation-panel {
   margin-top: 12px;
-  background: var(--c-surface);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-md);
-  padding: 10px 13px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
+  overflow: hidden;
   animation: fadeSlideUp .25s ease;
 }
 
@@ -752,21 +748,22 @@ a {
 }
 
 .explanation-panel__row {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--c-border);
+  background: var(--c-surface);
 }
 
-
+.explanation-panel__row:last-child {
+  border-bottom: none;
+}
 
 .expl-label {
+  display: block;
   font-size: .55rem;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .09em;
-  white-space: nowrap;
-  flex-shrink: 0;
-  opacity: .75;
+  letter-spacing: .1em;
+  margin-bottom: 2px;
 }
 
 .expl-label.why {
@@ -782,9 +779,9 @@ a {
 }
 
 .expl-text {
-  font-size: .8rem;
+  font-size: .78rem;
   color: var(--c-label);
-  line-height: 1.45;
+  line-height: 1.4;
 }
 
 /* Modal trust line */

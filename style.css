@@ -726,19 +726,19 @@ a {
   color: var(--c-red);
 }
 
-/* Explanation panel — clean rows */
+/* Explanation panel — pill tags inline */
 .explanation-panel {
-  margin-top: 12px;
-  border: 1px solid var(--c-border);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  animation: fadeSlideUp .25s ease;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  animation: fadeSlideUp .2s ease;
 }
 
 @keyframes fadeSlideUp {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
 
   to {
@@ -747,42 +747,42 @@ a {
   }
 }
 
-.explanation-panel__row {
-  padding: 7px 12px;
-  border-bottom: 1px solid var(--c-border);
-  background: var(--c-surface);
+.expl-row {
+  font-size: .78rem;
+  color: var(--c-label);
+  line-height: 1.45;
 }
 
-.explanation-panel__row:last-child {
-  border-bottom: none;
-}
-
-.expl-label {
-  display: block;
-  font-size: .55rem;
+/* Tiny inline pill — no min-font-size issues */
+.expl-tag {
+  display: inline-block;
+  font-size: 9px;
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .1em;
-  margin-bottom: 2px;
+  letter-spacing: .06em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-right: 5px;
+  vertical-align: middle;
+  line-height: 1.8;
+  white-space: nowrap;
 }
 
-.expl-label.why {
+.expl-tag.why {
+  background: rgba(34, 197, 94, .15);
   color: var(--c-green);
 }
 
-.expl-label.watch {
+.expl-tag.watch {
+  background: rgba(250, 204, 21, .12);
   color: var(--c-yellow);
 }
 
-.expl-label.pattern {
+.expl-tag.pattern {
+  background: rgba(133, 125, 255, .15);
   color: var(--c-primary-h);
 }
 
-.expl-text {
-  font-size: .78rem;
-  color: var(--c-label);
-  line-height: 1.4;
-}
 
 /* Modal trust line */
 .modal__trust {
@@ -942,6 +942,20 @@ a {
 .btn-retry:hover {
   background: var(--c-border);
   transform: translateY(-1px);
+}
+
+.btn-home {
+  background: transparent;
+  color: var(--c-muted);
+  border: none;
+  padding: 8px;
+  font-size: .82rem;
+  font-weight: 500;
+  transition: color var(--transition);
+}
+
+.btn-home:hover {
+  color: var(--c-text);
 }
 
 .btn-premium {

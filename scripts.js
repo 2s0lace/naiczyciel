@@ -429,8 +429,9 @@ function showResult() {
   showScreen('result');
 }
 
-/* ─── Retry ──────────────────────────────────────────────── */
+/* ─── Retry & Home ───────────────────────────────────────── */
 document.getElementById('btn-retry').addEventListener('click', startQuiz);
+document.getElementById('btn-home').addEventListener('click', () => showScreen('landing'));
 
 /* ─── Start buttons ──────────────────────────────────────── */
 document.getElementById('hero-start-btn').addEventListener('click', startQuiz);

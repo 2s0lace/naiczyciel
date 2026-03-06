@@ -444,11 +444,17 @@ const modalCloseBtn = document.getElementById('modal-close-btn');
 const modalComing = document.getElementById('modal-coming-soon');
 let selectedPlan = 'student';
 
+const stripeLinks = {
+  '1day': 'https://buy.stripe.com/aFa3cvfHwaa1d1IcD8fAc00',
+  '3days': 'https://buy.stripe.com/bJe00jcvk1DvaTA9qWfAc01',
+  'student': 'https://buy.stripe.com/4gM4gzcvk1Dv1j046CfAc02',
+  'studentplus': 'https://buy.stripe.com/3cIcN5anc6XP2n446CfAc03',
+};
+
 function openModal() {
   modalOverlay.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
   modalComing.style.display = 'none';
-  // reset to default selected
   document.querySelectorAll('.modal__plan').forEach(el => {
     el.classList.toggle('selected', el.dataset.plan === selectedPlan);
   });
@@ -469,11 +475,16 @@ document.querySelectorAll('.modal__plan').forEach(el => {
   });
 });
 
-// Buy button
+// Buy button → redirect to Stripe
 modalBuyBtn.addEventListener('click', () => {
-  // All plans show "coming soon" (no payment integration yet)
-  modalComing.style.display = 'block';
-  modalComing.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const url = stripeLinks[selectedPlan];
+  if (url) {
+    window.location.href = url;
+  } else {
+    // Uczeń+ not yet available
+    modalComing.style.display = 'block';
+    modalComing.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
 });
 
 modalCloseBtn.addEventListener('click', closeModal);

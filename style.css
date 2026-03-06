@@ -122,6 +122,18 @@ a {
   background: linear-gradient(135deg, var(--c-primary), #b06ef3);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.navbar__logo-img {
+  height: 22px;
+  width: auto;
+  display: inline-block;
+  filter: invert(1) brightness(2);
+  vertical-align: middle;
+  flex-shrink: 0;
 }
 
 .navbar__cta {

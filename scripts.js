@@ -432,6 +432,7 @@ function showResult() {
 /* ─── Retry & Home ───────────────────────────────────────── */
 document.getElementById('btn-retry').addEventListener('click', startQuiz);
 document.getElementById('btn-home').addEventListener('click', () => showScreen('landing'));
+document.getElementById('nav-logo-home').addEventListener('click', (e) => { e.preventDefault(); showScreen('landing'); });
 
 /* ─── Start buttons ──────────────────────────────────────── */
 document.getElementById('hero-start-btn').addEventListener('click', startQuiz);

@@ -1,39 +1,312 @@
 <!DOCTYPE html>
 <html lang="pl">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>naiczyciel</title>
+  <title>nAIczyciel E8 — Trening angielskiego do egzaminu</title>
+  <meta name="description"
+    content="Szybki, nowoczesny symulator egzaminu ósmoklasisty z angielskiego. Ćwicz reakcje językowe, słownictwo i gramatykę." />
   <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-  <div class="container">
-    <header class="hero">
-      <h1>nAIczyciel E8</h1>
-      <p>Trening angielskiego do egzaminu ósmoklasisty</p>
+
+  <!-- ════════════════════════════════════════════════════════
+     SCREEN: LANDING
+════════════════════════════════════════════════════════ -->
+  <div id="screen-landing">
+
+    <nav class="navbar">
+      <div class="navbar__inner">
+        <span class="navbar__logo">nAIczyciel E8</span>
+        <button class="navbar__cta" id="nav-start-btn">Zacznij quiz →</button>
+      </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero__badge">Egzamin Ósmoklasisty · Angielski</div>
+      <h1 class="hero__title">
+        <span>n<em
+            style="font-style:normal;background:linear-gradient(135deg,#6c63ff,#b06ef3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">AI</em>czyciel</span>
+        <span style="font-size:55%;color:var(--c-label);font-weight:700;">E8</span>
+      </h1>
+      <p class="hero__sub">Szybkie zestawy pytań do E8. Wynik, wyjaśnienia i codzienny trening — bez ścian tekstu.</p>
+      <button class="hero__cta" id="hero-start-btn">
+        Zacznij próbny quiz
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </button>
+      <p class="hero__cta-subtext">10 pytań &nbsp;•&nbsp; ~2 minuty &nbsp;•&nbsp; od razu zobaczysz wynik</p>
+    </section>
+
+    <!-- Preview question -->
+    <section class="preview reveal">
+      <div class="preview__card">
+        <div class="preview__tag">📋 Reakcje językowe</div>
+        <p class="preview__q">Kolega nie może przyjść na Twoje urodziny i przeprasza. Jak reagujesz?</p>
+        <div class="preview__answers">
+          <div class="preview__ans is-wrong">A. I hope you liked my party very much.</div>
+          <div class="preview__ans is-correct">B. What a pity you can't make it!</div>
+          <div class="preview__ans is-wrong">C. You must buy me a present later.</div>
+        </div>
+        <p class="preview__label">👆 Tak wygląda jedno pytanie — odpowiedź i wyjaśnienie od razu</p>
+      </div>
+    </section>
+
+    <!-- Why -->
+    <section class="why reveal">
+      <div class="container">
+        <h2 class="section__title">Dlaczego warto?</h2>
+        <p class="section__sub">Bez obietnic cudów. Tylko konkretna pomoc w nauce.</p>
+        <div class="why__grid">
+          <div class="why__card">
+            <div class="why__icon">⚡</div>
+            <h3>Szybkie zestawy</h3>
+            <p>10 pytań, wynik i wyjaśnienia. Możesz ćwiczyć nawet 5 minut dziennie.</p>
+          </div>
+          <div class="why__card">
+            <div class="why__icon">🎯</div>
+            <h3>Wzorce z E8</h3>
+            <p>Pytania oparte na typowych zadaniach egzaminacyjnych — reakcje, słownictwo, gramatyka.</p>
+          </div>
+          <div class="why__card">
+            <div class="why__icon">💡</div>
+            <h3>Krótkie wyjaśnienia</h3>
+            <p>Po każdej odpowiedzi dostajesz: dlaczego, na co uważać i jaki wzorzec zapamiętać.</p>
+          </div>
+          <div class="why__card">
+            <div class="why__icon">📱</div>
+            <h3>Działa na telefonie</h3>
+            <p>Mobilny interfejs — bez instalacji, bez rejestracji, od razu ćwiczysz.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="categories reveal">
+      <div class="container">
+        <h2 class="section__title">Typy zadań</h2>
+        <p class="section__sub" style="margin-bottom:32px;">Cztery kategorie na start — wszystkie z jasnym kluczem
+          odpowiedzi</p>
+        <div class="cat__grid">
+          <div class="cat__tile">
+            <div class="cat__tile__icon">💬</div>
+            <div class="cat__tile__name">Reakcje językowe</div>
+            <div class="cat__tile__count">10 zadań</div>
+          </div>
+          <div class="cat__tile">
+            <div class="cat__tile__icon">📖</div>
+            <div class="cat__tile__name">Reading MC</div>
+            <div class="cat__tile__count">4 zadania</div>
+          </div>
+          <div class="cat__tile">
+            <div class="cat__tile__icon">🔤</div>
+            <div class="cat__tile__name">Słownictwo</div>
+            <div class="cat__tile__count">3 zadania</div>
+          </div>
+          <div class="cat__tile">
+            <div class="cat__tile__icon">📝</div>
+            <div class="cat__tile__name">Gramatyka</div>
+            <div class="cat__tile__count">3 zadania</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="pricing reveal" id="pricing">
+      <div class="container">
+        <h2 class="section__title">Cennik</h2>
+        <p class="section__sub">Ten sam produkt, różny czas dostępu. Zero sztucznych podziałów.</p>
+        <div class="pricing__grid">
+
+          <div class="plan-card">
+            <div class="plan-card__name">1 dzień</div>
+            <div class="plan-card__price">5 <span>zł</span></div>
+            <p class="plan-card__desc">Pełny dostęp na 24 godziny. Dobre przed sprawdzianem.</p>
+            <button class="plan-card__btn open-modal-btn">Wybierz</button>
+          </div>
+
+          <div class="plan-card is-featured">
+            <div class="plan-card__badge">⭐ Najczęściej wybierany</div>
+            <div class="plan-card__name">3 dni</div>
+            <div class="plan-card__price">9 <span>zł</span></div>
+            <p class="plan-card__desc">Trzy dni intensywnego treningu przed egzaminem.</p>
+            <button class="plan-card__btn open-modal-btn">Wybierz</button>
+          </div>
+
+          <div class="plan-card">
+            <div class="plan-card__name">Uczeń</div>
+            <div class="plan-card__price"><s>29</s>19 <span>zł / mies.</span></div>
+            <p class="plan-card__desc">Pełny dostęp na miesiąc. Nowe zestawy co tydzień. Idealny do regularnej nauki.
+            </p>
+            <button class="plan-card__btn open-modal-btn">Wybierz</button>
+          </div>
+
+          <div class="plan-card">
+            <div class="plan-card__name">Uczeń+</div>
+            <div class="plan-card__price">~39 <span>zł / mies.</span></div>
+            <p class="plan-card__desc">Więcej zestawów, lepsza organizacja, lista słówek do powtórki. Wkrótce.</p>
+            <button class="plan-card__btn open-modal-btn">Wkrótce</button>
+          </div>
+
+        </div>
+        <p class="pricing__note">
+          To nie zastąpi korepetytora — przyspiesza naukę i oszczędza czas szukania materiałów.
+        </p>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <div class="footer__logo">nAIczyciel E8</div>
+      <p>Narzędzie do treningu angielskiego na egzamin ósmoklasisty.</p>
+      <p style="margin-top:6px;">© 2026 nAIczyciel · Uczciwie, konkretnie, bez magii.</p>
+    </footer>
+
+  </div><!-- /screen-landing -->
+
+
+  <!-- ════════════════════════════════════════════════════════
+     SCREEN: QUIZ
+════════════════════════════════════════════════════════ -->
+  <div id="screen-quiz" class="hidden">
+
+    <header class="quiz-header">
+      <span class="quiz-header__logo">nAIczyciel E8</span>
+      <span class="quiz-header__progress" id="quiz-progress-text">1 / 10</span>
     </header>
 
-    <main class="exam-card">
-      <div class="exam-top">
-        <div class="exam-badge">ZADANIE: REAKCJE JĘZYKOWE</div>
-        <div id="progress" class="progress">Pytanie 1 / 10</div>
+    <div class="quiz-progress-bar-wrap">
+      <div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div>
+    </div>
+
+    <div class="quiz-body">
+      <div class="quiz-badge-row">
+        <button class="quiz-nav-btn" id="quiz-prev-btn" disabled aria-label="Poprzednie pytanie">‹</button>
+        <div class="quiz-type-badge" id="quiz-type-badge">💬 Reakcje językowe</div>
+        <button class="quiz-nav-btn" id="quiz-next-btn" aria-label="Następne pytanie">›</button>
+      </div>
+      <p class="quiz-question" id="quiz-question">Treść pytania</p>
+
+      <div class="quiz-answers" id="quiz-answers"></div>
+
+      <div class="answer-feedback hidden" id="answer-feedback"></div>
+
+      <div class="explanation-panel hidden" id="explanation-panel">
+        <div class="explanation-panel__row">
+          <div class="expl-label why">💡 Dlaczego?</div>
+          <div class="expl-text" id="expl-why"></div>
+        </div>
+        <div class="explanation-panel__row">
+          <div class="expl-label watch">⚠ Uważaj</div>
+          <div class="expl-text" id="expl-watch"></div>
+        </div>
+        <div class="explanation-panel__row">
+          <div class="expl-label pattern">🔁 Wzorzec</div>
+          <div class="expl-text" id="expl-pattern"></div>
+        </div>
       </div>
 
-      <div id="quiz">
-        <h2 id="question-title">Treść pytania</h2>
-        <div id="answers" class="answers"></div>
-        <p id="feedback" class="feedback"></p>
-        <button id="next-btn" class="next-btn hidden">Następne pytanie</button>
+      <button class="next-btn hidden" id="next-btn">Następne pytanie →</button>
+    </div>
+
+    <!-- Dot navigation bar -->
+    <nav class="quiz-dots-bar" id="quiz-dots-bar" aria-label="Nawigacja pytań"></nav>
+
+  </div><!-- /screen-quiz -->
+
+
+  <!-- ════════════════════════════════════════════════════════
+     SCREEN: RESULT
+════════════════════════════════════════════════════════ -->
+  <div id="screen-result" class="hidden">
+
+    <div class="result__emoji" id="result-emoji">🎉</div>
+    <h2 class="result__title" id="result-title">Dobra robota!</h2>
+    <div class="result__score" id="result-score">8 / 10</div>
+    <p class="result__percent" id="result-percent">80% poprawnych odpowiedzi</p>
+
+    <div class="result__actions">
+      <button class="btn-retry" id="btn-retry">Spróbuj nowego zestawu</button>
+      <button class="btn-premium open-modal-btn">Odblokuj pełny dostęp →</button>
+    </div>
+
+    <div class="result__paywall">
+      <h3>Chcesz więcej zestawów?</h3>
+      <p>Darmowy quiz to tylko próbka. Pełny dostęp daje Ci nowe zestawy co tydzień i wyjaśnienia do każdego pytania.
+      </p>
+      <ul class="paywall__perks">
+        <li>Nowe zestawy pytań co tydzień</li>
+        <li>Wszystkie 4 typy zadań egzaminacyjnych</li>
+        <li>Krótkie wyjaśnienia do każdej odpowiedzi</li>
+        <li>Działa na telefonie bez instalacji</li>
+      </ul>
+      <button class="btn-premium open-modal-btn" style="width:100%;display:block;">Zobacz plany →</button>
+    </div>
+
+  </div><!-- /screen-result -->
+
+
+  <!-- ════════════════════════════════════════════════════════
+     PAYWALL MODAL
+════════════════════════════════════════════════════════ -->
+  <div class="modal-overlay hidden" id="modal-overlay">
+    <div class="modal" id="modal">
+      <div class="modal__handle"></div>
+      <h3 class="modal__title">Wybierz plan dostępu</h3>
+      <p class="modal__sub">Ten sam produkt, różny czas dostępu. Bez ukrytych opłat.</p>
+      <p class="modal__trust">Pełny dostęp do wszystkich zestawów i wyjaśnień. <strong>Bez subskrypcji.</strong></p>
+
+      <div class="modal__plans">
+
+        <div class="modal__plan" data-plan="1day">
+          <div class="modal__plan-info">
+            <span class="modal__plan-name">1 dzień</span>
+            <span class="modal__plan-desc">Pełny dostęp na 24h</span>
+          </div>
+          <div class="modal__plan-price">5 <small>zł</small></div>
+        </div>
+
+        <div class="modal__plan" data-plan="3days">
+          <div class="modal__plan-info">
+            <span class="modal__plan-name">3 dni</span>
+            <span class="modal__plan-desc">Intensywny trening przed E8</span>
+          </div>
+          <div class="modal__plan-price">9 <small>zł</small></div>
+        </div>
+
+        <div class="modal__plan selected" data-plan="student">
+          <div class="modal__plan-info">
+            <span class="modal__plan-name">Uczeń</span>
+            <span class="modal__plan-desc">Miesiąc regularnej nauki</span>
+          </div>
+          <div class="modal__plan-price"><s>29</s> 19 <small>zł/mies.</small></div>
+        </div>
+
+        <div class="modal__plan" data-plan="studentplus">
+          <div class="modal__plan-info">
+            <span class="modal__plan-name">Uczeń+</span>
+            <span class="modal__plan-desc">Więcej zestawów + słówka (wkrótce)</span>
+          </div>
+          <div class="modal__plan-price">~39 <small>zł/mies.</small></div>
+        </div>
+
       </div>
 
-      <div id="result-screen" class="hidden result-screen">
-        <h2>Twój wynik</h2>
-        <p id="score-text" class="score-text"></p>
-        <button id="restart-btn" class="restart-btn">Spróbuj ponownie</button>
+      <button class="modal__buy" id="modal-buy-btn">Przejdź do płatności →</button>
+      <div class="modal__coming-soon" id="modal-coming-soon">
+        🔜 Ta opcja jest już w przygotowaniu. Napisz do nas, żeby dowiedzieć się pierwszy!
       </div>
-    </main>
-  </div>
+      <button class="modal__close" id="modal-close-btn">Zamknij</button>
+    </div>
+  </div><!-- /modal -->
 
   <script src="scripts.js"></script>
 </body>
+
 </html>

@@ -167,6 +167,15 @@ a {
   pointer-events: none;
 }
 
+.hero__logo-img {
+  height: 56px;
+  width: auto;
+  filter: invert(1) brightness(2);
+  margin: 0 auto 20px;
+  display: block;
+  opacity: .92;
+}
+
 .hero__badge {
   display: inline-block;
   background: rgba(108, 99, 255, .18);
@@ -296,9 +305,18 @@ a {
 
 .preview__label {
   text-align: center;
-  margin-top: 18px;
+  margin-top: 14px;
   font-size: .78rem;
   color: var(--c-muted);
+}
+
+.preview__reasoning {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--c-border);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 
 /* ─── "Dlaczego warto" ────────────────────────────────────── */

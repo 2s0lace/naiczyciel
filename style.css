@@ -419,6 +419,21 @@ a {
   box-shadow: var(--shadow-md);
 }
 
+/* Gradient em in why title — like hero */
+.why__title em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--c-primary), #b06ef3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Highlighted card (instant results) */
+.why__card--highlight {
+  border-color: rgba(108, 99, 255, .4);
+  background: rgba(108, 99, 255, .07);
+  box-shadow: 0 0 0 1px rgba(108, 99, 255, .15), 0 4px 20px rgba(108, 99, 255, .08);
+}
+
 .why__icon {
   font-size: 1.8rem;
   margin-bottom: 12px;
@@ -520,6 +535,19 @@ a {
   padding: 72px 20px;
   background: var(--c-surface);
   border-top: 1px solid var(--c-border);
+}
+
+.pricing__kebab {
+  text-align: center;
+  font-size: .97rem;
+  color: var(--c-muted);
+  margin-bottom: 36px;
+  line-height: 1.6;
+}
+
+.pricing__kebab strong {
+  color: var(--c-text);
+  font-weight: 700;
 }
 
 .pricing__grid {

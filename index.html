@@ -1,81 +1,39 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="pl">
 <head>
-<meta charset="UTF-8">
-<title>nAIczyciel E8</title>
-
-<style>
-
-body{
-font-family:Arial;
-max-width:700px;
-margin:auto;
-padding:40px;
-background:#f5f5f5;
-}
-
-h1{
-text-align:center;
-}
-
-.question{
-background:white;
-padding:20px;
-margin-top:30px;
-border-radius:10px;
-}
-
-button{
-display:block;
-width:100%;
-padding:12px;
-margin:10px 0;
-font-size:16px;
-}
-
-#result{
-margin-top:20px;
-font-weight:bold;
-}
-
-</style>
-
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nAIczyciel E8</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
-
 <body>
+  <div class="container">
+    <header class="hero">
+      <h1>nAIczyciel E8</h1>
+      <p>Trening angielskiego do egzaminu ósmoklasisty</p>
+    </header>
 
-<h1>nAIczyciel E8</h1>
-<p>Ćwicz zadania jak na egzaminie ósmoklasisty</p>
+    <main class="exam-card">
+      <div class="exam-top">
+        <div class="exam-badge">ZADANIE: REAKCJE JĘZYKOWE</div>
+        <div id="progress" class="progress">Pytanie 1 / 10</div>
+      </div>
 
-<div class="question">
+      <div id="quiz">
+        <h2 id="question-title">Treść pytania</h2>
+        <div id="answers" class="answers"></div>
+        <p id="feedback" class="feedback"></p>
+        <button id="next-btn" class="next-btn hidden">Następne pytanie</button>
+      </div>
 
-<p><b>1.1</b> Your friend asks what subject you have now.</p>
+      <div id="result-screen" class="hidden result-screen">
+        <h2>Twój wynik</h2>
+        <p id="score-text" class="score-text"></p>
+        <button id="restart-btn" class="restart-btn">Spróbuj ponownie</button>
+      </div>
+    </main>
+  </div>
 
-<button onclick="check('A')">A. I have Biology now.</button>
-<button onclick="check('B')">B. My pencil case is blue.</button>
-<button onclick="check('C')">C. I am a good student.</button>
-
-</div>
-
-<p id="result"></p>
-
-<script>
-
-function check(answer){
-
-if(answer==="A"){
-document.getElementById("result").innerText="Correct!"
-}
-
-else{
-document.getElementById("result").innerText="Wrong answer"
-}
-
-}
-
-</script>
-
+  <script src="script.js"></script>
 </body>
-
 </html>

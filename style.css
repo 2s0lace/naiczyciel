@@ -167,13 +167,87 @@ a {
   pointer-events: none;
 }
 
-.hero__logo-img {
-  height: 56px;
+/* Brand block: logo + name inline */
+.hero__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.hero__brand-logo {
+  height: 52px;
   width: auto;
   filter: invert(1) brightness(2);
-  margin: 0 auto 20px;
-  display: block;
-  opacity: .92;
+  flex-shrink: 0;
+}
+
+.hero__brand-name {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(2rem, 7vw, 3.2rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -.02em;
+  background: linear-gradient(140deg, #fff 30%, #b0a8ff 70%, #6c63ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero__brand-name em {
+  font-style: normal;
+  background: linear-gradient(135deg, #6c63ff, #b06ef3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* E8 highlight tag inside title */
+.e8-tag {
+  display: inline-block;
+  font-size: .45em;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--c-primary), #b06ef3);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  border: 1.5px solid rgba(108, 99, 255, .5);
+  border-radius: 6px;
+  padding: 1px 7px;
+  vertical-align: middle;
+  letter-spacing: .04em;
+  margin-left: 2px;
+}
+
+/* Soon product tag pills */
+.hero__soon-tags {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.hero__soon-tag {
+  background: rgba(108, 99, 255, .08);
+  border: 1px solid rgba(108, 99, 255, .22);
+  color: var(--c-muted);
+  font-size: .7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  padding: 4px 13px;
+  border-radius: 999px;
+  transition: border-color var(--transition), color var(--transition);
+}
+
+.hero__soon-tag:hover {
+  border-color: var(--c-primary);
+  color: var(--c-label);
+}
+
+/* Active (current product) */
+.hero__soon-tag.is-active {
+  background: rgba(108, 99, 255, .18);
+  border-color: rgba(108, 99, 255, .5);
+  color: var(--c-primary-h);
+  cursor: default;
 }
 
 .hero__badge {
@@ -188,22 +262,6 @@ a {
   padding: 5px 14px;
   border-radius: 999px;
   margin-bottom: 22px;
-}
-
-.hero__title {
-  font-family: 'Outfit', sans-serif;
-  font-size: clamp(2.8rem, 8vw, 5rem);
-  font-weight: 900;
-  line-height: 1.05;
-  letter-spacing: -.02em;
-  background: linear-gradient(140deg, #fff 30%, #b0a8ff 70%, #6c63ff);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  margin-bottom: 18px;
-}
-
-.hero__title span {
-  display: block;
 }
 
 .hero__sub {
@@ -402,6 +460,43 @@ a {
 .cat__tile:hover {
   border-color: var(--c-primary);
   transform: translateY(-2px);
+}
+
+.soon-tile {
+  opacity: .55;
+  cursor: pointer;
+}
+
+.soon-tile:hover {
+  border-color: var(--c-muted) !important;
+  transform: translateY(-2px);
+  opacity: .75;
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  background: var(--c-surface2);
+  border: 1px solid var(--c-border);
+  color: var(--c-text);
+  font-size: .85rem;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-md);
+  z-index: 9999;
+  pointer-events: none;
+  transition: opacity .25s ease, transform .25s ease;
+}
+
+.toast.hidden {
+  opacity: 0 !important;
+  transform: translateX(-50%) translateY(10px) !important;
+  display: block !important;
+  /* override hidden, use opacity instead */
 }
 
 .cat__tile__icon {

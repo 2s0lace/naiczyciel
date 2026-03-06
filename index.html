@@ -28,13 +28,17 @@
 
     <!-- Hero -->
     <section class="hero">
-      <img src="img/logonaiczyciel.png" alt="nAIczyciel" class="hero__logo-img">
-      <div class="hero__badge">Egzamin Ósmoklasisty · Angielski</div>
-      <h1 class="hero__title">
-        <span>n<em
-            style="font-style:normal;background:linear-gradient(135deg,#6c63ff,#b06ef3);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">AI</em>czyciel</span>
-        <span style="font-size:55%;color:var(--c-label);font-weight:700;">E8</span>
-      </h1>
+      <!-- Brand: logo + name inline -->
+      <div class="hero__brand">
+        <img src="img/logonaiczyciel.png" alt="" class="hero__brand-logo">
+        <h1 class="hero__brand-name">n<em>AI</em>czyciel <span class="e8-tag">E8</span></h1>
+      </div>
+      <!-- Product tags row -->
+      <div class="hero__soon-tags">
+        <button class="hero__soon-tag is-active">Egzamin ósmoklasisty</button>
+        <button class="hero__soon-tag soon-tile">Matura</button>
+        <button class="hero__soon-tag soon-tile">Edukacja</button>
+      </div>
       <p class="hero__sub">Szybkie zestawy pytań do E8. Wynik, wyjaśnienia i codzienny trening — bez ścian tekstu.</p>
       <button class="hero__cta" id="hero-start-btn">
         Zacznij próbny quiz
@@ -123,6 +127,16 @@
             <div class="cat__tile__name">Gramatyka</div>
             <div class="cat__tile__count">3 zadania</div>
           </div>
+          <div class="cat__tile soon-tile">
+            <div class="cat__tile__icon">🎓</div>
+            <div class="cat__tile__name">Matura</div>
+            <div class="cat__tile__count">Wkrótce</div>
+          </div>
+          <div class="cat__tile soon-tile">
+            <div class="cat__tile__icon">🏫</div>
+            <div class="cat__tile__name">Dla edukacji</div>
+            <div class="cat__tile__count">Wkrótce</div>
+          </div>
         </div>
       </div>
     </section>
@@ -178,6 +192,9 @@
     </footer>
 
   </div><!-- /screen-landing -->
+
+  <!-- Toast -->
+  <div class="toast hidden" id="toast">Wkrótce! 🚀</div>
 
 
   <!-- ════════════════════════════════════════════════════════

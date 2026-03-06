@@ -505,3 +505,15 @@ const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
 }, { threshold: 0.12 });
 revealEls.forEach(el => revealObserver.observe(el));
+
+/* ─── "Wkrótce" toast ────────────────────────────────────── */
+const toast = document.getElementById('toast');
+let toastTimer;
+function showToast() {
+  clearTimeout(toastTimer);
+  toast.classList.remove('hidden');
+  toastTimer = setTimeout(() => toast.classList.add('hidden'), 2200);
+}
+document.querySelectorAll('.soon-tile').forEach(el => {
+  el.addEventListener('click', showToast);
+});

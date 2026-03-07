@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Kontakt — nAIczyciel</title>
+    <title>Korepetycje z języka angielskiego — nAIczyciel</title>
     <meta name="description"
-        content="Skontaktuj się z twórcą nAIczyciel.pl — korepetytorem i lektorem języka angielskiego." />
+        content="Indywidualne korepetycje z języka angielskiego (A1–B2) online lub stacjonarnie w Radomiu. Twórca nAIczyciel.pl." />
     <link rel="canonical" href="https://naiczyciel.pl/contact/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -16,88 +16,155 @@
     <link rel="stylesheet" href="../style.css" />
     <style>
         .contact-wrap {
-            min-height: calc(100vh - 80px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            padding: 64px 24px;
-            gap: 16px;
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 80px 24px 64px;
+            text-align: left;
         }
 
         .contact-wrap h1 {
             font-family: 'Outfit', sans-serif;
-            font-size: 2rem;
+            font-size: clamp(1.8rem, 5vw, 2.8rem);
             font-weight: 900;
+            margin-bottom: 24px;
+            line-height: 1.1;
+        }
+
+        .contact-wrap h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin: 40px 0 16px;
+            color: var(--c-text);
         }
 
         .contact-wrap p {
             font-size: .95rem;
             color: var(--c-muted);
-            max-width: 380px;
-            line-height: 1.7;
+            line-height: 1.65;
+            margin-bottom: 16px;
+        }
+
+        .contact-wrap ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 24px;
+        }
+
+        .contact-wrap li {
+            position: relative;
+            padding-left: 24px;
+            font-size: .95rem;
+            color: var(--c-muted);
+            line-height: 1.5;
+            margin-bottom: 8px;
+        }
+
+        .contact-wrap li::before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            color: var(--c-primary-h);
+            font-weight: bold;
         }
 
         .contact-card {
             background: var(--c-surface);
             border: 1px solid var(--c-border);
             border-radius: var(--radius-lg);
-            padding: 28px 36px;
-            margin-top: 8px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            min-width: 280px;
+            padding: 32px;
+            margin-top: 48px;
+            text-align: center;
         }
 
-        .contact-card a {
-            color: var(--c-primary-h);
-            font-weight: 600;
-            text-decoration: none;
-            font-size: 1rem;
+        .contact-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
         }
 
-        .contact-card a:hover {
-            text-decoration: underline;
-        }
-
-        .contact-label {
-            font-size: .72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .07em;
+        .contact-card p {
+            font-size: .9rem;
+            margin: 0 auto 20px;
             color: var(--c-muted);
+            max-width: 400px;
+        }
+
+        .btn-large {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 32px;
+            background: linear-gradient(135deg, var(--c-primary) 0%, #9f5ae0 100%);
+            color: #fff;
+            font-weight: 700;
+            font-size: 1rem;
+            border-radius: var(--radius-sm);
+            text-decoration: none;
+            transition: all .2s;
+            box-shadow: 0 8px 24px rgba(108, 99, 255, .25);
+        }
+
+        .btn-large:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(108, 99, 255, .35);
         }
     </style>
 </head>
 
 <body>
     <nav class="navbar">
-        <a href="../" class="navbar__logo" id="nav-logo-home">
-            <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
-        </a>
-        <a href="../" class="btn-cta btn-cta--sm">← Powrót</a>
+        <div class="navbar__inner">
+            <a href="../" class="navbar__logo">
+                <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
+            </a>
+            <a href="../" class="btn-cta btn-cta--sm">← Powrót</a>
+        </div>
     </nav>
 
     <main>
         <section class="contact-wrap">
-            <h1>Kontakt</h1>
-            <p>Masz pytanie o serwis, płatność lub chcesz porozmawiać o korepetycjach? Napisz — odpowiem szybko.</p>
+            <h1>Korepetycje z angielskiego <span
+                    style="display:block; font-size: 1.2rem; color: var(--c-primary-h); margin-top: 8px;">(A1–B2)</span>
+            </h1>
+
+            <p>Mam na imię Patryk, mam 23 lata i studiuję filologię angielską na UW. Pracowałem jako lektor, a teraz
+                prowadzę zajęcia indywidualne. Interesuję się cyberbezpieczeństwem, grafiką i e-sportem, dlatego uczę
+                nowoczesnego, żywego języka.</p>
+
+            <p><strong>nAIczyciel</strong> to narzędzie, które powstało z moich doświadczeń — by rozwiązać problem
+                monotonnych apek do nauki i dać uczniom skuteczny trening przed egzaminem.</p>
+
+            <h2>W czym mogę pomóc?</h2>
+            <p>Pracuję z uczniami na poziomach A1–B2. Pomagam głównie w:</p>
+            <ul>
+                <li>przygotowaniu do E8 oraz Matury (podstawa i rozszerzenie)</li>
+                <li>przełamywaniu bariery językowej i poprawie mówienia</li>
+                <li>rozwijaniu gramatyki i słownictwa w praktyce</li>
+                <li>pracy nad wymową (brytyjski RP / amerykański GA)</li>
+            </ul>
+
+            <h2>Jak wyglądają zajęcia?</h2>
+            <p>Zapewniam świetną, bezstresową atmosferę. Z natury jestem spokojnym ambiwertykiem i bez problemu
+                dopasowuję styl pracy do każdego ucznia.</p>
+            <ul>
+                <li>Indywidualne podejście i autorskie materiały</li>
+                <li>Zajęcia online (Discord / Google Meet / Teams)</li>
+                <li>Zajęcia stacjonarne na terenie Radomia</li>
+            </ul>
 
             <div class="contact-card">
-                <span class="contact-label">E-mail</span>
-                <a href="mailto:kontakt@naiczyciel.pl">kontakt@naiczyciel.pl</a>
+                <h3>Gotowy na pierwsze zajęcia?</h3>
+                <p>Napisz do mnie i umówmy się na lekcję próbną, by przegadać Twój cel i poziom.</p>
+                <a href="mailto:kontakt@naiczyciel.pl" class="btn-large">Napisz e-mail (kontakt@naiczyciel.pl)</a>
             </div>
 
-            <p style="margin-top:16px; font-size:.85rem;">
-                👨‍🏫 Korepetytor / lektor języka angielskiego &nbsp;·&nbsp; Twórca nAIczyciel
-            </p>
         </section>
     </main>
 
     <footer class="footer">
-        <div class="footer__logo">nAIczyciel E8</div>
+        <div class="footer__logo">nAIczyciel</div>
         <nav class="footer__nav">
             <a href="../">Strona główna</a>
             <a href="../e8/">Quiz E8</a>

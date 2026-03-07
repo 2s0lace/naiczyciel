@@ -787,6 +787,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const dashboardView = document.getElementById('e8-dashboard-view');
     const welcomeMsg = document.getElementById('e8-welcome-msg');
     const previewSection = document.querySelector('.preview');
+    const navCta = document.getElementById('nav-start-btn');
+
+    if (navCta) navCta.style.display = 'none';
 
     if (dashboardView && (heroLeft || heroRight)) {
       if (heroLeft) heroLeft.style.display = 'none';
@@ -799,13 +802,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         welcomeMsg.textContent = `Cześć, ${firstName}! 👋`;
       }
 
-      // Hide additional marketing persuasions
-      if (previewSection) previewSection.style.display = 'none';
-
-      const sectionsToHide = ['.why', '.categories', '.pricing', '.author'];
-      sectionsToHide.forEach(selector => {
-        const el = document.querySelector(selector);
-        if (el) el.style.display = 'none';
+      // Hide all marketing/guest sections
+      const selectorsToHide = ['.preview', '.why', '.categories', '.pricing', '.author', '.footer'];
+      selectorsToHide.forEach(selector => {
+        document.querySelectorAll(selector).forEach(el => {
+          el.style.display = 'none';
+        });
       });
 
       updateDashboardStats(user);

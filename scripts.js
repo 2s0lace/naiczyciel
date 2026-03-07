@@ -289,6 +289,10 @@ const prevNavBtn = document.getElementById('quiz-prev-btn');
 const nextNavBtn = document.getElementById('quiz-next-btn');
 const dotsBar = document.getElementById('quiz-dots-bar');
 
+const btnRetry = document.getElementById('btn-retry');
+const btnHome = document.getElementById('btn-home');
+const startBtn = document.getElementById('nav-start-btn');
+
 /* ─── Dot nav renderer ──────────────────────────────────── */
 function renderDots() {
   dotsBar.innerHTML = '';
@@ -405,23 +409,27 @@ function selectAnswer(idx, selectedBtn, q) {
 }
 
 /* ─── Nav buttons ────────────────────────────────────────── */
-nextNavBtn.addEventListener('click', () => {
-  if (currentIndex < sessionQuestions.length - 1) {
-    currentIndex++;
-    renderQuestion();
-    window.scrollTo(0, 0);
-  } else {
-    showResult();
-  }
-});
+if (nextNavBtn) {
+  nextNavBtn.addEventListener('click', () => {
+    if (currentIndex < sessionQuestions.length - 1) {
+      currentIndex++;
+      renderQuestion();
+      window.scrollTo(0, 0);
+    } else {
+      showResult();
+    }
+  });
+}
 
-prevNavBtn.addEventListener('click', () => {
-  if (currentIndex > 0) {
-    currentIndex--;
-    renderQuestion();
-    window.scrollTo(0, 0);
-  }
-});
+if (prevNavBtn) {
+  prevNavBtn.addEventListener('click', () => {
+    if (currentIndex > 0) {
+      currentIndex--;
+      renderQuestion();
+      window.scrollTo(0, 0);
+    }
+  });
+}
 
 function showResult() {
   const total = sessionQuestions.length;

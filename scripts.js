@@ -663,14 +663,27 @@ if (window.supabase) {
 }
 
 async function loginGoogle() {
-  if (!supabaseClient) return;
-  // This will redirect to Google for auth, then back to the current page
-  await supabaseClient.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin + window.location.pathname
+  if (!supabaseClient) {
+    alert("Błąd: Supabase nie zostało zainicjowane!");
+    return;
+  }
+
+  try {
+    const { data, error } = await supabaseClient.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname
+      }
+    });
+
+    if (error) {
+      alert("Błąd logowania Supabase: " + error.message);
+      console.error(error);
     }
-  });
+  } catch (err) {
+    alert("Krytyczny błąd JS przy logowaniu: " + err.message);
+    console.error(err);
+  }
 }
 
 async function logout() {

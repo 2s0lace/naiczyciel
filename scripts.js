@@ -798,9 +798,66 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Hide additional marketing persuasions
-      if (previewSection) {
-        previewSection.style.display = 'none';
-      }
+      if (previewSection) previewSection.style.display = 'none';
+
+      const sectionsToHide = ['.why', '.categories', '.pricing', '.author'];
+      sectionsToHide.forEach(selector => {
+        const el = document.querySelector(selector);
+        if (el) el.style.display = 'none';
+      });
+
+      updateDashboardStats(user);
     }
   }
 });
+
+function updateDashboardStats(user) {
+  // Mock data for now (later can be fetched from Supabase 'profiles' or 'stats' table)
+  // We use localStorage to keep it persistent for the demo session
+  const stats = JSON.parse(localStorage.getItem('e8_stats') || JSON.stringify({
+    streak: 5,
+    sets: 18,
+    accuracy: 74,
+    questions: 186,
+    avgTime: 14,
+    history: [
+      { id: 12, score: 9, total: 10, time: "2:41" },
+      { id: 11, score: 7, total: 10, time: "3:12" }
+    ]
+  }));
+
+  // Update UI elements
+  const elProgPercent = document.getElementById('dash-prog-percent');
+  const elProgBar = document.getElementById('dash-prog-bar');
+  const elStreak = document.getElementById('dash-streak');
+  const elSets = document.getElementById('dash-sets');
+  const elAccuracyTop = document.getElementById('dash-accuracy-top');
+  const elAccuracy = document.getElementById('dash-accuracy');
+  const elAvgTime = document.getElementById('dash-avg-time');
+  const elQuestions = document.getElementById('dash-questions');
+  const elHistoryList = document.getElementById('dash-history-list');
+
+  if (elProgPercent) elProgPercent.textContent = `${stats.accuracy}%`;
+  if (elProgBar) elProgBar.style.width = `${stats.accuracy}%`;
+  if (elStreak) elStreak.textContent = stats.streak;
+  if (elSets) elSets.textContent = stats.sets;
+  if (elAccuracyTop) elAccuracyTop.textContent = stats.accuracy;
+  if (elAccuracy) elAccuracy.textContent = `${stats.accuracy}%`;
+  if (elAvgTime) elAvgTime.innerHTML = `${stats.avgTime} <small style="font-size: 0.9rem; font-weight: 500;">s</small>`;
+  if (elQuestions) elQuestions.textContent = stats.questions;
+
+  if (elHistoryList && stats.history.length > 0) {
+    elHistoryList.innerHTML = stats.history.map(item => `
+      <div class="dash-history-card">
+        <div class="dash-history-info">
+          <h4>Zestaw #${item.id}</h4>
+          <p>${item.time} • Egzamin E8</p>
+        </div>
+        <div class="dash-history-score">
+          <span class="score-val">${item.score}/${item.total}</span>
+          <span class="score-pct">${Math.round((item.score / item.total) * 100)}%</span>
+        </div>
+      </div>
+    `).join('');
+  }
+}

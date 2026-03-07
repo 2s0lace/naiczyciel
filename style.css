@@ -121,6 +121,7 @@ a {
   font-weight: 900;
   background: linear-gradient(135deg, var(--c-primary), #b06ef3);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   display: flex;
   align-items: center;
@@ -227,6 +228,103 @@ a {
   margin: 6px 0;
 }
 
+/* ─── Premium Dashboard Elements ─────────────────────────── */
+.btn-premium-action {
+  width: 100%;
+  padding: 24px;
+  background: linear-gradient(135deg, #6c63ff 0%, #b06ef3 50%, #6c63ff 100%);
+  background-size: 200% auto;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.3rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 10px 30px rgba(108, 99, 255, 0.3);
+  animation: shine-gradient 4s linear infinite;
+}
+
+@keyframes shine-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 200% 50%;
+  }
+}
+
+.btn-premium-action:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 15px 45px rgba(108, 99, 255, 0.5);
+  filter: brightness(1.1);
+}
+
+.btn-premium-action:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+.btn-premium-action svg {
+  transition: transform 0.3s ease;
+}
+
+.btn-premium-action:hover svg {
+  transform: translateX(6px);
+}
+
+.dash-history-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.dash-history-card:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(108, 99, 255, 0.3);
+  transform: translateX(4px);
+}
+
+.dash-history-info h4 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--c-text);
+}
+
+.dash-history-info p {
+  font-size: 0.8rem;
+  color: var(--c-muted);
+}
+
+.dash-history-score {
+  text-align: right;
+}
+
+.dash-history-score .score-val {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--c-primary-h);
+}
+
+.dash-history-score .score-pct {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--c-muted);
+}
+
 /* ─── Hero ───────────────────────────────────────────────── */
 .hero {
   padding: 80px 20px 64px;
@@ -266,6 +364,7 @@ a {
   letter-spacing: -.02em;
   background: linear-gradient(140deg, #fff 30%, #b0a8ff 70%, #6c63ff);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -273,6 +372,7 @@ a {
   font-style: normal;
   background: linear-gradient(135deg, #6c63ff, #b06ef3);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -283,6 +383,7 @@ a {
   font-weight: 800;
   background: linear-gradient(135deg, var(--c-primary), #b06ef3);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   border: 1.5px solid rgba(108, 99, 255, .5);
   border-radius: 6px;
@@ -571,6 +672,7 @@ a {
   font-weight: 900;
   background: linear-gradient(135deg, #fff 30%, #b0a8ff 70%, #6c63ff);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1;
 }
@@ -689,6 +791,7 @@ a {
   margin-top: 16px;
   background: linear-gradient(135deg, #fff 20%, #b06ef3 60%, var(--c-primary));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   filter: drop-shadow(0 0 8px rgba(108, 99, 255, .35));
   letter-spacing: .01em;
@@ -885,6 +988,7 @@ a {
   font-style: normal;
   background: linear-gradient(135deg, var(--c-primary), #b06ef3);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1185,6 +1289,7 @@ a {
   font-size: 1.1rem;
   background: linear-gradient(135deg, var(--c-primary), #b06ef3);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 8px;
 }
@@ -1242,6 +1347,7 @@ a {
   font-size: 1.1rem;
   background: linear-gradient(135deg, var(--c-primary), #b06ef3);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -1594,6 +1700,7 @@ a {
   font-family: 'Outfit', sans-serif;
   background: linear-gradient(135deg, var(--c-primary), #b06ef3);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   line-height: 1;
   margin-bottom: 6px;

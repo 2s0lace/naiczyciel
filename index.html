@@ -228,9 +228,14 @@
 <body>
   <nav class="navbar">
     <div class="navbar__inner">
-      <a class="navbar__logo" href="/">
-        <img src="img/logonaiczyciel.png" alt="nAIczyciel" class="navbar__logo-img">
+      <a href="." class="navbar__logo">
+        <img src="img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
       </a>
+      <div class="auth-container">
+        <button class="btn-cta btn-cta--sm" onclick="loginGoogle()"
+          style="background: rgba(255,255,255,0.1); color: var(--c-text); border: 1px solid rgba(255,255,255,0.2);">Zaloguj
+          z Google</button>
+      </div>
     </div>
   </nav>
 

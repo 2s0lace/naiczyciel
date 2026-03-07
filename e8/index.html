@@ -21,9 +21,14 @@
       <div class="navbar__inner">
         <a class="navbar__logo" href="#" id="nav-logo-home">
           <img src="../img/logonaiczyciel.png" alt="nAIczyciel" class="navbar__logo-img">
-        </a>
-        <button class="navbar__cta" id="nav-start-btn">Zacznij quiz →</button>
-      </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="auth-container" style="display: none;">
+              <button class="btn-cta btn-cta--sm" onclick="loginGoogle()"
+                style="background: rgba(255,255,255,0.1); color: var(--c-text); border: 1px solid rgba(255,255,255,0.2);">Zaloguj
+                z Google</button>
+            </div>
+            <button class="navbar__cta" id="nav-start-btn">Zacznij quiz →</button>
+          </div>
     </nav>
 
     <!-- Hero -->
@@ -501,6 +506,7 @@
     </div>
   </div><!-- /modal -->
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="../scripts.js"></script>
 </body>
 

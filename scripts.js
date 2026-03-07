@@ -638,11 +638,75 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toast.textContent = msg || 'Wkrótce! 🚀';
   toast.classList.remove('hidden');
+  toast.classList.add('visible');
   toastTimer = setTimeout(() => {
-    toast.classList.add('hidden');
-    toast.textContent = 'Wkrótce! 🚀'; // reset
-  }, 2800);
+    toast.classList.remove('visible');
+    setTimeout(() => toast.classList.add('hidden'), 300);
+  }, 2500);
 }
-document.querySelectorAll('.soon-tile').forEach(el => {
-  el.addEventListener('click', showToast);
+
+document.querySelectorAll('.soon-tile').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    showToast('Moduł w przygotowaniu...');
+  });
+});
+
+/* ─── SUPABASE AUTH ────────────────────────────────────── */
+const SUPABASE_URL = 'https://owyqpitxqxvxlrfszoyc.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_yXsk_Q-tbYT8BgQTy2R1Eg_FnZzPwpF';
+
+// Initialize Supabase only if the script is loaded (it will be added via CDN)
+let supabaseClient = null;
+if (window.supabase) {
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+async function loginGoogle() {
+  if (!supabaseClient) return;
+  // This will redirect to Google for auth, then back to the current page
+  await supabaseClient.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + window.location.pathname
+    }
+  });
+}
+
+async function logout() {
+  if (!supabaseClient) return;
+  await supabaseClient.auth.signOut();
+  window.location.reload();
+}
+
+// Check session on load and update UI
+document.addEventListener('DOMContentLoaded', async () => {
+  if (!supabaseClient) return;
+
+  const { data } = await supabaseClient.auth.getUser();
+  const user = data?.user;
+
+  if (user) {
+    console.log('Zalogowany uczeń:', user);
+
+    // Find all auth buttons/containers in navbars
+    const authContainers = document.querySelectorAll('.auth-container');
+
+    authContainers.forEach(container => {
+      // Create user profile UI (avatar + name)
+      const avatarUrl = user.user_metadata?.avatar_url || '';
+      const fullName = user.user_metadata?.full_name || user.email;
+      const firstName = fullName.split(' ')[0];
+
+      container.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 4px 12px 4px 4px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.1);">
+            ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;">` : `<div style="width: 24px; height: 24px; border-radius: 50%; background: var(--c-primary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">${firstName.charAt(0)}</div>`}
+            <span style="font-size: .85rem; font-weight: 600; color: var(--c-text);">${firstName}</span>
+          </div>
+          <button onclick="logout()" style="background: transparent; border: none; color: var(--c-muted); font-size: .8rem; cursor: pointer; text-decoration: underline;">Wyloguj</button>
+        </div>
+      `;
+    });
+  }
 });

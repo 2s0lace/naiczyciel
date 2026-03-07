@@ -15,6 +15,7 @@
         rel="stylesheet" />
     <link rel="stylesheet" href="../style.css" />
     <style>
+        /* Navbar from main style.css to ensure it shows up if styles are missing, though it uses style.css */
         .contact-wrap {
             max-width: 680px;
             margin: 0 auto;
@@ -119,7 +120,11 @@
             <a href="../" class="navbar__logo">
                 <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
             </a>
-            <a href="../" class="btn-cta btn-cta--sm">← Powrót</a>
+            <div class="auth-container">
+                <button class="btn-cta btn-cta--sm" onclick="loginGoogle()"
+                    style="background: rgba(255,255,255,0.1); color: var(--c-text); border: 1px solid rgba(255,255,255,0.2);">Zaloguj
+                    z Google</button>
+            </div>
         </div>
     </nav>
 
@@ -150,19 +155,23 @@
                         <li
                             style="position: relative; padding-left: 20px; font-size: .9rem; color: var(--c-muted); margin-bottom: 8px;">
                             <span style="position: absolute; left: 0; color: var(--c-primary-h);">•</span> E8 oraz
-                            Maturze (podstawa i rozszerzenie)</li>
+                            Maturze (podstawa i rozszerzenie)
+                        </li>
                         <li
                             style="position: relative; padding-left: 20px; font-size: .9rem; color: var(--c-muted); margin-bottom: 8px;">
                             <span style="position: absolute; left: 0; color: var(--c-primary-h);">•</span> przełamywaniu
-                            bariery językowej i mówieniu</li>
+                            bariery językowej i mówieniu
+                        </li>
                         <li
                             style="position: relative; padding-left: 20px; font-size: .9rem; color: var(--c-muted); margin-bottom: 8px;">
                             <span style="position: absolute; left: 0; color: var(--c-primary-h);">•</span> rozwijaniu
-                            gramatyki i słownictwa w praktyce</li>
+                            gramatyki i słownictwa w praktyce
+                        </li>
                         <li
                             style="position: relative; padding-left: 20px; font-size: .9rem; color: var(--c-muted); margin-bottom: 0;">
                             <span style="position: absolute; left: 0; color: var(--c-primary-h);">•</span> wymowie
-                            (brytyjski RP / amerykański GA)</li>
+                            (brytyjski RP / amerykański GA)
+                        </li>
                     </ul>
                 </div>
 
@@ -178,15 +187,18 @@
                         <li
                             style="position: relative; padding-left: 20px; font-size: .9rem; color: var(--c-muted); margin-bottom: 8px;">
                             <span style="position: absolute; left: 0; color: var(--c-primary-h);">•</span> Indywidualne
-                            podejście i autorskie materiały</li>
+                            podejście i autorskie materiały
+                        </li>
                         <li
                             style="position: relative; padding-left: 20px; font-size: .9rem; color: var(--c-muted); margin-bottom: 8px;">
                             <span style="position: absolute; left: 0; color: var(--c-primary-h);">•</span> Zajęcia
-                            online (Discord / Google Meet / Teams)</li>
+                            online (Discord / Google Meet / Teams)
+                        </li>
                         <li
                             style="position: relative; padding-left: 20px; font-size: .9rem; color: var(--c-muted); margin-bottom: 0;">
                             <span style="position: absolute; left: 0; color: var(--c-primary-h);">•</span> Możliwość
-                            zajęć stacjonarnych w Radomiu</li>
+                            zajęć stacjonarnych w Radomiu
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -210,6 +222,8 @@
         </nav>
         <p class="footer__copy">© 2026 nAIczyciel</p>
     </footer>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../scripts.js"></script>
 </body>
 
 </html>

@@ -978,6 +978,7 @@ a {
   line-height: 1;
   height: fit-content;
   align-self: flex-start;
+  width: 58px;
 }
 
 .mock-pill.why {

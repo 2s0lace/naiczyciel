@@ -845,7 +845,7 @@ function updateDashboardStats(user) {
   if (elSets) elSets.textContent = stats.sets;
   if (elAccuracyTop) elAccuracyTop.textContent = stats.accuracy;
   if (elAccuracy) elAccuracy.textContent = `${stats.accuracy}%`;
-  if (elAvgTime) elAvgTime.innerHTML = `${stats.avgTime} <small style="font-size: 0.9rem; font-weight: 500;">s</small>`;
+  if (elAvgTime) elAvgTime.innerHTML = `${stats.avgTime}s`;
   if (elQuestions) elQuestions.textContent = stats.questions;
 
   if (elHistoryList && stats.history.length > 0) {

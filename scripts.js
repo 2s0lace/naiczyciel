@@ -487,16 +487,18 @@ function computeTopicStats(results) {
 function renderInsights() {
   const results = userResults;
 
-  // 1. Inline topic accuracy chips under percent
+  // 1. Inline topic accuracy chips — always show all 4 types
   const stats = computeTopicStats(results);
   const topicsBar = document.getElementById('insights-topics-bar');
+  const allTypes = ['reactions', 'grammar', 'reading', 'vocabulary'];
 
   if (topicsBar) {
-    topicsBar.innerHTML = Object.entries(stats)
-      .map(([type, data]) => {
-        const good = data.accuracy >= 70;
-        return `<span class="topic-chip ${good ? 'topic-chip--good' : 'topic-chip--bad'}">${typeNames[type] || type} ${data.accuracy}%</span>`;
-      }).join('');
+    topicsBar.innerHTML = allTypes.map(type => {
+      const data = stats[type] || { accuracy: 0, total: 0 };
+      const good = data.accuracy >= 70 && data.total > 0;
+      const score = data.total > 0 ? `${data.accuracy}%` : '—';
+      return `<span class="topic-chip ${good ? 'topic-chip--good' : 'topic-chip--bad'}">${typeNames[type] || type} ${score}</span>`;
+    }).join('');
   }
 
   // Words to review — vocabulary type only, collapsible

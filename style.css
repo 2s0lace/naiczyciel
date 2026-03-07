@@ -1578,7 +1578,7 @@ a {
 /* Single words box */
 .insights {
   width: 100%;
-  max-width: 400px;
+  max-width: 300px;
   margin: 10px auto 20px;
   background: linear-gradient(180deg, rgba(167, 139, 250, .1) 0%, var(--c-surface) 52px);
   border: 1px solid var(--c-border);
@@ -1612,6 +1612,7 @@ a {
 
 .insights__heading--words {
   color: #a78bfa;
+  line-height: 1.25;
 }
 
 .insights__toggle,

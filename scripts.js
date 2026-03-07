@@ -259,6 +259,7 @@ let score = 0;
 let answered = false;
 let answers = []; // null | selectedIndex per question
 let userResults = []; // { type, topic, correct, keywords? } per answered question
+let quizStartedAt = null;
 
 /* ─── Screens ────────────────────────────────────────────── */
 const screenLanding = document.getElementById('screen-landing');
@@ -325,6 +326,7 @@ function startQuiz() {
   score = 0;
   answers = new Array(sessionQuestions.length).fill(null);
   userResults = [];
+  quizStartedAt = Date.now();
   showScreen('quiz');
   renderQuestion();
 }
@@ -431,7 +433,7 @@ if (prevNavBtn) {
   });
 }
 
-function showResult() {
+async function showResult() {
   const total = sessionQuestions.length;
 
   // For any skipped questions, push them into userResults as wrong
@@ -467,6 +469,7 @@ function showResult() {
 
   progressBar.style.width = '100%';
   renderInsights();
+  await persistQuizSession(total, percent);
   showScreen('result');
 }
 
@@ -676,18 +679,28 @@ document.querySelectorAll('.soon-tile').forEach(btn => {
 });
 
 /* ─── SUPABASE AUTH ────────────────────────────────────── */
-const SUPABASE_URL = 'https://owyqpitxqxvxlrfszoyc.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_yXsk_Q-tbYT8BgQTy2R1Eg_FnZzPwpF';
-
-// Initialize Supabase only if the script is loaded (it will be added via CDN)
 let supabaseClient = null;
-if (window.supabase) {
-  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+window.supabaseClient = null;
+
+async function ensureSupabaseClient() {
+  if (supabaseClient) return supabaseClient;
+  if (typeof window.getSupabaseClient !== 'function') return null;
+  try {
+    supabaseClient = await window.getSupabaseClient();
+    window.supabaseClient = supabaseClient;
+  } catch (err) {
+    console.error('Supabase init error:', err);
+    supabaseClient = null;
+    window.supabaseClient = null;
+  }
+  return supabaseClient;
 }
 
 async function loginGoogle() {
+  await ensureSupabaseClient();
   if (!supabaseClient) {
-    alert("Błąd: Supabase nie zostało zainicjowane!");
+    const details = window.__supabaseInitError ? ` Szczegóły: ${window.__supabaseInitError}` : '';
+    alert(`Błąd: Supabase nie zostało zainicjowane.${details}`);
     return;
   }
 
@@ -710,6 +723,7 @@ async function loginGoogle() {
 }
 
 async function logout() {
+  await ensureSupabaseClient();
   if (!supabaseClient) return;
   await supabaseClient.auth.signOut();
   window.location.reload();
@@ -747,7 +761,11 @@ document.addEventListener('click', (event) => {
 
 // Check session on load and update UI
 document.addEventListener('DOMContentLoaded', async () => {
-  if (!supabaseClient) return;
+  await ensureSupabaseClient();
+  if (!supabaseClient) {
+    document.body.classList.remove('auth-loading');
+    return;
+  }
 
   const { data } = await supabaseClient.auth.getUser();
   const user = data?.user;
@@ -819,7 +837,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
       });
 
-      updateDashboardStats(user);
+      await updateDashboardStats(user);
     }
   }
 
@@ -827,20 +845,135 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.body.classList.remove('auth-loading');
 });
 
-function updateDashboardStats(user) {
-  // Mock data for now (later can be fetched from Supabase 'profiles' or 'stats' table)
-  // We use localStorage to keep it persistent for the demo session
-  const stats = JSON.parse(localStorage.getItem('e8_stats') || JSON.stringify({
-    streak: 5,
-    sets: 18,
-    accuracy: 74,
-    questions: 186,
-    avgTime: 14,
-    history: [
-      { id: 12, score: 9, total: 10, time: "2:41" },
-      { id: 11, score: 7, total: 10, time: "3:12" }
-    ]
+async function persistQuizSession(total, percent) {
+  await ensureSupabaseClient();
+  if (!supabaseClient) return;
+
+  const { data: authData } = await supabaseClient.auth.getUser();
+  const user = authData?.user;
+  if (!user) return;
+
+  const durationSeconds = quizStartedAt ? Math.max(1, Math.round((Date.now() - quizStartedAt) / 1000)) : null;
+
+  try {
+    const { data: session, error: sessionError } = await supabaseClient
+      .from('quiz_sessions')
+      .insert({
+        user_id: user.id,
+        quiz_type: 'e8',
+        score,
+        total_questions: total,
+        percent,
+        duration_seconds: durationSeconds
+      })
+      .select('id')
+      .single();
+
+    if (sessionError || !session) {
+      console.error('quiz_sessions insert error:', sessionError);
+      return;
+    }
+
+    const answersRows = sessionQuestions.map((q, i) => {
+      const selectedIndex = answers[i];
+      const selectedAnswer = selectedIndex === null ? null : (q.answers[selectedIndex] || null);
+      const correctAnswer = q.answers[q.correct] || null;
+      return {
+        session_id: session.id,
+        user_id: user.id,
+        question_id: q.id ? String(q.id) : null,
+        branch: q.type || null,
+        question_text: q.question || '',
+        selected_answer: selectedAnswer,
+        correct_answer: correctAnswer,
+        is_correct: selectedIndex === q.correct
+      };
+    });
+
+    const { error: answersError } = await supabaseClient
+      .from('quiz_answers')
+      .insert(answersRows);
+
+    if (answersError) console.error('quiz_answers insert error:', answersError);
+  } catch (err) {
+    console.error('persistQuizSession failed:', err);
+  }
+}
+
+function fallbackStats() {
+  return {
+    streak: 0,
+    sets: 0,
+    accuracy: 0,
+    questions: 0,
+    avgTime: 0,
+    history: []
+  };
+}
+
+function calculateStreakFromSessions(sessions) {
+  if (!sessions.length) return 0;
+  const dayKeys = [...new Set(sessions.map((s) => new Date(s.completed_at || s.created_at).toISOString().slice(0, 10)))].sort().reverse();
+  let streak = 0;
+  let cursor = new Date();
+  cursor.setHours(0, 0, 0, 0);
+  for (const key of dayKeys) {
+    const day = new Date(`${key}T00:00:00.000Z`);
+    const diff = Math.round((cursor - day) / 86400000);
+    if (diff === streak) streak++;
+    else if (diff > streak) break;
+  }
+  return streak;
+}
+
+async function fetchStatsFromSupabase(user) {
+  await ensureSupabaseClient();
+  if (!supabaseClient || !user) return null;
+
+  const { data: sessions, error } = await supabaseClient
+    .from('quiz_sessions')
+    .select('id, score, total_questions, percent, duration_seconds, completed_at, created_at')
+    .eq('user_id', user.id)
+    .eq('quiz_type', 'e8')
+    .order('completed_at', { ascending: false })
+    .limit(50);
+
+  if (error || !sessions) {
+    console.error('fetchStatsFromSupabase error:', error);
+    return null;
+  }
+
+  if (!sessions.length) {
+    return { streak: 0, sets: 0, accuracy: 0, questions: 0, avgTime: 0, history: [] };
+  }
+
+  const totalSets = sessions.length;
+  const totalQuestions = sessions.reduce((sum, s) => sum + Number(s.total_questions || 0), 0);
+  const totalCorrect = sessions.reduce((sum, s) => sum + Number(s.score || 0), 0);
+  const accuracy = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+  const durationRows = sessions.filter((s) => Number(s.duration_seconds || 0) > 0);
+  const avgTime = durationRows.length ? Math.round(durationRows.reduce((sum, s) => sum + Number(s.duration_seconds), 0) / durationRows.length) : 0;
+  const streak = calculateStreakFromSessions(sessions);
+
+  const history = sessions.slice(0, 2).map((s, idx) => ({
+    id: idx + 1,
+    score: Number(s.score || 0),
+    total: Number(s.total_questions || 0),
+    time: `${Number(s.duration_seconds || 0)}s`
   }));
+
+  return {
+    streak,
+    sets: totalSets,
+    accuracy,
+    questions: totalQuestions,
+    avgTime,
+    history
+  };
+}
+
+async function updateDashboardStats(user) {
+  const stats = (await fetchStatsFromSupabase(user)) || fallbackStats();
 
   // Update UI elements
   const elProgPercent = document.getElementById('dash-prog-percent');
@@ -862,18 +995,27 @@ function updateDashboardStats(user) {
   if (elAvgTime) elAvgTime.innerHTML = `${stats.avgTime}s`;
   if (elQuestions) elQuestions.textContent = stats.questions;
 
-  if (elHistoryList && stats.history.length > 0) {
-    elHistoryList.innerHTML = stats.history.map(item => `
-      <div class="dash-history-card">
-        <div class="dash-history-info">
-          <h4>Zestaw #${item.id}</h4>
-          <p>${item.time} • Egzamin E8</p>
+  if (elHistoryList) {
+    if (stats.history.length > 0) {
+      elHistoryList.innerHTML = stats.history.map(item => `
+        <div class="dash-history-card">
+          <div class="dash-history-info">
+            <h4>Zestaw #${item.id}</h4>
+            <p>${item.time} • Egzamin E8</p>
+          </div>
+          <div class="dash-history-score">
+            <span class="score-val">${item.score}/${item.total}</span>
+            <span class="score-pct">${Math.round((item.score / item.total) * 100)}%</span>
+          </div>
         </div>
-        <div class="dash-history-score">
-          <span class="score-val">${item.score}/${item.total}</span>
-          <span class="score-pct">${Math.round((item.score / item.total) * 100)}%</span>
+      `).join('');
+    } else {
+      elHistoryList.innerHTML = `
+        <div class="dash-history-empty">
+          <h4>Brak aktywności</h4>
+          <p>Nie masz jeszcze żadnych ukończonych treningów. Rozwiąż pierwszy zestaw, aby zobaczyć historię.</p>
         </div>
-      </div>
-    `).join('');
+      `;
+    }
   }
 }

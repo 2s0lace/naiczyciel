@@ -136,6 +136,27 @@ body.auth-loading #e8-seo-text {
   gap: 8px;
 }
 
+.dash-history-empty {
+  border: 1px dashed rgba(255, 255, 255, 0.14);
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  padding: 14px;
+}
+
+.dash-history-empty h4 {
+  margin: 0 0 6px;
+  font-size: .88rem;
+  font-weight: 800;
+  color: var(--c-text);
+}
+
+.dash-history-empty p {
+  margin: 0;
+  font-size: .78rem;
+  line-height: 1.45;
+  color: var(--c-muted);
+}
+
 @media (max-width: 768px) {
   .dash-view {
     padding: 0 15px;

@@ -1,84 +1,76 @@
-const SUPABASE_URL = 'https://owyqpitxqxvxlrfszoyc.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_yXsk_Q-tbYT8BgQTy2R1Eg_FnZzPwpF';
-
-const LS_QUESTIONS = 'admin_question_bank_v1';
-const LS_CATEGORIES = 'admin_categories_v1';
-const LS_SETS = 'admin_published_sets_v1';
-
+const BRANCHES = ['grammar', 'reading', 'vocab'];
 let supabaseClient = null;
-let currentUser = null;
-let questions = [];
-let categories = [];
-let publishedSets = [];
+let pendingImport = null;
+let allQuestions = [];
 
-const fallbackQuestions = [
-  {
-    id: 1001,
-    type: 'reactions',
-    topic: 'Szkoła',
-    level: 'A2',
-    question: 'Kolega pyta o plan lekcji. Co odpowiesz?',
-    answers: ['A. I have my notebook.', "B. According to my timetable, it's Biology.", 'C. I am very tired.'],
-    correct: 1,
-    explanation: {
-      why: 'To bezpośrednia odpowiedź na pytanie o przedmiot.',
-      watch_out: 'notebook nie odpowiada na pytanie o plan.',
-      pattern: "According to my timetable, it's..."
-    }
-  },
-  {
-    id: 1002,
-    type: 'grammar',
-    topic: 'Present Perfect',
-    level: 'A2',
-    question: 'She ___ already ___ her homework.',
-    answers: ['A. has / finished', 'B. did / finish', 'C. is / finishing'],
-    correct: 0,
-    explanation: {
-      why: 'Present Perfect z already pokazuje ukończoną czynność.',
-      watch_out: 'did finish to inny czas.',
-      pattern: 'has/have + already + past participle'
-    }
-  }
-];
-
-const fallbackCategories = [
-  { key: 'reactions', label: 'Reakcje językowe', color: '#6c63ff', description: 'Typowe reakcje', active: true },
-  { key: 'reading', label: 'Reading', color: '#22c55e', description: 'Rozumienie tekstu', active: true },
-  { key: 'vocabulary', label: 'Słownictwo', color: '#f59e0b', description: 'Kolokacje i słowa', active: true },
-  { key: 'grammar', label: 'Gramatyka', color: '#ef4444', description: 'Zadania gramatyczne', active: true }
-];
-
-function saveState() {
-  localStorage.setItem(LS_QUESTIONS, JSON.stringify(questions));
-  localStorage.setItem(LS_CATEGORIES, JSON.stringify(categories));
-  localStorage.setItem(LS_SETS, JSON.stringify(publishedSets));
+function qs(id) {
+  return document.getElementById(id);
 }
 
-function loadState() {
-  questions = JSON.parse(localStorage.getItem(LS_QUESTIONS) || 'null') || [];
-  categories = JSON.parse(localStorage.getItem(LS_CATEGORIES) || 'null') || [];
-  publishedSets = JSON.parse(localStorage.getItem(LS_SETS) || 'null') || [];
-
-  if (!categories.length) {
-    categories = [...fallbackCategories];
-  }
+function isValidBranch(branch) {
+  return BRANCHES.includes(branch);
 }
 
-function seedFallbackQuestions() {
-  if (!questions.length) {
-    questions = [...fallbackQuestions];
-    saveState();
-  }
+function generateId(branch) {
+  const random = Math.random().toString(36).slice(2, 8);
+  return `${branch}_${Date.now()}_${random}`;
 }
 
-function getNextQuestionId() {
-  const maxId = questions.reduce((max, q) => Math.max(max, Number(q.id) || 0), 0);
-  return maxId + 1;
+function normalizeOptions(options) {
+  if (!Array.isArray(options)) return [];
+  return options.map((o) => String(o || '').trim()).filter(Boolean);
 }
 
-function escapeHtml(value) {
-  return String(value)
+function validateQuestionRecord(raw, mode = 'auto', forcedBranch = null) {
+  const branch = mode === 'force' ? forcedBranch : raw.branch;
+  if (!isValidBranch(branch)) return { valid: false, error: 'Invalid branch' };
+
+  const question = String(raw.question || '').trim();
+  const options = normalizeOptions(raw.options);
+  const correctAnswer = String(raw.correctAnswer || '').trim();
+  const type = String(raw.type || 'multiple_choice').trim();
+
+  if (!question) return { valid: false, error: 'question is required' };
+  if (options.length < 2) return { valid: false, error: 'options must contain at least 2 items' };
+  if (!correctAnswer || !options.includes(correctAnswer)) return { valid: false, error: 'correctAnswer must match one option' };
+
+  const record = {
+    id: String(raw.id || '').trim() || generateId(branch),
+    branch,
+    type,
+    question,
+    options,
+    correctAnswer,
+    explanationWhy: String(raw.explanationWhy || '').trim(),
+    explanationPattern: String(raw.explanationPattern || '').trim(),
+    difficulty: String(raw.difficulty || '').trim(),
+    topic: String(raw.topic || '').trim(),
+    tags: Array.isArray(raw.tags) ? raw.tags.map((t) => String(t)) : [],
+    source: String(raw.source || 'admin-import').trim(),
+    createdAt: String(raw.createdAt || new Date().toISOString())
+  };
+
+  return { valid: true, record };
+}
+
+function splitRecordsByBranch(records) {
+  return records.reduce((acc, r) => {
+    if (!acc[r.branch]) acc[r.branch] = [];
+    acc[r.branch].push(r);
+    return acc;
+  }, { grammar: [], reading: [], vocab: [] });
+}
+
+function isDuplicateCandidate(record, existingList) {
+  const keyQ = record.question.trim().toLowerCase();
+  return existingList.some(
+    (q) => String(q.branch || '') === record.branch
+      && String(q.question || '').trim().toLowerCase() === keyQ
+  );
+}
+
+function escapeHtml(v) {
+  return String(v)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -86,8 +78,245 @@ function escapeHtml(value) {
     .replace(/'/g, '&#039;');
 }
 
-function adminPath() {
-  return './';
+async function apiGet(url) {
+  const res = await fetch(url);
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'API error');
+  return json;
+}
+
+async function apiPost(url, payload) {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'API error');
+  return json;
+}
+
+async function apiDelete(url) {
+  const res = await fetch(url, { method: 'DELETE' });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || 'API error');
+  return json;
+}
+
+async function loadQuestions(filterBranch = 'all') {
+  const data = await apiGet('/api/questions');
+  allQuestions = Array.isArray(data.questions) ? data.questions : [];
+  renderCounts();
+  renderQuestionTable(filterBranch);
+}
+
+function renderCounts() {
+  const counts = { grammar: 0, reading: 0, vocab: 0 };
+  for (const q of allQuestions) {
+    if (isValidBranch(q.branch)) counts[q.branch] += 1;
+  }
+  qs('branch-counts').textContent = `grammar: ${counts.grammar} | reading: ${counts.reading} | vocab: ${counts.vocab}`;
+}
+
+function renderQuestionTable(filterBranch = 'all') {
+  const tbody = qs('questions-table').querySelector('tbody');
+  const filtered = allQuestions
+    .filter((q) => (filterBranch === 'all' ? true : q.branch === filterBranch))
+    .sort((a, b) => String(a.id).localeCompare(String(b.id)));
+
+  tbody.innerHTML = filtered.length
+    ? filtered.map((q) => `
+      <tr>
+        <td>${escapeHtml(q.id)}</td>
+        <td>${escapeHtml(q.branch)}</td>
+        <td>${escapeHtml(q.question)}</td>
+        <td>${escapeHtml(q.correctAnswer)}</td>
+        <td>
+          <div class="row-actions">
+            <button class="delete" data-branch="${escapeHtml(q.branch)}" data-id="${escapeHtml(q.id)}">Usuń</button>
+          </div>
+        </td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="5">Brak pytań.</td></tr>';
+}
+
+function resetManualForm() {
+  qs('manual-form').reset();
+  qs('manual-type').value = 'multiple_choice';
+  qs('manual-source').value = 'admin';
+}
+
+async function handleManualSubmit(event) {
+  event.preventDefault();
+  const msg = qs('manual-msg');
+  msg.textContent = '';
+
+  const branch = qs('manual-branch').value;
+  const options = [qs('opt-1').value, qs('opt-2').value, qs('opt-3').value, qs('opt-4').value]
+    .map((v) => v.trim())
+    .filter(Boolean);
+
+  const raw = {
+    branch,
+    type: qs('manual-type').value,
+    question: qs('manual-question').value,
+    options,
+    correctAnswer: qs('manual-correct').value,
+    explanationWhy: qs('manual-why').value,
+    explanationPattern: qs('manual-pattern').value,
+    difficulty: qs('manual-difficulty').value,
+    topic: qs('manual-topic').value,
+    source: qs('manual-source').value || 'admin'
+  };
+
+  const validated = validateQuestionRecord(raw, 'force', branch);
+  if (!validated.valid) {
+    msg.textContent = `Błąd: ${validated.error}`;
+    msg.style.color = '#fca5a5';
+    return;
+  }
+
+  try {
+    await apiPost('/api/questions', validated.record);
+    msg.textContent = 'Sukces: pytanie dodane.';
+    msg.style.color = '#6ee7b7';
+    resetManualForm();
+    await loadQuestions(qs('list-branch-filter').value);
+  } catch (err) {
+    msg.textContent = `Błąd zapisu: ${err.message}`;
+    msg.style.color = '#fca5a5';
+  }
+}
+
+function parseImportJson() {
+  const raw = qs('import-json').value.trim();
+  if (!raw) throw new Error('Wklej JSON.');
+  const parsed = JSON.parse(raw);
+  if (!Array.isArray(parsed)) throw new Error('Root JSON musi być tablicą.');
+  return parsed;
+}
+
+function buildPreviewAndPending(records, mode, targetBranch) {
+  const validRecords = [];
+  const rejected = [];
+  let duplicates = 0;
+
+  for (let i = 0; i < records.length; i++) {
+    const v = validateQuestionRecord(records[i], mode, targetBranch);
+    if (!v.valid) {
+      rejected.push({ index: i, error: v.error });
+      continue;
+    }
+
+    if (isDuplicateCandidate(v.record, allQuestions) || isDuplicateCandidate(v.record, validRecords)) {
+      duplicates += 1;
+      continue;
+    }
+
+    validRecords.push({ ...v.record, source: 'admin-import', createdAt: new Date().toISOString() });
+  }
+
+  const grouped = splitRecordsByBranch(validRecords);
+  return {
+    records: validRecords,
+    grouped,
+    rejected,
+    duplicates,
+    summary: {
+      grammar: grouped.grammar.length,
+      reading: grouped.reading.length,
+      vocab: grouped.vocab.length
+    }
+  };
+}
+
+function renderImportPreview(pending) {
+  qs('import-preview').textContent = [
+    'Preview:',
+    `grammar: ${pending.summary.grammar}`,
+    `reading: ${pending.summary.reading}`,
+    `vocab: ${pending.summary.vocab}`,
+    `duplicates skipped: ${pending.duplicates}`,
+    `rejected: ${pending.rejected.length}`,
+    pending.rejected.length ? `errors: ${JSON.stringify(pending.rejected, null, 2)}` : ''
+  ].join('\n');
+}
+
+function renderImportReport(report) {
+  qs('import-report').textContent = [
+    'Raport importu:',
+    `zaimportowano grammar: ${report.imported.grammar || 0}`,
+    `zaimportowano reading: ${report.imported.reading || 0}`,
+    `zaimportowano vocab: ${report.imported.vocab || 0}`,
+    `duplikaty pominięte: ${report.duplicates || 0}`,
+    `odrzucone: ${(report.rejected || []).length}`,
+    (report.rejected || []).length ? JSON.stringify(report.rejected, null, 2) : ''
+  ].join('\n');
+}
+
+function setupImportModeToggle() {
+  const mode = qs('import-mode');
+  const target = qs('import-target');
+  mode.addEventListener('change', () => {
+    target.disabled = mode.value !== 'force';
+  });
+}
+
+async function handleValidateJson() {
+  qs('import-report').textContent = '';
+  qs('import-json-btn').disabled = true;
+
+  try {
+    const records = parseImportJson();
+    const mode = qs('import-mode').value;
+    const target = qs('import-target').value;
+    const pending = buildPreviewAndPending(records, mode, target);
+    pendingImport = { ...pending, mode, targetBranch: target };
+    renderImportPreview(pendingImport);
+    qs('import-json-btn').disabled = pendingImport.records.length === 0;
+  } catch (err) {
+    qs('import-preview').textContent = `Błąd walidacji: ${err.message}`;
+    pendingImport = null;
+  }
+}
+
+async function handleImportJson() {
+  if (!pendingImport || !pendingImport.records.length) return;
+
+  try {
+    const payload = {
+      mode: pendingImport.mode === 'force' ? 'force' : 'auto',
+      targetBranch: pendingImport.targetBranch,
+      records: pendingImport.records
+    };
+    const result = await apiPost('/api/questions/import', payload);
+    renderImportReport(result.report || {});
+    await loadQuestions(qs('list-branch-filter').value);
+    qs('import-json-btn').disabled = true;
+    pendingImport = null;
+  } catch (err) {
+    qs('import-report').textContent = `Błąd importu: ${err.message}`;
+  }
+}
+
+function setupListInteractions() {
+  qs('list-branch-filter').addEventListener('change', (e) => renderQuestionTable(e.target.value));
+
+  qs('questions-table').addEventListener('click', async (event) => {
+    const btn = event.target.closest('button.delete');
+    if (!btn) return;
+    const branch = btn.getAttribute('data-branch');
+    const id = btn.getAttribute('data-id');
+    if (!branch || !id) return;
+
+    try {
+      await apiDelete(`/api/questions/${encodeURIComponent(branch)}/${encodeURIComponent(id)}`);
+      await loadQuestions(qs('list-branch-filter').value);
+    } catch (err) {
+      alert(`Nie udało się usunąć: ${err.message}`);
+    }
+  });
 }
 
 function logout() {
@@ -101,336 +330,30 @@ function toggleDropdown(event, menuId) {
   event.stopPropagation();
   const menu = document.getElementById(menuId);
   if (!menu) return;
-  document.querySelectorAll('.profile-menu.show').forEach((m) => {
-    if (m.id !== menuId) m.classList.remove('show');
-  });
+  document.querySelectorAll('.profile-menu.show').forEach((m) => m.classList.remove('show'));
   menu.classList.toggle('show');
 }
 
-function injectProfile(user) {
-  const container = document.getElementById('admin-auth-container');
-  if (!container) return;
-
-  const avatarUrl = user.user_metadata?.avatar_url || '';
+function renderProfile(user) {
+  const container = qs('admin-auth-container');
   const fullName = user.user_metadata?.full_name || user.email || 'Admin';
   const firstName = fullName.split(' ')[0];
+  const avatarUrl = user.user_metadata?.avatar_url || '';
 
   container.innerHTML = `
-    <div class="profile-dropdown" id="profile-dropdown-admin">
-      <div class="profile-trigger" onclick="toggleDropdown(event, 'menu-admin')">
-        ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;">` : `<div style="width: 24px; height: 24px; border-radius: 50%; background: var(--c-primary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">${firstName.charAt(0)}</div>`}
-        <span style="font-size: .85rem; font-weight: 600; color: var(--c-text);">${escapeHtml(firstName)}</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px; color: var(--c-muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    <div class="profile-dropdown">
+      <div class="profile-trigger" onclick="toggleDropdown(event, 'admin-menu')">
+        ${avatarUrl ? `<img src="${avatarUrl}" alt="avatar" style="width:24px;height:24px;border-radius:50%;">` : `<div style="width:24px;height:24px;border-radius:50%;background:var(--c-primary);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:bold;">${firstName.charAt(0)}</div>`}
+        <span style="font-size:.85rem;font-weight:600;color:var(--c-text);">${escapeHtml(firstName)}</span>
       </div>
-      <div class="profile-menu" id="menu-admin">
+      <div class="profile-menu" id="admin-menu">
         <button class="profile-menu-item" onclick="window.location.href='../'">🏠 Strona główna</button>
-        <button class="profile-menu-item" onclick="window.location.href='../e8/'">📘 Quiz E8</button>
+        <button class="profile-menu-item" onclick="window.location.href='../e8/'">📘 E8</button>
         <div class="profile-menu-divider"></div>
-        <button class="profile-menu-item" onclick="logout()" style="color: var(--c-red);">🚪 Wyloguj</button>
+        <button class="profile-menu-item" onclick="logout()" style="color:var(--c-red)">🚪 Wyloguj</button>
       </div>
     </div>
   `;
-}
-
-function setupTabSwitching() {
-  const tabs = document.querySelectorAll('.admin__tab');
-  tabs.forEach((tab) => {
-    tab.addEventListener('click', () => {
-      tabs.forEach((t) => {
-        t.classList.remove('is-active');
-        t.setAttribute('aria-selected', 'false');
-      });
-      tab.classList.add('is-active');
-      tab.setAttribute('aria-selected', 'true');
-
-      const target = tab.dataset.tab;
-      document.querySelectorAll('.admin__panel').forEach((p) => p.classList.add('hidden'));
-      const panel = document.getElementById(`panel-${target}`);
-      if (panel) panel.classList.remove('hidden');
-    });
-  });
-}
-
-function renderQuestionsTable() {
-  const tbody = document.querySelector('#questions-table tbody');
-  if (!tbody) return;
-
-  tbody.innerHTML = questions
-    .slice()
-    .sort((a, b) => Number(a.id) - Number(b.id))
-    .map((q) => `
-      <tr>
-        <td>${escapeHtml(q.id)}</td>
-        <td>${escapeHtml(q.type)}</td>
-        <td>${escapeHtml(q.topic)}</td>
-        <td>${escapeHtml(q.question)}</td>
-        <td>
-          <div class="admin__row-actions">
-            <button data-action="edit" data-id="${q.id}">Edytuj</button>
-            <button data-action="delete" data-id="${q.id}">Usuń</button>
-          </div>
-        </td>
-      </tr>
-    `)
-    .join('');
-}
-
-function fillQuestionForm(q) {
-  document.getElementById('q-id').value = q.id;
-  document.getElementById('q-type').value = q.type;
-  document.getElementById('q-topic').value = q.topic;
-  document.getElementById('q-level').value = q.level || 'A2';
-  document.getElementById('q-correct').value = String(q.correct ?? 0);
-  document.getElementById('q-question').value = q.question || '';
-  document.getElementById('q-answers').value = (q.answers || []).join(' | ');
-  document.getElementById('q-why').value = q.explanation?.why || '';
-  document.getElementById('q-watch').value = q.explanation?.watch_out || '';
-  document.getElementById('q-pattern').value = q.explanation?.pattern || '';
-}
-
-function clearQuestionForm() {
-  document.getElementById('question-form').reset();
-  document.getElementById('q-id').value = '';
-  document.getElementById('q-level').value = 'A2';
-  document.getElementById('q-correct').value = '0';
-}
-
-function setupQuestionHandlers() {
-  const form = document.getElementById('question-form');
-  const clearBtn = document.getElementById('clear-question-btn');
-  const seedBtn = document.getElementById('seed-questions-btn');
-  const tbody = document.querySelector('#questions-table tbody');
-
-  if (seedBtn) {
-    seedBtn.addEventListener('click', () => {
-      if (questions.length) return;
-      questions = [...fallbackQuestions];
-      saveState();
-      renderQuestionsTable();
-      renderStats();
-    });
-  }
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', clearQuestionForm);
-  }
-
-  if (tbody) {
-    tbody.addEventListener('click', (event) => {
-      const btn = event.target.closest('button[data-action]');
-      if (!btn) return;
-      const id = Number(btn.dataset.id);
-      const action = btn.dataset.action;
-      const q = questions.find((item) => Number(item.id) === id);
-      if (!q) return;
-
-      if (action === 'edit') {
-        fillQuestionForm(q);
-      } else if (action === 'delete') {
-        questions = questions.filter((item) => Number(item.id) !== id);
-        saveState();
-        renderQuestionsTable();
-        renderStats();
-      }
-    });
-  }
-
-  if (form) {
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-
-      const idValue = document.getElementById('q-id').value;
-      const type = document.getElementById('q-type').value.trim();
-      const topic = document.getElementById('q-topic').value.trim();
-      const level = document.getElementById('q-level').value.trim();
-      const correct = Number(document.getElementById('q-correct').value);
-      const question = document.getElementById('q-question').value.trim();
-      const answersRaw = document.getElementById('q-answers').value;
-      const answers = answersRaw.split('|').map((v) => v.trim()).filter(Boolean);
-      const why = document.getElementById('q-why').value.trim();
-      const watch = document.getElementById('q-watch').value.trim();
-      const pattern = document.getElementById('q-pattern').value.trim();
-
-      if (answers.length !== 3) {
-        alert('Podaj dokładnie 3 odpowiedzi oddzielone znakiem |');
-        return;
-      }
-      if (correct < 0 || correct > 2) {
-        alert('Poprawna odpowiedź musi mieć index 0-2.');
-        return;
-      }
-
-      const payload = {
-        id: idValue ? Number(idValue) : getNextQuestionId(),
-        type,
-        topic,
-        level,
-        question,
-        answers,
-        correct,
-        explanation: {
-          why,
-          watch_out: watch,
-          pattern
-        }
-      };
-
-      const existingIndex = questions.findIndex((q) => Number(q.id) === Number(payload.id));
-      if (existingIndex >= 0) {
-        questions[existingIndex] = payload;
-      } else {
-        questions.push(payload);
-      }
-
-      saveState();
-      renderQuestionsTable();
-      renderStats();
-      clearQuestionForm();
-    });
-  }
-}
-
-function renderCategories() {
-  const wrapper = document.getElementById('categories-list');
-  if (!wrapper) return;
-
-  wrapper.innerHTML = categories
-    .map((cat) => `
-      <div class="admin__chip" style="border-color:${escapeHtml(cat.color || '#2a2d3a')}66">
-        <strong>${escapeHtml(cat.label)}</strong>
-        <small>${escapeHtml(cat.key)}</small>
-        <small>${cat.active ? 'aktywna' : 'ukryta'}</small>
-        <button data-del-cat="${escapeHtml(cat.key)}" class="admin__btn admin__btn--ghost" style="padding:4px 7px;font-size:.65rem;">Usuń</button>
-      </div>
-    `)
-    .join('');
-}
-
-function setupCategoryHandlers() {
-  const form = document.getElementById('category-form');
-  const wrapper = document.getElementById('categories-list');
-
-  if (form) {
-    form.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const key = document.getElementById('cat-key').value.trim();
-      const label = document.getElementById('cat-label').value.trim();
-      const color = document.getElementById('cat-color').value.trim() || '#6c63ff';
-      const description = document.getElementById('cat-desc').value.trim();
-      const active = document.getElementById('cat-active').checked;
-
-      if (!key || !label) return;
-      if (categories.some((c) => c.key === key)) {
-        alert('Kategoria o tym kluczu już istnieje.');
-        return;
-      }
-
-      categories.push({ key, label, color, description, active });
-      saveState();
-      renderCategories();
-      renderStats();
-      form.reset();
-      document.getElementById('cat-color').value = '#6c63ff';
-      document.getElementById('cat-active').checked = true;
-    });
-  }
-
-  if (wrapper) {
-    wrapper.addEventListener('click', (event) => {
-      const btn = event.target.closest('[data-del-cat]');
-      if (!btn) return;
-      const key = btn.getAttribute('data-del-cat');
-      categories = categories.filter((cat) => cat.key !== key);
-      saveState();
-      renderCategories();
-      renderStats();
-    });
-  }
-}
-
-function renderStats() {
-  const cards = document.getElementById('admin-stats-cards');
-  const stats = JSON.parse(localStorage.getItem('e8_stats') || JSON.stringify({
-    sets: 0,
-    accuracy: 0,
-    questions: 0,
-    streak: 0,
-    history: []
-  }));
-
-  if (cards) {
-    cards.innerHTML = `
-      <div class="admin__stat"><div class="label">Pytania w banku</div><div class="value">${questions.length}</div></div>
-      <div class="admin__stat"><div class="label">Kategorie</div><div class="value">${categories.length}</div></div>
-      <div class="admin__stat"><div class="label">Średnia skuteczność</div><div class="value">${stats.accuracy}%</div></div>
-      <div class="admin__stat"><div class="label">Opublikowane zestawy</div><div class="value">${publishedSets.length}</div></div>
-    `;
-  }
-
-  const tbody = document.querySelector('#stats-history-table tbody');
-  if (tbody) {
-    const history = Array.isArray(stats.history) ? stats.history : [];
-    tbody.innerHTML = history.length
-      ? history.map((item) => {
-          const pct = item.total ? Math.round((item.score / item.total) * 100) : 0;
-          return `<tr><td>#${escapeHtml(item.id)}</td><td>${escapeHtml(item.score)}/${escapeHtml(item.total)} (${pct}%)</td><td>${escapeHtml(item.time || '-')}</td><td>-</td></tr>`;
-        }).join('')
-      : '<tr><td colspan="4">Brak historii.</td></tr>';
-  }
-}
-
-function renderSets() {
-  const tbody = document.querySelector('#sets-table tbody');
-  if (!tbody) return;
-
-  tbody.innerHTML = publishedSets.length
-    ? publishedSets
-        .slice()
-        .reverse()
-        .map((set) => `
-          <tr>
-            <td>${escapeHtml(set.name)}</td>
-            <td>${set.questionIds.length}</td>
-            <td>${set.published ? 'Opublikowany' : 'Szkic'}</td>
-            <td>${escapeHtml(set.createdAt)}</td>
-          </tr>
-        `)
-        .join('')
-    : '<tr><td colspan="4">Brak zestawów.</td></tr>';
-}
-
-function setupPublishHandlers() {
-  const form = document.getElementById('publish-form');
-  if (!form) return;
-
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    if (!questions.length) {
-      alert('Najpierw dodaj pytania do banku.');
-      return;
-    }
-
-    const name = document.getElementById('set-name').value.trim();
-    const size = Math.max(1, Math.min(Number(document.getElementById('set-size').value), questions.length));
-    const published = document.getElementById('set-published').checked;
-
-    const shuffled = [...questions].sort(() => Math.random() - 0.5).slice(0, size);
-    const newSet = {
-      id: Date.now(),
-      name,
-      questionIds: shuffled.map((q) => q.id),
-      published,
-      createdAt: new Date().toLocaleString('pl-PL')
-    };
-
-    publishedSets.push(newSet);
-    saveState();
-    renderSets();
-    renderStats();
-    form.reset();
-    document.getElementById('set-size').value = '10';
-    document.getElementById('set-published').checked = true;
-  });
 }
 
 async function boot() {
@@ -440,41 +363,43 @@ async function boot() {
     }
   });
 
-  if (window.supabase) {
-    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  setupImportModeToggle();
+
+  if (typeof window.getSupabaseClient === 'function') {
+    try {
+      supabaseClient = await window.getSupabaseClient();
+    } catch (err) {
+      console.error('Supabase init error:', err);
+    }
   }
 
   if (!supabaseClient) {
-    document.getElementById('admin-guard').classList.remove('hidden');
+    qs('admin-guard').classList.remove('hidden');
     return;
   }
 
   const { data } = await supabaseClient.auth.getUser();
-  currentUser = data?.user || null;
-
-  if (!currentUser) {
-    document.getElementById('admin-guard').classList.remove('hidden');
+  const user = data?.user;
+  if (!user) {
+    qs('admin-guard').classList.remove('hidden');
     return;
   }
 
-  injectProfile(currentUser);
-  loadState();
-  seedFallbackQuestions();
+  renderProfile(user);
+  qs('admin-app').classList.remove('hidden');
 
-  setupTabSwitching();
-  setupQuestionHandlers();
-  setupCategoryHandlers();
-  setupPublishHandlers();
+  qs('manual-form').addEventListener('submit', handleManualSubmit);
+  qs('manual-clear').addEventListener('click', resetManualForm);
+  qs('validate-json-btn').addEventListener('click', handleValidateJson);
+  qs('import-json-btn').addEventListener('click', handleImportJson);
 
-  renderQuestionsTable();
-  renderCategories();
-  renderStats();
-  renderSets();
-
-  document.getElementById('admin-app').classList.remove('hidden');
+  setupListInteractions();
+  await loadQuestions('all');
 }
 
-window.toggleDropdown = toggleDropdown;
 window.logout = logout;
+window.toggleDropdown = toggleDropdown;
+window.validateQuestionRecord = validateQuestionRecord;
+window.splitRecordsByBranch = splitRecordsByBranch;
 
 document.addEventListener('DOMContentLoaded', boot);

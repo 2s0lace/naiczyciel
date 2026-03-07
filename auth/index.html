@@ -25,7 +25,7 @@
 
             <div id="auth-alert" class="auth-alert"></div>
 
-            <form id="auth-form">
+            <form id="auth-form" novalidate>
                 <input type="email" id="auth-email" class="auth-input" placeholder="Adres e-mail" required />
                 <input type="password" id="auth-password" class="auth-input" placeholder="Hasło" required
                     minlength="6" />
@@ -61,6 +61,8 @@
 
     <!-- Supabase & Global scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../shared/supabase-config.js"></script>
+    <script src="../shared/supabase-client.js"></script>
     <script src="../scripts.js"></script>
 
     <script>
@@ -71,6 +73,19 @@
         const switchText = document.getElementById('auth-switch-text');
         const switchLink = document.getElementById('auth-switch-link');
         const alertBox = document.getElementById('auth-alert');
+        let authSupabaseClient = null;
+
+        async function ensureSupabase() {
+            if (authSupabaseClient) return authSupabaseClient;
+            if (typeof window.getSupabaseClient !== 'function') return null;
+            try {
+                authSupabaseClient = await window.getSupabaseClient();
+            } catch (err) {
+                console.error('Supabase init error:', err);
+                authSupabaseClient = null;
+            }
+            return authSupabaseClient;
+        }
 
         function showAlert(msg, isSuccess = false) {
             alertBox.textContent = msg;
@@ -99,6 +114,7 @@
         }
 
         form.addEventListener('submit', async (e) => {
+            console.log('REGISTER SUBMIT START');
             e.preventDefault();
             hideAlert();
             submitBtn.disabled = true;
@@ -108,15 +124,32 @@
             const email = document.getElementById('auth-email').value;
             const password = document.getElementById('auth-password').value;
 
-            if (!window.supabaseClient) {
-                showAlert('Błąd: Brak połączenia z bazą danych.');
+            const supabase = await ensureSupabase();
+            console.log('SUPABASE INSTANCE', supabase);
+            if (!supabase) {
+                const details = window.__supabaseInitError ? ` Szczegóły: ${window.__supabaseInitError}` : '';
+                showAlert(`Błąd: Brak połączenia z bazą danych.${details}`);
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+
+            if (!email || !password) {
+                showAlert('Uzupełnij e-mail i hasło.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+
+            if (password.length < 6) {
+                showAlert('Hasło musi mieć minimum 6 znaków.');
                 submitBtn.disabled = false;
                 submitBtn.textContent = originalText;
                 return;
             }
 
             if (isLogin) {
-                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
                 if (error) {
                     showAlert(error.message === 'Invalid login credentials' ? 'Nieprawidłowy adres e-mail lub hasło.' : error.message);
                     submitBtn.disabled = false;
@@ -126,7 +159,10 @@
                     window.location.href = '../';
                 }
             } else {
-                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                console.log('ABOUT TO CALL SIGNUP');
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                console.log('SIGNUP DATA', data);
+                console.log('SIGNUP ERROR', error);
                 if (error) {
                     showAlert(error.message);
                     submitBtn.disabled = false;
@@ -148,8 +184,9 @@
 
         // If user is already logged in, kick them out of auth page
         document.addEventListener('DOMContentLoaded', async () => {
-            if (supabaseClient) {
-                const { data } = await supabaseClient.auth.getUser();
+            await ensureSupabase();
+            if (authSupabaseClient) {
+                const { data } = await authSupabaseClient.auth.getUser();
                 if (data?.user) {
                     window.location.href = '../';
                 }

@@ -4,9 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>nAIczyciel — Wybierz egzamin</title>
+  <title>nAIczyciel — Trening angielskiego, egzaminy, korepetycje</title>
   <meta name="description"
-    content="nAIczyciel — inteligentny trening do egzaminów językowych. Wybierz swój egzamin i ćwicz to, co naprawdę pojawi się w arkuszu." />
+    content="nAIczyciel — quizy oparte na arkuszach E8 i Matury, materiały dla nauczycieli i korepetytorów oraz wsparcie w nauce angielskiego. Ćwicz konkretnie, ucz skutecznie." />
   <link rel="canonical" href="https://naiczyciel.pl/" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -15,14 +15,12 @@
     rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* ── Hub page styles ─────────────────────── */
+    /* ── Hub page ──────────────────────────────── */
     .hub {
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      padding: 64px 24px;
+      padding: 32px 24px 48px;
       text-align: center;
       gap: 12px;
     }
@@ -33,42 +31,43 @@
       text-transform: uppercase;
       letter-spacing: .1em;
       color: var(--c-primary-h);
+      margin-top: 16px;
     }
 
     .hub h1 {
       font-family: 'Outfit', sans-serif;
-      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-size: clamp(1.8rem, 5vw, 2.8rem);
       font-weight: 900;
       line-height: 1.1;
       margin-bottom: 4px;
     }
 
     .hub__sub {
-      font-size: 1rem;
+      font-size: .95rem;
       color: var(--c-muted);
       max-width: 380px;
       line-height: 1.65;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
-    /* Exam cards grid */
+    /* Exam cards */
     .hub__grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
       width: 100%;
-      max-width: 640px;
+      max-width: 600px;
     }
 
     .hub__card {
       display: flex;
       flex-direction: column;
       align-items: flex-start;
-      gap: 10px;
+      gap: 8px;
       background: var(--c-surface);
       border: 1px solid var(--c-border);
       border-radius: var(--radius-lg);
-      padding: 24px 20px;
+      padding: 20px 18px;
       text-decoration: none;
       transition: border-color .2s, transform .2s, box-shadow .2s;
       text-align: left;
@@ -96,18 +95,18 @@
     }
 
     .hub__card.is-soon {
-      opacity: .55;
+      opacity: .5;
       cursor: default;
       pointer-events: none;
     }
 
     .hub__card-icon {
-      font-size: 2rem;
+      font-size: 1.7rem;
       line-height: 1;
     }
 
     .hub__card-label {
-      font-size: .62rem;
+      font-size: .6rem;
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: .09em;
@@ -126,24 +125,98 @@
 
     .hub__card h2 {
       font-family: 'Outfit', sans-serif;
-      font-size: 1.05rem;
+      font-size: .98rem;
       font-weight: 800;
       margin: 0;
       color: var(--c-text);
     }
 
     .hub__card p {
-      font-size: .82rem;
+      font-size: .8rem;
       color: var(--c-muted);
-      line-height: 1.55;
+      line-height: 1.5;
       margin: 0;
     }
 
     .hub__card-arrow {
       margin-top: auto;
+      padding-top: 4px;
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--c-primary-h);
+    }
+
+    /* ── Info sections ─────────────────────────── */
+    .info-sections {
+      width: 100%;
+      max-width: 640px;
+      margin: 12px auto 0;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding: 0 24px 48px;
+    }
+
+    .info-card {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-lg);
+      padding: 22px 22px 18px;
+      text-align: left;
+    }
+
+    .info-card__tag {
+      display: inline-block;
+      font-size: .6rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      padding: 2px 9px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    .info-card__tag--edu {
+      background: rgba(52, 211, 153, .1);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, .25);
+    }
+
+    .info-card__tag--korep {
+      background: rgba(251, 191, 36, .1);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, .25);
+    }
+
+    .info-card h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin: 0 0 8px;
+    }
+
+    .info-card p {
+      font-size: .85rem;
+      color: var(--c-muted);
+      line-height: 1.7;
+      margin: 0 0 6px;
+    }
+
+    .info-card p:last-child {
+      margin: 0;
+    }
+
+    .info-card__link {
+      display: inline-block;
+      margin-top: 10px;
       font-size: .8rem;
       font-weight: 700;
       color: var(--c-primary-h);
+      text-decoration: none;
+    }
+
+    .info-card__link:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
@@ -158,13 +231,13 @@
   </nav>
 
   <main>
+    <!-- ── EXAM SELECTION ─── -->
     <section class="hub">
       <p class="hub__eyebrow">Trening egzaminacyjny</p>
       <h1>Wybierz swój egzamin</h1>
       <p class="hub__sub">Ćwicz dokładnie to, co pojawi się w arkuszu — oparte na analizie poprzednich roczników.</p>
 
       <div class="hub__grid">
-        <!-- E8 — active -->
         <a href="e8/" class="hub__card">
           <span class="hub__card-icon">📘</span>
           <span class="hub__card-label">Dostępne</span>
@@ -173,7 +246,6 @@
           <span class="hub__card-arrow">Zacznij quiz →</span>
         </a>
 
-        <!-- Matura — coming soon -->
         <div class="hub__card is-soon">
           <span class="hub__card-icon">🎓</span>
           <span class="hub__card-label soon">Wkrótce</span>
@@ -182,6 +254,33 @@
         </div>
       </div>
     </section>
+
+    <!-- ── INFO SECTIONS ─── -->
+    <div class="info-sections">
+
+      <!-- Edukacja dla nauczycieli -->
+      <div class="info-card">
+        <span class="info-card__tag info-card__tag--edu">Edukacja</span>
+        <h2>Dla nauczycieli i&nbsp;korepetytorów</h2>
+        <p>nAIczyciel to narzędzie, które możesz polecić swoim uczniom jako uzupełnienie zajęć. Pytania są oparte na
+          oficjalnych arkuszach egzaminacyjnych CKE — każde zawiera krótkie wyjaśnienie po odpowiedzi, żeby uczeń
+          rozumiał, a nie tylko klikał.</p>
+        <p>Jeśli czegoś brakuje lub masz pomysł na nowe zestawy — napisz do nas. Chętnie współpracujemy z lektorami i
+          nauczycielami.</p>
+        <a href="contact/" class="info-card__link">Napisz do nas →</a>
+      </div>
+
+      <!-- Korepetycje -->
+      <div class="info-card">
+        <span class="info-card__tag info-card__tag--korep">Korepetycje</span>
+        <h2>Korepetycje z angielskiego</h2>
+        <p>nAIczyciel tworzony jest przez lektora i korepetytora angielskiego z wieloletnim doświadczeniem w pracy z
+          uczniami szkoły podstawowej i ponadpodstawowej. Quizy to tylko punkt startowy — jeśli Twój uczeń potrzebuje
+          indywidualnej pomocy przed egzaminem, skontaktuj się bezpośrednio.</p>
+        <a href="contact/" class="info-card__link">Zapytaj o korepetycje →</a>
+      </div>
+
+    </div>
   </main>
 
   <footer class="footer">

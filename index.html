@@ -4,454 +4,196 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>nAIczyciel E8 — Trening angielskiego do egzaminu</title>
+  <title>nAIczyciel — Wybierz egzamin</title>
   <meta name="description"
-    content="Szybki, nowoczesny symulator egzaminu ósmoklasisty z angielskiego. Ćwicz reakcje językowe, słownictwo i gramatykę." />
+    content="nAIczyciel — inteligentny trening do egzaminów językowych. Wybierz swój egzamin i ćwicz to, co naprawdę pojawi się w arkuszu." />
+  <link rel="canonical" href="https://naiczyciel.pl/" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap"
+    rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Hub page styles ─────────────────────── */
+    .hub {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 64px 24px;
+      text-align: center;
+      gap: 12px;
+    }
+
+    .hub__eyebrow {
+      font-size: .72rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--c-primary-h);
+    }
+
+    .hub h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 900;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .hub__sub {
+      font-size: 1rem;
+      color: var(--c-muted);
+      max-width: 380px;
+      line-height: 1.65;
+      margin-bottom: 20px;
+    }
+
+    /* Exam cards grid */
+    .hub__grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .hub__card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius-lg);
+      padding: 24px 20px;
+      text-decoration: none;
+      transition: border-color .2s, transform .2s, box-shadow .2s;
+      text-align: left;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hub__card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(108, 99, 255, .06) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .hub__card:hover {
+      border-color: rgba(108, 99, 255, .4);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 32px rgba(108, 99, 255, .18);
+    }
+
+    .hub__card:hover::before {
+      opacity: 1;
+    }
+
+    .hub__card.is-soon {
+      opacity: .55;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .hub__card-icon {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .hub__card-label {
+      font-size: .62rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: .09em;
+      color: var(--c-primary-h);
+      background: rgba(108, 99, 255, .1);
+      border: 1px solid rgba(108, 99, 255, .2);
+      border-radius: 20px;
+      padding: 2px 8px;
+    }
+
+    .hub__card-label.soon {
+      color: var(--c-muted);
+      background: rgba(255, 255, 255, .04);
+      border-color: var(--c-border);
+    }
+
+    .hub__card h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 800;
+      margin: 0;
+      color: var(--c-text);
+    }
+
+    .hub__card p {
+      font-size: .82rem;
+      color: var(--c-muted);
+      line-height: 1.55;
+      margin: 0;
+    }
+
+    .hub__card-arrow {
+      margin-top: auto;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--c-primary-h);
+    }
+  </style>
 </head>
 
 <body>
+  <nav class="navbar">
+    <div class="navbar__inner">
+      <a class="navbar__logo" href="/">
+        <img src="img/logonaiczyciel.png" alt="nAIczyciel" class="navbar__logo-img">
+      </a>
+    </div>
+  </nav>
 
-  <!-- ════════════════════════════════════════════════════════
-     SCREEN: LANDING
-════════════════════════════════════════════════════════ -->
-  <div id="screen-landing">
+  <main>
+    <section class="hub">
+      <p class="hub__eyebrow">Trening egzaminacyjny</p>
+      <h1>Wybierz swój egzamin</h1>
+      <p class="hub__sub">Ćwicz dokładnie to, co pojawi się w arkuszu — oparte na analizie poprzednich roczników.</p>
 
-    <nav class="navbar">
-      <div class="navbar__inner">
-        <a class="navbar__logo" href="#" id="nav-logo-home">
-          <img src="img/logonaiczyciel.png" alt="nAIczyciel" class="navbar__logo-img">
+      <div class="hub__grid">
+        <!-- E8 — active -->
+        <a href="/e8/" class="hub__card">
+          <span class="hub__card-icon">📘</span>
+          <span class="hub__card-label">Dostępne</span>
+          <h2>Egzamin Ósmoklasisty</h2>
+          <p>Angielski E8 — reakcje językowe, reading, słownictwo, gramatyka.</p>
+          <span class="hub__card-arrow">Zacznij quiz →</span>
         </a>
-        <button class="navbar__cta" id="nav-start-btn">Zacznij quiz →</button>
+
+        <!-- Matura — coming soon -->
+        <div class="hub__card is-soon">
+          <span class="hub__card-icon">🎓</span>
+          <span class="hub__card-label soon">Wkrótce</span>
+          <h2>Matura — Angielski</h2>
+          <p>Poziom podstawowy i rozszerzony. W przygotowaniu.</p>
+        </div>
       </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer__logo">nAIczyciel</div>
+    <nav class="footer__nav">
+      <a href="/e8/">Quiz E8</a>
+      <a href="/privacy/">Polityka prywatności</a>
+      <a href="/terms/">Regulamin</a>
+      <a href="/contact/">Kontakt</a>
     </nav>
-
-    <!-- Hero -->
-    <section class="hero">
-      <div class="hero__layout">
-
-        <!-- LEFT: brand + steps + CTA -->
-        <div class="hero__left">
-          <div class="hero__brand">
-            <img src="img/logonaiczyciel.png" alt="" class="hero__brand-logo">
-            <h1 class="hero__brand-name">n<em>AI</em>czyciel <span class="e8-tag">E8</span></h1>
-          </div>
-          <div class="hero__soon-tags">
-            <button class="hero__soon-tag is-active">Egzamin ósmoklasisty</button>
-            <button class="hero__soon-tag soon-tile">Matura</button>
-            <button class="hero__soon-tag soon-tile">Edukacja</button>
-          </div>
-
-          <ol class="hero__steps">
-            <li class="hero__step">
-              <span class="hero__step-num">01</span>
-              <div>
-                <h3>Rozwiązuj pytania egzaminacyjne</h3>
-                <p>Ćwicz reakcje językowe, reading i zadania gramatyczne w stylu E8.</p>
-              </div>
-            </li>
-            <li class="hero__step">
-              <span class="hero__step-num">02</span>
-              <div>
-                <h3>Zobacz krótkie wyjaśnienie</h3>
-                <p>Dowiedz się dlaczego odpowiedź jest poprawna. Bez długich definicji.</p>
-              </div>
-            </li>
-            <li class="hero__step">
-              <span class="hero__step-num">03</span>
-              <div>
-                <h3>Sprawdź wynik</h3>
-                <p>Dostajesz wynik i możesz zrobić kolejny zestaw.</p>
-              </div>
-            </li>
-          </ol>
-
-          <button class="hero__cta" id="hero-start-btn">
-            Zacznij próbny quiz
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-          </button>
-          <p class="hero__cta-subtext">10 pytań &nbsp;•&nbsp; ~2 minuty &nbsp;•&nbsp; od razu zobaczysz wynik</p>
-        </div>
-
-        <!-- RIGHT: phone mockup (desktop only) -->
-        <div class="hero__right" aria-hidden="true">
-          <div class="hero__phone">
-            <div class="hero__phone-bar">
-              <span></span><span></span><span></span>
-            </div>
-            <div class="hero__phone-screen">
-
-              <!-- Screen 1: Quiz question -->
-              <div class="mock-quiz">
-                <div class="mock-tag">💬 Reakcje językowe</div>
-                <p class="mock-question">Kolega nie może przyjść na Twoje urodziny i przeprasza. Jak reagujesz?</p>
-                <div class="mock-answers">
-                  <div class="mock-ans">A. I hope you liked my party very much.</div>
-                  <div class="mock-ans mock-ans--correct">B. What a pity you can't make it!</div>
-                  <div class="mock-ans">C. You must buy me a present later.</div>
-                </div>
-                <div class="mock-expl">
-                  <p class="mock-expl-row"><span class="expl-tag why">Dlaczego?</span>Wyrażasz współczucie, że ktoś nie
-                    może przyjść — typowa reakcja językowa.</p>
-                  <p class="mock-expl-row"><span class="expl-tag pattern">Wzorzec</span>What a pity... → wyrażanie żalu
-                    / rozczarowania</p>
-                </div>
-              </div>
-
-              <!-- Divider -->
-              <div class="mock-divider"></div>
-
-              <!-- Screen 2: Result -->
-              <div class="mock-result">
-                <div class="mock-emoji">🎉</div>
-                <p class="mock-label">Nieźle, ćwicz dalej!</p>
-                <div class="mock-score">7 / 10</div>
-                <p class="mock-percent">70% poprawnych odpowiedzi</p>
-                <button class="mock-btn">Nowy zestaw →</button>
-              </div>
-
-            </div>
-          </div>
-          <p class="mock-caption hero__phone-caption">Po każdej odpowiedzi dostajesz wyjaśnienie i rezultat</p>
-        </div>
-
-      </div>
-    </section>
-
-    <!-- Preview question -->
-    <section class="preview reveal">
-      <div class="preview__card">
-        <div class="preview__tag">📋 Reakcje językowe</div>
-        <p class="preview__q">Kolega nie może przyjść na Twoje urodziny i przeprasza. Jak reagujesz?</p>
-        <div class="preview__answers">
-          <div class="preview__ans is-wrong">A. I hope you liked my party very much.</div>
-          <div class="preview__ans is-correct">B. What a pity you can't make it!</div>
-          <div class="preview__ans is-wrong">C. You must buy me a present later.</div>
-        </div>
-        <div class="preview__reasoning">
-          <p class="expl-row"><span class="expl-tag why">Dlaczego?</span>Wyrażasz współczucie, że ktoś nie może przyjść
-            — to typowa reakcja językowa.</p>
-          <p class="expl-row"><span class="expl-tag pattern">Wzorzec</span>What a pity... → wyrażanie żalu /
-            rozczarowania</p>
-        </div>
-        <p class="preview__label">👆 Po każdej odpowiedzi dostajesz wyjaśnienie</p>
-      </div>
-    </section>
-
-    <!-- Author -->
-    <section class="author reveal">
-      <div class="container">
-        <div class="author__card">
-          <div class="author__avatar">👨‍🏫</div>
-          <div class="author__body">
-            <p class="author__quote">Od kilku lat prowadzę korepetycje i zajęcia językowe, a ten projekt stworzyłem,
-              żeby ułatwić uczniom szybki trening przed egzaminem.</p>
-            <span class="author__role">korepetytor / lektor</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Why -->
-    <section class="why reveal">
-      <div class="container">
-        <h2 class="section__title why__title">
-          Dlaczego <em>warto?</em>
-        </h2>
-        <p class="section__sub">Bez obietnic cudów. Tylko konkretna pomoc w nauce.</p>
-        <div class="why__grid">
-          <div class="why__card">
-            <div class="why__icon">⚡</div>
-            <h3>Szybkie zestawy</h3>
-            <p>10 pytań, wynik i wyjaśnienia. Możesz ćwiczyć nawet 5 minut dziennie.</p>
-          </div>
-          <div class="why__card">
-            <div class="why__icon">🎯</div>
-            <h3>Wzorce z E8</h3>
-            <p>Pytania oparte na typowych zadaniach egzaminacyjnych — reakcje, słownictwo, gramatyka.</p>
-          </div>
-          <div class="why__card">
-            <div class="why__icon">💡</div>
-            <h3>Krótkie wyjaśnienia</h3>
-            <p>Po każdej odpowiedzi dostajesz: dlaczego, na co uważać i jaki wzorzec zapamiętać.</p>
-          </div>
-          <div class="why__card">
-            <div class="why__icon">📱</div>
-            <h3>Działa na telefonie</h3>
-            <p>Mobilny interfejs — bez instalacji, bez rejestracji, od razu ćwiczysz.</p>
-          </div>
-          <div class="why__card why__card--highlight">
-            <div class="why__icon">🏆</div>
-            <h3>Wynik od razu</h3>
-            <p>Zaraz po ostatnim pytaniu widzisz swój wynik i wiesz, co poprawić przed egzaminem.</p>
-          </div>
-          <div class="why__card">
-            <div class="why__icon">🥙</div>
-            <h3>Za cenę kebaba</h3>
-            <p>Możesz poćwiczyć coś, co zadecyduje <strong>do jakiej szkoły się dostaniesz.</strong></p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Categories -->
-    <section class="categories reveal">
-      <div class="container">
-        <h2 class="section__title">Typy zadań</h2>
-        <p class="section__sub" style="margin-bottom:32px;">Cztery kategorie na start — wszystkie z jasnym kluczem
-          odpowiedzi</p>
-        <div class="cat__grid">
-          <div class="cat__tile">
-            <div class="cat__tile__icon">💬</div>
-            <div class="cat__tile__name">Reakcje językowe</div>
-            <div class="cat__tile__count">10 zadań</div>
-          </div>
-          <div class="cat__tile">
-            <div class="cat__tile__icon">📖</div>
-            <div class="cat__tile__name">Reading MC</div>
-            <div class="cat__tile__count">4 zadania</div>
-          </div>
-          <div class="cat__tile">
-            <div class="cat__tile__icon">🔤</div>
-            <div class="cat__tile__name">Słownictwo</div>
-            <div class="cat__tile__count">3 zadania</div>
-          </div>
-          <div class="cat__tile">
-            <div class="cat__tile__icon">📝</div>
-            <div class="cat__tile__name">Gramatyka</div>
-            <div class="cat__tile__count">3 zadania</div>
-          </div>
-          <div class="cat__tile soon-tile" style="display:none"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Methodology -->
-    <section class="author reveal">
-      <div class="container">
-        <div class="author__card">
-          <div class="author__avatar">📄</div>
-          <div class="author__body">
-            <p class="author__quote">Wszystkie zadania są przygotowywane na podstawie oficjalnych arkuszy
-              egzaminacyjnych ósmoklasisty — analizujemy słownictwo, reakcje językowe i wzorce powtarzające się między
-              rocznikami, żeby każde ćwiczenie trafiało dokładnie w to, co pojawia się na egzaminie.</p>
-            <span class="author__role">oparte na arkuszach E8</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Pricing -->
-    <section class="pricing reveal" id="pricing">
-      <div class="container">
-        <h2 class="section__title">Cennik</h2>
-        <p class="section__sub">Ten sam produkt, różny czas dostępu. Zero sztucznych podziałów.</p>
-
-        <div class="pricing__grid">
-
-          <div class="plan-card">
-            <div class="plan-card__name">1 dzień</div>
-            <div class="plan-card__price">5 <span>zł</span></div>
-            <p class="plan-card__desc">Pełny dostęp na 24 godziny. Dobre przed sprawdzianem.</p>
-            <button class="plan-card__btn open-modal-btn">Wybierz</button>
-          </div>
-
-          <div class="plan-card is-featured">
-            <div class="plan-card__badge">⭐ Najczęściej wybierany</div>
-            <div class="plan-card__name">3 dni</div>
-            <div class="plan-card__price">9 <span>zł</span></div>
-            <p class="plan-card__desc">Trzy dni intensywnego treningu przed egzaminem.</p>
-            <button class="plan-card__btn open-modal-btn">Wybierz</button>
-          </div>
-
-          <div class="plan-card">
-            <div class="plan-card__name">Uczeń</div>
-            <div class="plan-card__price"><s>29</s>19 <span>zł / mies.</span></div>
-            <p class="plan-card__desc">Pełny dostęp na miesiąc. Nowe zestawy co tydzień. Idealny do regularnej nauki.
-            </p>
-            <button class="plan-card__btn open-modal-btn">Wybierz</button>
-          </div>
-
-          <div class="plan-card">
-            <div class="plan-card__name">Uczeń+</div>
-            <div class="plan-card__price">~39 <span>zł / mies.</span></div>
-            <p class="plan-card__desc">Więcej zestawów, lepsza organizacja, lista słówek do powtórki. Wkrótce.</p>
-            <button class="plan-card__btn open-modal-btn">Wkrótce</button>
-          </div>
-
-        </div>
-        <p class="pricing__note">
-          To nie zastąpi korepetytora — przyspiesza naukę i oszczędza czas szukania materiałów.
-        </p>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <div class="footer__logo">nAIczyciel E8</div>
-      <p>Narzędzie do treningu angielskiego na egzamin ósmoklasisty.</p>
-      <nav class="footer__nav">
-        <a href="/e8/">Quiz E8</a>
-        <a href="/privacy/">Polityka prywatności</a>
-        <a href="/terms/">Regulamin</a>
-        <a href="/contact/">Kontakt</a>
-      </nav>
-      <p class="footer__copy">© 2026 nAIczyciel · Uczciwie, konkretnie, bez magii.</p>
-    </footer>
-
-  </div><!-- /screen-landing -->
-
-  <!-- Toast -->
-  <div class="toast hidden" id="toast">Wkrótce! 🚀</div>
-
-
-  <!-- ════════════════════════════════════════════════════════
-     SCREEN: QUIZ
-════════════════════════════════════════════════════════ -->
-  <div id="screen-quiz" class="hidden">
-
-    <header class="quiz-header">
-      <span class="quiz-header__logo">
-        <img src="img/logonaiczyciel.png" alt="" class="navbar__logo-img">nAIczyciel E8
-      </span>
-      <span class="quiz-header__progress" id="quiz-progress-text">1 / 10</span>
-    </header>
-
-    <div class="quiz-progress-bar-wrap">
-      <div class="quiz-progress-bar" id="quiz-progress-bar" style="width:0%"></div>
-    </div>
-
-    <div class="quiz-body">
-      <div class="quiz-badge-row">
-        <button class="quiz-nav-btn" id="quiz-prev-btn" disabled aria-label="Poprzednie pytanie">‹</button>
-        <div class="quiz-type-badge" id="quiz-type-badge">💬 Reakcje językowe</div>
-        <button class="quiz-nav-btn" id="quiz-next-btn" aria-label="Następne pytanie">›</button>
-      </div>
-      <p class="quiz-question" id="quiz-question">Treść pytania</p>
-
-      <div class="quiz-answers" id="quiz-answers"></div>
-
-      <div class="answer-feedback hidden" id="answer-feedback"></div>
-
-      <div class="explanation-panel hidden" id="explanation-panel">
-        <p class="expl-row"><span class="expl-tag why">Dlaczego?</span><span id="expl-why"></span></p>
-        <p class="expl-row"><span class="expl-tag watch">Uważaj</span><span id="expl-watch"></span></p>
-        <p class="expl-row"><span class="expl-tag pattern">Wzorzec</span><span id="expl-pattern"></span></p>
-      </div>
-
-      <button class="next-btn hidden" id="next-btn">Następne pytanie →</button>
-    </div>
-
-    <!-- Dot navigation bar -->
-    <nav class="quiz-dots-bar" id="quiz-dots-bar" aria-label="Nawigacja pytań"></nav>
-
-  </div><!-- /screen-quiz -->
-
-
-  <!-- ════════════════════════════════════════════════════════
-     SCREEN: RESULT
-════════════════════════════════════════════════════════ -->
-  <div id="screen-result" class="hidden">
-
-    <div class="result__emoji" id="result-emoji">🎉</div>
-    <h2 class="result__title" id="result-title">Dobra robota!</h2>
-    <div class="result__score" id="result-score">8 / 10</div>
-    <p class="result__percent" id="result-percent">80% poprawnych odpowiedzi</p>
-
-    <!-- Inline topic accuracy chips -->
-    <div class="insights-topics-bar" id="insights-topics-bar"></div>
-
-    <!-- Words to review — single collapsible box -->
-    <div class="insights" id="insights-panel" style="display:none">
-      <div class="insights__words-header">
-        <h4 class="insights__heading insights__heading--words">Powtórz słownictwo</h4>
-        <div class="insights__words-actions">
-          <button class="insights__toggle" id="insights-toggle" aria-expanded="false">Pokaż ▾</button>
-          <button class="insights__pdf" id="insights-pdf">Eksportuj PDF</button>
-        </div>
-      </div>
-      <ul class="insights__list insights__list--words" id="insights-words-list"></ul>
-    </div>
-
-    <div class="result__actions">
-      <button class="btn-retry" id="btn-retry">Spróbuj nowego zestawu</button>
-      <button class="btn-premium open-modal-btn">Odblokuj pełny dostęp →</button>
-      <button class="btn-home" id="btn-home">← Wróć na stronę główną</button>
-    </div>
-
-    <div class="result__paywall">
-      <h3>Chcesz więcej zestawów?</h3>
-      <p>Darmowy quiz to tylko próbka. Pełny dostęp daje Ci nowe zestawy co tydzień i wyjaśnienia do każdego pytania.
-      </p>
-      <ul class="paywall__perks">
-        <li>Nowe zestawy pytań co tydzień</li>
-        <li>Wszystkie 4 typy zadań egzaminacyjnych</li>
-        <li>Krótkie wyjaśnienia do każdej odpowiedzi</li>
-        <li>Działa na telefonie bez instalacji</li>
-      </ul>
-      <button class="btn-premium open-modal-btn" style="width:100%;display:block;">Zobacz plany →</button>
-    </div>
-
-  </div><!-- /screen-result -->
-
-
-  <!-- ════════════════════════════════════════════════════════
-     PAYWALL MODAL
-════════════════════════════════════════════════════════ -->
-  <div class="modal-overlay hidden" id="modal-overlay">
-    <div class="modal" id="modal">
-      <div class="modal__handle"></div>
-      <h3 class="modal__title">Wybierz plan dostępu</h3>
-      <p class="modal__sub">Ten sam produkt, różny czas dostępu. Bez ukrytych opłat.</p>
-      <p class="modal__trust">Pełny dostęp do wszystkich zestawów i wyjaśnień. <strong>Bez subskrypcji.</strong></p>
-
-      <div class="modal__plans">
-
-        <div class="modal__plan" data-plan="1day">
-          <div class="modal__plan-info">
-            <span class="modal__plan-name">1 dzień</span>
-            <span class="modal__plan-desc">Pełny dostęp na 24h</span>
-          </div>
-          <div class="modal__plan-price">5 <small>zł</small></div>
-        </div>
-
-        <div class="modal__plan" data-plan="3days">
-          <div class="modal__plan-info">
-            <span class="modal__plan-name">3 dni</span>
-            <span class="modal__plan-desc">Intensywny trening przed E8</span>
-          </div>
-          <div class="modal__plan-price">9 <small>zł</small></div>
-        </div>
-
-        <div class="modal__plan selected" data-plan="student">
-          <div class="modal__plan-info">
-            <span class="modal__plan-name">Uczeń</span>
-            <span class="modal__plan-desc">Miesiąc regularnej nauki</span>
-          </div>
-          <div class="modal__plan-price"><s>29</s> 19 <small>zł/mies.</small></div>
-        </div>
-
-        <div class="modal__plan" data-plan="studentplus">
-          <div class="modal__plan-info">
-            <span class="modal__plan-name">Uczeń+</span>
-            <span class="modal__plan-desc">Więcej zestawów + słówka (wkrótce)</span>
-          </div>
-          <div class="modal__plan-price">~39 <small>zł/mies.</small></div>
-        </div>
-
-      </div>
-
-      <button class="modal__buy" id="modal-buy-btn">Przejdź do płatności →</button>
-      <div class="modal__coming-soon" id="modal-coming-soon">
-        🔜 Ta opcja jest już w przygotowaniu. Napisz do nas, żeby dowiedzieć się pierwszy!
-      </div>
-      <button class="modal__close" id="modal-close-btn">Zamknij</button>
-    </div>
-  </div><!-- /modal -->
-
-  <script src="scripts.js"></script>
+    <p class="footer__copy">© 2026 nAIczyciel · Uczciwie, konkretnie, bez magii.</p>
+  </footer>
 </body>
 
 </html>

@@ -30,6 +30,15 @@
   --transition: .18s ease;
 }
 
+/* FOUC Fix - Hide content until auth check is complete */
+body.auth-loading #screen-landing,
+body.auth-loading #e8-dashboard-view,
+body.auth-loading .preview,
+body.auth-loading #e8-seo-text {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* ─── Reset ─────────────────────────────────────────────── */
 *,
 *::before,

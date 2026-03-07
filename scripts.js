@@ -813,6 +813,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       updateDashboardStats(user);
     }
   }
+
+  // Always remove loading class to reveal the page (whether logged in or guest)
+  document.body.classList.remove('auth-loading');
 });
 
 function updateDashboardStats(user) {

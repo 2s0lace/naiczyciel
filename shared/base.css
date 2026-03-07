@@ -153,6 +153,13 @@ a {
   transform: translateY(-1px);
 }
 
+.navbar__cta-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ─── Profile Dropdown ───────────────────────────────────── */
 .profile-dropdown {
   position: relative;

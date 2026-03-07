@@ -25,9 +25,7 @@
         </a>
         <div style="display: flex; align-items: center; gap: 12px;">
           <div class="auth-container">
-            <a href="../auth/" class="btn-cta btn-cta--sm"
-              style="background: rgba(255,255,255,0.1); color: var(--c-text); border: 1px solid rgba(255,255,255,0.2); text-decoration: none; display: inline-flex; align-items: center; justify-content: center;">Zaloguj
-              się</a>
+            <a href="../auth/" class="navbar__cta navbar__cta-link">Zaloguj się</a>
           </div>
           <button class="navbar__cta" id="nav-start-btn">Zacznij quiz →</button>
         </div>
@@ -93,53 +91,98 @@
         </div>
 
         <!-- RIGHT: phone mockup (desktop only) -->
-        <div class="hero__right" id="e8-hero-right" aria-hidden="true">
-          <div class="hero__phone">
-            <div class="hero__phone-bar">
-              <span></span><span></span><span></span>
+        <div class="hero__right" id="e8-hero-right">
+          <div class="hero-preview-stack" id="hero-preview-stack">
+            <div class="hero-preview-panel hero-preview-panel--welcome" id="hero-preview-welcome" data-preview-panel="welcome" role="button" tabindex="0" aria-label="Podgląd panelu powitalnego">
+              <h4>👋 Cześć!</h4>
+              <span class="hero-preview-cta">Zrobimy test?</span>
             </div>
-            <div class="hero__phone-screen">
-              <div class="mock-scroll">
-                <!-- Screen 1: Quiz question -->
-                <div class="mock-quiz">
-                  <div class="mock-tag"><span role="img" aria-label="speech">💬</span> REAKCJE JĘZYKOWE</div>
-                  <p class="mock-question">Kolega nie może przyjść na Twoje urodziny i przeprasza. Jak reagujesz?</p>
-                  <div class="mock-answers">
-                    <div class="mock-ans">A. I hope you liked my party very much.</div>
-                    <div class="mock-ans mock-ans--correct">B. What a pity you can't make it!</div>
-                    <div class="mock-ans">C. You must buy me a present later.</div>
-                  </div>
-
-                  <div class="mock-expl">
-                    <div class="mock-expl-row">
-                      <span class="mock-pill why">DLACZEGO?</span>
-                      <span class="mock-text-bright">Wyrażasz współczucie, że ktoś nie może przyjść — typowa reakcja
-                        językowa.</span>
+            <div class="hero-preview-panel hero-preview-panel--stats" id="hero-preview-stats" data-preview-panel="stats" role="button" tabindex="0" aria-label="Podgląd statystyk">
+              <h4>📊 Statystyki</h4>
+              <div class="hero-preview-stats-grid">
+                <div><span>Poprawność</span><strong>74%</strong></div>
+                <div><span>Średni czas</span><strong>6s</strong></div>
+                <div><span>Pytania</span><strong>186</strong></div>
+              </div>
+            </div>
+            <div class="hero-preview-panel hero-preview-panel--trainings" id="hero-preview-trainings" data-preview-panel="trainings" role="button" tabindex="0" aria-label="Podgląd ostatnich treningów">
+              <h4>🧠 Ostatnie treningi</h4>
+              <div class="hero-preview-training-item">
+                <div>
+                  <strong>Zestaw #1</strong>
+                  <span>6s • Egzamin E8</span>
+                </div>
+                <b>7/10</b>
+              </div>
+            </div>
+            <div class="hero__phone" id="hero-phone-mock">
+              <div class="hero__phone-bar">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="hero__phone-screen">
+                <div class="mock-scroll">
+                  <!-- Screen 1: Quiz question -->
+                  <div class="mock-quiz">
+                    <div class="mock-tag"><span role="img" aria-label="speech">💬</span> REAKCJE JĘZYKOWE</div>
+                    <p class="mock-question">Kolega nie może przyjść na Twoje urodziny i przeprasza. Jak reagujesz?</p>
+                    <div class="mock-answers">
+                      <div class="mock-ans">A. I hope you liked my party very much.</div>
+                      <div class="mock-ans mock-ans--correct">B. What a pity you can't make it!</div>
+                      <div class="mock-ans">C. You must buy me a present later.</div>
                     </div>
-                    <div class="mock-expl-row">
-                      <span class="mock-pill pat">WZORZEC</span>
-                      <span class="mock-text-bright">What a pity... → wyrażanie żalu / rozczarowania</span>
+
+                    <div class="mock-expl">
+                      <div class="mock-expl-row">
+                        <span class="mock-pill why">DLACZEGO?</span>
+                        <span class="mock-text-bright">Wyrażasz współczucie, że ktoś nie może przyjść — typowa reakcja
+                          językowa.</span>
+                      </div>
+                      <div class="mock-expl-row">
+                        <span class="mock-pill pat">WZORZEC</span>
+                        <span class="mock-text-bright">What a pity... → wyrażanie żalu / rozczarowania</span>
+                      </div>
                     </div>
-                  </div>
 
-                  <div class="mock-divider" style="height: 1px; background: rgba(255,255,255,0.08); margin: 12px 0;">
-                  </div>
+                    <div class="mock-divider" style="height: 1px; background: rgba(255,255,255,0.08); margin: 12px 0;">
+                    </div>
 
-                  <div class="mock-result">
-                    <div style="font-size: 1.6rem; margin-bottom: 6px;">🎉</div>
-                    <p class="mock-text-pure" style="font-size: .75rem; margin-bottom: 2px;">Nieźle, ćwicz dalej!</p>
-                    <div
-                      style="font-size: 2.1rem; font-weight: 900; color: #fff; margin-bottom: 4px; text-shadow: 0 0 15px rgba(108, 99, 255, 0.3);">
-                      7/10</div>
-                    <p class="mock-text-bright" style="font-size: .65rem; margin-bottom: 12px;">70% poprawnych
-                      odpowiedzi</p>
-                    <button class="mock-btn-cta">Nowy zestaw →</button>
+                    <div class="mock-result">
+                      <div style="font-size: 1.6rem; margin-bottom: 6px;">🎉</div>
+                      <p class="mock-text-pure" style="font-size: .75rem; margin-bottom: 2px;">Nieźle, ćwicz dalej!</p>
+                      <div
+                        style="font-size: 2.1rem; font-weight: 900; color: #fff; margin-bottom: 4px; text-shadow: 0 0 15px rgba(108, 99, 255, 0.3);">
+                        7/10</div>
+                      <p class="mock-text-bright" style="font-size: .65rem; margin-bottom: 12px;">70% poprawnych
+                        odpowiedzi</p>
+                      <button class="mock-btn-cta">Nowy zestaw →</button>
+                    </div>
+
+                    <div class="mock-accordion-group">
+                      <details class="mock-accordion" open>
+                        <summary>Typy zadań</summary>
+                        <div class="mock-accordion-content">
+                          <span>💬 Reakcje językowe</span>
+                          <span>📖 Reading</span>
+                          <span>🔤 Słownictwo</span>
+                          <span>📝 Gramatyka</span>
+                        </div>
+                      </details>
+                      <details class="mock-accordion">
+                        <summary>Cennik</summary>
+                        <div class="mock-accordion-content mock-accordion-content--pricing">
+                          <span>1 dzień — 5 zł</span>
+                          <span>3 dni — 9 zł</span>
+                          <span>Uczeń — 19 zł / mies.</span>
+                          <span>Uczeń+ — ~39 zł / mies.</span>
+                        </div>
+                      </details>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-          <p class="mock-caption hero__phone-caption">Po każdej odpowiedzi dostajesz wyjaśnienie i rezultat</p>
+          <p class="mock-caption hero__phone-caption" id="hero-mini-caption" data-default-caption="Po każdej odpowiedzi dostajesz wyjaśnienie i rezultat">Po każdej odpowiedzi dostajesz wyjaśnienie i rezultat</p>
         </div>
 
         <!-- Dashboard View (Visible for authenticated user) -->
@@ -153,8 +196,8 @@
 
             <!-- LEFT COLUMN: Welcome + CTA + Progress -->
             <div id="dash-left-col">
-              <div class="dash-card">
-                <h2 id="e8-welcome-msg" class="dash-welcome">Cześć, patryk! 👋</h2>
+              <div class="dash-card dash-mobile-slide dash-mobile-slide--welcome">
+                <h2 id="e8-welcome-msg" class="dash-welcome">Cześć! 👋</h2>
 
                 <button class="btn-premium-action" onclick="document.getElementById('nav-start-btn').click()">
                   Rozpocznij nowy zestaw →
@@ -162,30 +205,35 @@
 
                 <div class="dash-prog-section">
                   <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                    <span style="font-weight: 700; color: var(--c-text); font-size: 0.9rem;">Twój progres</span>
-                    <span id="dash-prog-percent" style="font-weight: 800; color: #6c63ff; font-size: 1rem;">74%</span>
+                    <span style="font-weight: 700; color: var(--c-text); font-size: 0.9rem;">Jesteś przygotowany na:</span>
+                    <span id="dash-prog-percent" style="font-weight: 800; color: #6c63ff; font-size: 1rem;">0%</span>
                   </div>
                   <div
                     style="height: 6px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; margin-bottom: 24px;">
                     <div id="dash-prog-bar"
-                      style="width: 74%; height: 100%; background: #6c63ff; transition: width 1s ease-out;"></div>
+                      style="width: 0%; height: 100%; background: #6c63ff; transition: width 1s ease-out;"></div>
                   </div>
 
-                  <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    <div class="dash-pill streak">🔥 <span id="dash-streak">5</span> dni nauki</div>
-                    <div class="dash-pill accuracy">🎯 <span id="dash-accuracy-top">74</span>% poprawnych</div>
-                    <div class="dash-pill sets">📚 <span id="dash-sets">18</span> zestawów</div>
+                  <div class="dash-activity-wrap">
+                    <div class="dash-activity-row">
+                      <div id="dash-activity-grid" class="dash-activity-grid" aria-label="Aktywność z ostatnich 4 tygodni">
+                        <span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span>
+                        <span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span>
+                        <span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span>
+                        <span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span><span class="dash-activity-dot"></span>
+                      </div>
+                      <div class="dash-activity-copy">
+                        <p class="dash-activity-title">Damy radę dobić 14 dni?</p>
+                        <p class="dash-activity-meta" id="dash-activity-meta">Brakuje 14 dni do celu.</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div style="margin-top: 20px; text-align: center; margin-bottom: 20px;">
-                <p
-                  style="font-size: 0.8rem; font-weight: 700; color: #a0aec0; letter-spacing: 0.05em; line-height: 1.5; margin: 0;">
-                  STATUS KONTA: PODSTAWOWE<br>
-                  <span style="color: #fff; font-size: 0.75rem; opacity: 0.8;">ULEPSZ DLA WIĘKSZEJ ILOŚCI
-                    FUNKCJI!</span>
-                </p>
+              <div class="dash-upgrade-box">
+                <p class="dash-upgrade-title">Ulepsz po większa ilość funkcji!</p>
+                <button type="button" id="dash-upgrade-btn" class="dash-upgrade-link">Ulepsz</button>
               </div>
             </div>
 
@@ -193,7 +241,7 @@
             <div id="dash-right-col">
 
               <!-- Stats Card -->
-              <div class="dash-stats-card" style="margin-bottom: 20px;">
+              <div class="dash-stats-card dash-mobile-slide dash-mobile-slide--stats" style="margin-bottom: 20px;">
                 <h3
                   style="font-family: 'Outfit', sans-serif; font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-weight: 800;">
                   📊 Statystyki
@@ -203,25 +251,25 @@
                     <div
                       style="color: #718096; font-size: 0.7rem; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; letter-spacing: 0.05em;">
                       Poprawność</div>
-                    <div id="dash-accuracy" style="font-size: 1.3rem; font-weight: 800; color: #fff;">74%</div>
+                    <div id="dash-accuracy" style="font-size: 1.3rem; font-weight: 800; color: #fff;">0%</div>
                   </div>
                   <div class="dash-stat-item">
                     <div
                       style="color: #718096; font-size: 0.7rem; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; letter-spacing: 0.05em;">
                       Średni czas</div>
-                    <div id="dash-avg-time" style="font-size: 1.3rem; font-weight: 800; color: #fff;">14s</div>
+                    <div id="dash-avg-time" style="font-size: 1.3rem; font-weight: 800; color: #fff;">0s</div>
                   </div>
                   <div class="dash-stat-item" style="grid-column: span 2;">
                     <div
                       style="color: #718096; font-size: 0.7rem; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; letter-spacing: 0.05em;">
                       Rozwiązane pytania</div>
-                    <div id="dash-questions" style="font-size: 1.3rem; font-weight: 800; color: #fff;">186</div>
+                    <div id="dash-questions" style="font-size: 1.3rem; font-weight: 800; color: #fff;">0</div>
                   </div>
                 </div>
               </div>
 
               <!-- History Card -->
-              <div class="dash-card">
+              <div class="dash-card dash-mobile-slide dash-mobile-slide--history">
                 <h3
                   style="font-family: 'Outfit', sans-serif; font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; font-weight: 800;">
                   🧠 Ostatnie treningi
@@ -233,10 +281,58 @@
 
             </div>
           </div>
+          <div id="dash-mobile-dots" class="dash-mobile-dots" aria-label="Przełączanie paneli dashboardu"></div>
         </div>
 
       </div>
     </section>
+
+    <div id="dash-history-modal" class="dash-history-modal hidden">
+      <div class="dash-history-modal__backdrop" id="dash-history-modal-close-bg"></div>
+      <div class="dash-history-modal__panel">
+        <div class="dash-history-modal__head">
+          <h3>Pełna historia treningów</h3>
+          <button type="button" id="dash-history-modal-close" class="dash-history-modal__close">✕</button>
+        </div>
+        <div id="dash-history-modal-list" class="dash-history-modal__list"></div>
+        <div class="dash-history-modal__tools">
+          <h4>Wkrótce</h4>
+          <p>Krótki raport quizów i eksport pytań/słówek do PDF.</p>
+          <div class="dash-history-modal__actions">
+            <button type="button" disabled>Podsumowanie quizów PDF</button>
+            <button type="button" disabled>Słówka z quizów PDF</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="settings-modal" class="settings-modal hidden">
+      <div class="settings-modal__backdrop" id="settings-modal-close-bg"></div>
+      <div class="settings-modal__panel">
+        <div class="settings-modal__head">
+          <h3>Ustawienia</h3>
+          <button type="button" id="settings-modal-close" class="settings-modal__close">✕</button>
+        </div>
+        <div class="settings-modal__content">
+          <label class="settings-field">
+            <span>Nazwa wyświetlana</span>
+            <input id="settings-display-name" type="text" placeholder="Twoja nazwa" />
+          </label>
+          <label class="settings-field">
+            <span>Subskrypcja</span>
+            <input id="settings-subscription" type="text" value="Podstawowe" disabled />
+          </label>
+          <label class="settings-field">
+            <span>Inne ustawienia</span>
+            <input id="settings-other" type="text" value="Więcej opcji wkrótce" disabled />
+          </label>
+          <div class="settings-actions">
+            <button type="button" id="settings-save-btn">Zapisz zmiany</button>
+          </div>
+          <p class="settings-note" id="settings-save-note"></p>
+        </div>
+      </div>
+    </div>
 
     <section class="preview reveal">
       <div class="preview__card" style="margin-bottom: 16px;">
@@ -358,34 +454,79 @@
     </section>
 
     <!-- Categories -->
-    <section class="categories reveal">
+    <section class="categories reveal section-accordion" id="section-categories">
       <div class="container">
-        <h2 class="section__title">Typy zadań</h2>
-        <p class="section__sub" style="margin-bottom:32px;">Cztery kategorie na start — wszystkie z jasnym kluczem
-          odpowiedzi</p>
-        <div class="cat__grid">
-          <div class="cat__tile">
-            <div class="cat__tile__icon">💬</div>
-            <div class="cat__tile__name">Reakcje językowe</div>
-            <div class="cat__tile__count">10 zadań</div>
+        <button type="button" class="section-accordion__trigger" data-accordion-target="categories-content" aria-expanded="false">
+          <span>Typy zadań</span>
+          <span class="section-accordion__chevron">▾</span>
+        </button>
+        <div class="section-accordion__content" id="categories-content">
+          <p class="section__sub" style="margin-bottom:32px;">Cztery kategorie na start — wszystkie z jasnym kluczem
+            odpowiedzi</p>
+          <div class="cat__grid">
+            <div class="cat__tile">
+              <div class="cat__tile__icon">💬</div>
+              <div class="cat__tile__name">Reakcje językowe</div>
+              <div class="cat__tile__count">10 zadań</div>
+            </div>
+            <div class="cat__tile">
+              <div class="cat__tile__icon">📖</div>
+              <div class="cat__tile__name">Reading MC</div>
+              <div class="cat__tile__count">4 zadania</div>
+            </div>
+            <div class="cat__tile">
+              <div class="cat__tile__icon">🔤</div>
+              <div class="cat__tile__name">Słownictwo</div>
+              <div class="cat__tile__count">3 zadania</div>
+            </div>
+            <div class="cat__tile">
+              <div class="cat__tile__icon">📝</div>
+              <div class="cat__tile__name">Gramatyka</div>
+              <div class="cat__tile__count">3 zadania</div>
+            </div>
+            <div class="cat__tile soon-tile" style="display:none"></div>
           </div>
-          <div class="cat__tile">
-            <div class="cat__tile__icon">📖</div>
-            <div class="cat__tile__name">Reading MC</div>
-            <div class="cat__tile__count">4 zadania</div>
-          </div>
-          <div class="cat__tile">
-            <div class="cat__tile__icon">🔤</div>
-            <div class="cat__tile__name">Słownictwo</div>
-            <div class="cat__tile__count">3 zadania</div>
-          </div>
-          <div class="cat__tile">
-            <div class="cat__tile__icon">📝</div>
-            <div class="cat__tile__name">Gramatyka</div>
-            <div class="cat__tile__count">3 zadania</div>
-          </div>
-          <div class="cat__tile soon-tile" style="display:none"></div>
         </div>
+      </div>
+    </section>
+
+    <section id="e8-pricing" class="pricing reveal section-accordion">
+      <div class="container">
+        <button type="button" class="section-accordion__trigger" data-accordion-target="pricing-content" aria-expanded="false">
+          <span>Cennik</span>
+          <span class="section-accordion__chevron">▾</span>
+        </button>
+      </div>
+      <div class="section-accordion__content" id="pricing-content">
+        <p class="section__sub">Ten sam produkt, różny czas dostępu. Zero sztucznych podziałów.</p>
+        <div class="pricing__grid">
+          <article class="plan-card">
+            <div class="plan-card__name">1 dzień</div>
+            <div class="plan-card__price">5 <span>zł</span></div>
+            <p class="plan-card__desc">Pełny dostęp na 24 godziny. Dobre przed sprawdzianem.</p>
+            <button class="plan-card__btn open-modal-btn">Wybierz</button>
+          </article>
+          <article class="plan-card">
+            <div class="plan-card__name">3 dni</div>
+            <div class="plan-card__price">9 <span>zł</span></div>
+            <p class="plan-card__desc">Trzy dni intensywnego treningu przed egzaminem.</p>
+            <button class="plan-card__btn open-modal-btn">Wybierz</button>
+          </article>
+          <article class="plan-card is-featured">
+            <div class="plan-card__badge">Najpopularniejszy</div>
+            <div class="plan-card__name">Uczeń</div>
+            <div class="plan-card__price"><s>29</s>19 <span>zł / mies.</span></div>
+            <p class="plan-card__desc">Pełny dostęp na miesiąc. Nowe zestawy co tydzień, idealny do regularnej nauki.</p>
+            <button class="plan-card__btn open-modal-btn">Wybierz</button>
+          </article>
+          <article class="plan-card">
+            <div class="plan-card__name">Uczeń+</div>
+            <div class="plan-card__price">~39 <span>zł / mies.</span></div>
+            <p class="plan-card__desc">Więcej zestawów, lepsza organizacja i lista słówek do powtórki. Wkrótce.</p>
+            <button class="plan-card__btn open-modal-btn">Wkrótce</button>
+          </article>
+        </div>
+        <p class="pricing__note">To nie zastąpi korepetytora, ale mocno przyspiesza naukę.</p>
       </div>
     </section>
 

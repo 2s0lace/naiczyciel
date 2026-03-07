@@ -434,6 +434,7 @@ if (prevNavBtn) {
 }
 
 async function showResult() {
+  console.log('QUIZ COMPLETE START');
   const total = sessionQuestions.length;
 
   // For any skipped questions, push them into userResults as wrong
@@ -469,7 +470,10 @@ async function showResult() {
 
   progressBar.style.width = '100%';
   renderInsights();
-  await persistQuizSession(total, percent);
+  const persistResult = await persistQuizSession(total);
+  if (persistResult?.user) {
+    await updateDashboardStats(persistResult.user);
+  }
   showScreen('result');
 }
 
@@ -573,7 +577,17 @@ if (insightsPdfBtn) {
 
 /* ─── Retry & Home ───────────────────────────────────────── */
 if (btnRetry) btnRetry.addEventListener('click', startQuiz);
-if (btnHome) btnHome.addEventListener('click', () => showScreen('landing'));
+if (btnHome) {
+  btnHome.addEventListener('click', async () => {
+    showScreen('landing');
+    await ensureSupabaseClient();
+    if (!supabaseClient) return;
+    const { data } = await supabaseClient.auth.getUser();
+    if (data?.user) {
+      await updateDashboardStats(data.user);
+    }
+  });
+}
 const navLogoHome = document.getElementById('nav-logo-home');
 if (navLogoHome) {
   navLogoHome.addEventListener('click', (e) => { e.preventDefault(); showScreen('landing'); });
@@ -759,8 +773,348 @@ document.addEventListener('click', (event) => {
   }
 });
 
+function initHeroPreviewStack() {
+  const stack = document.getElementById('hero-preview-stack');
+  if (!stack) return;
+
+  const panels = Array.from(stack.querySelectorAll('[data-preview-panel]'));
+  const phoneMock = document.getElementById('hero-phone-mock');
+  if (!panels.length || !phoneMock) return;
+
+  let activePreviewPanel = 'main';
+
+  function setPreviewState(nextState = 'main') {
+    activePreviewPanel = nextState;
+    const hasActive = nextState !== 'main';
+    stack.classList.toggle('has-active', hasActive);
+    panels.forEach((panel) => {
+      const panelName = panel.getAttribute('data-preview-panel');
+      panel.classList.toggle('is-active', hasActive && panelName === nextState);
+      panel.setAttribute('aria-expanded', String(hasActive && panelName === nextState));
+    });
+  }
+
+  function resetPreviewState() {
+    setPreviewState('main');
+  }
+
+  panels.forEach((panel) => {
+    if (panel.dataset.boundPreview === '1') return;
+    panel.dataset.boundPreview = '1';
+    panel.addEventListener('click', (event) => {
+      const panelName = panel.getAttribute('data-preview-panel') || 'main';
+      if (activePreviewPanel === panelName) {
+        resetPreviewState();
+      } else {
+        setPreviewState(panelName);
+      }
+    });
+    panel.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        setPreviewState(panel.getAttribute('data-preview-panel') || 'main');
+      }
+    });
+  });
+
+  if (!phoneMock.dataset.boundPreview) {
+    phoneMock.dataset.boundPreview = '1';
+    phoneMock.addEventListener('click', () => {
+      resetPreviewState();
+    });
+  }
+
+  if (!stack.dataset.boundPreview) {
+    stack.dataset.boundPreview = '1';
+    stack.addEventListener('click', (event) => {
+      const clickedPanel = event.target.closest('[data-preview-panel]');
+      const clickedPhone = event.target.closest('#hero-phone-mock');
+      if (!clickedPanel && !clickedPhone) {
+        resetPreviewState();
+      }
+    });
+  }
+
+  if (!document.body.dataset.boundPreviewOutside) {
+    document.body.dataset.boundPreviewOutside = '1';
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('[data-preview-panel]') && !stack.contains(event.target)) {
+        resetPreviewState();
+      }
+    });
+  }
+
+  if (!window.__heroPreviewResizeBound) {
+    window.__heroPreviewResizeBound = true;
+    window.addEventListener('resize', () => {
+      resetPreviewState();
+    });
+  }
+
+  resetPreviewState();
+}
+
+function initLandingAccordions() {
+  const triggers = Array.from(document.querySelectorAll('.section-accordion__trigger[data-accordion-target]'));
+  if (!triggers.length) return;
+
+  const isMobile = () => window.matchMedia('(max-width: 860px)').matches;
+
+  function setOpenState(section, open) {
+    if (!section) return;
+    section.classList.toggle('is-open', open);
+    const trigger = section.querySelector('.section-accordion__trigger');
+    if (trigger) trigger.setAttribute('aria-expanded', String(open));
+  }
+
+  function resetByViewport() {
+    triggers.forEach((trigger, index) => {
+      const section = trigger.closest('.section-accordion');
+      if (!section) return;
+      if (isMobile()) {
+        setOpenState(section, index === 0);
+      } else {
+        setOpenState(section, true);
+      }
+    });
+  }
+
+  triggers.forEach((trigger) => {
+    if (trigger.dataset.boundAccordion === '1') return;
+    trigger.dataset.boundAccordion = '1';
+    trigger.addEventListener('click', () => {
+      const targetId = trigger.getAttribute('data-accordion-target');
+      const section = trigger.closest('.section-accordion');
+      const target = targetId ? document.getElementById(targetId) : null;
+      if (!section || !target || !isMobile()) return;
+
+      const isOpen = section.classList.contains('is-open');
+      document.querySelectorAll('.section-accordion').forEach((item) => setOpenState(item, false));
+      setOpenState(section, !isOpen);
+    });
+  });
+
+  if (!window.__landingAccordionResizeBound) {
+    window.__landingAccordionResizeBound = true;
+    window.addEventListener('resize', resetByViewport);
+  }
+
+  resetByViewport();
+}
+
+function initMobileDashboardSlider() {
+  const grid = document.querySelector('#e8-dashboard-view .dash-grid');
+  const dotsWrap = document.getElementById('dash-mobile-dots');
+  if (!grid || !dotsWrap) return;
+
+  const slides = Array.from(grid.querySelectorAll('.dash-mobile-slide'));
+  if (!slides.length) return;
+
+  dotsWrap.innerHTML = slides
+    .map((_, idx) => `<button type="button" data-dash-slide="${idx}" aria-label="Panel ${idx + 1}"></button>`)
+    .join('');
+
+  const dots = Array.from(dotsWrap.querySelectorAll('[data-dash-slide]'));
+
+  function setActive(index) {
+    dots.forEach((dot, idx) => dot.classList.toggle('is-active', idx === index));
+  }
+
+  function findClosestIndex() {
+    const left = grid.scrollLeft;
+    let closestIdx = 0;
+    let closestDiff = Number.POSITIVE_INFINITY;
+    slides.forEach((slide, idx) => {
+      const diff = Math.abs(slide.offsetLeft - left);
+      if (diff < closestDiff) {
+        closestDiff = diff;
+        closestIdx = idx;
+      }
+    });
+    return closestIdx;
+  }
+
+  dots.forEach((dot) => {
+    if (dot.dataset.boundDashDot === '1') return;
+    dot.dataset.boundDashDot = '1';
+    dot.addEventListener('click', () => {
+      const idx = Number(dot.getAttribute('data-dash-slide') || '0');
+      const target = slides[idx];
+      if (!target) return;
+      grid.scrollTo({ left: target.offsetLeft, behavior: 'smooth' });
+      setActive(idx);
+    });
+  });
+
+  let scrollRaf = null;
+  if (!grid.dataset.boundDashScroll) {
+    grid.dataset.boundDashScroll = '1';
+    grid.addEventListener('scroll', () => {
+      if (scrollRaf) cancelAnimationFrame(scrollRaf);
+      scrollRaf = requestAnimationFrame(() => {
+        setActive(findClosestIndex());
+      });
+    }, { passive: true });
+  }
+
+  if (!window.__dashMobileResizeBound) {
+    window.__dashMobileResizeBound = true;
+    window.addEventListener('resize', () => setActive(findClosestIndex()));
+  }
+
+  setActive(0);
+}
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getDisplayNameStorageKey(userId) {
+  return `naiczyciel_display_name_${userId}`;
+}
+
+function getDisplayName(user) {
+  if (!user) return 'Uczeń';
+  const custom = localStorage.getItem(getDisplayNameStorageKey(user.id));
+  if (custom && custom.trim()) return custom.trim();
+  const metaName = user.user_metadata?.full_name || user.user_metadata?.name || '';
+  if (String(metaName).trim()) return String(metaName).trim();
+  return user.email || 'Uczeń';
+}
+
+function getFirstName(displayName) {
+  return String(displayName || 'Uczeń').trim().split(' ')[0] || 'Uczeń';
+}
+
+function hasStudentPlan(user) {
+  if (!user) return false;
+  const values = [
+    user.user_metadata?.plan,
+    user.user_metadata?.subscription,
+    user.user_metadata?.tier,
+    localStorage.getItem(`naiczyciel_plan_${user.id}`)
+  ]
+    .filter(Boolean)
+    .map((v) => String(v).toLowerCase().trim());
+
+  return values.some((v) => v === 'uczen' || v === 'uczeń' || v === 'student');
+}
+
+function renderAuthContainers(user) {
+  const authContainers = document.querySelectorAll('.auth-container');
+  const avatarUrl = user.user_metadata?.avatar_url || '';
+  const displayName = getDisplayName(user);
+  const firstName = getFirstName(displayName);
+  const safeDisplayName = escapeHtml(displayName);
+  const safeFirstName = escapeHtml(firstName);
+  const menuId = `menu-${(user.id || 'user').slice(0, 8)}`;
+  const dropdownId = `profile-dropdown-${(user.id || 'user').slice(0, 8)}`;
+
+  authContainers.forEach(container => {
+    container.innerHTML = `
+      <div class="profile-dropdown" id="${dropdownId}">
+        <div class="profile-trigger" onclick="toggleDropdown(event, '${menuId}')">
+          ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;">` : `<div style="width: 24px; height: 24px; border-radius: 50%; background: var(--c-primary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">${safeFirstName.charAt(0)}</div>`}
+          <span style="font-size: .85rem; font-weight: 600; color: var(--c-text);">${safeDisplayName}</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px; color: var(--c-muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </div>
+        <div class="profile-menu" id="${menuId}">
+          <button class="profile-menu-item" onclick="openSettingsModal()">
+            <span style="font-size: 1.1rem;">⚙️</span> Ustawienia
+          </button>
+          <button class="profile-menu-item" onclick="window.location.href='${getAdminHref()}'">
+            <span style="font-size: 1.1rem;">🛠️</span> Panel admina
+          </button>
+          <div class="profile-menu-divider"></div>
+          <button class="profile-menu-item" onclick="logout()" style="color: var(--c-red);">
+            <span style="font-size: 1.1rem;">🚪</span> Wyloguj
+          </button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+function updateWelcomeMessage(user) {
+  const welcomeMsg = document.getElementById('e8-welcome-msg');
+  if (!welcomeMsg || !user) return;
+  const firstName = getFirstName(getDisplayName(user));
+  welcomeMsg.textContent = `Cześć, ${firstName}! 👋`;
+}
+
+function closeSettingsModal() {
+  const modal = document.getElementById('settings-modal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+async function saveSettings() {
+  const user = window.__currentSupabaseUser;
+  const input = document.getElementById('settings-display-name');
+  const note = document.getElementById('settings-save-note');
+  if (!user || !input) return;
+
+  const name = input.value.trim();
+  if (!name) {
+    if (note) note.textContent = 'Podaj nazwę.';
+    return;
+  }
+
+  localStorage.setItem(getDisplayNameStorageKey(user.id), name);
+
+  await ensureSupabaseClient();
+  if (supabaseClient) {
+    try {
+      await supabaseClient.auth.updateUser({ data: { full_name: name } });
+    } catch (err) {
+      console.error('auth.updateUser failed:', err);
+    }
+
+    try {
+      await supabaseClient
+        .from('profiles')
+        .upsert({ id: user.id, email: user.email, full_name: name }, { onConflict: 'id' });
+    } catch (err) {
+      console.error('profiles upsert failed:', err);
+    }
+  }
+
+  window.__currentSupabaseUser = {
+    ...user,
+    user_metadata: { ...(user.user_metadata || {}), full_name: name }
+  };
+
+  renderAuthContainers(window.__currentSupabaseUser);
+  updateWelcomeMessage(window.__currentSupabaseUser);
+  if (note) note.textContent = 'Zapisano.';
+}
+
+function openSettingsModal() {
+  const modal = document.getElementById('settings-modal');
+  const input = document.getElementById('settings-display-name');
+  const note = document.getElementById('settings-save-note');
+  const user = window.__currentSupabaseUser;
+  if (!modal || !input || !user) return;
+
+  input.value = getDisplayName(user);
+  if (note) note.textContent = '';
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+window.openSettingsModal = openSettingsModal;
+
 // Check session on load and update UI
 document.addEventListener('DOMContentLoaded', async () => {
+  initHeroPreviewStack();
+  initLandingAccordions();
+  initMobileDashboardSlider();
   await ensureSupabaseClient();
   if (!supabaseClient) {
     document.body.classList.remove('auth-loading');
@@ -772,41 +1126,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (user) {
     console.log('Zalogowany uczeń:', user);
-
-    // Find all auth buttons/containers in navbars
-    const authContainers = document.querySelectorAll('.auth-container');
-
-    authContainers.forEach(container => {
-      // Create user profile UI (avatar + name)
-      const avatarUrl = user.user_metadata?.avatar_url || '';
-      const fullName = user.user_metadata?.full_name || user.email;
-      const firstName = fullName.split(' ')[0];
-
-      container.innerHTML = `
-        <div class="profile-dropdown" id="profile-dropdown-${firstName.toLowerCase()}">
-          <div class="profile-trigger" onclick="toggleDropdown(event, 'menu-${firstName.toLowerCase()}')">
-            ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;">` : `<div style="width: 24px; height: 24px; border-radius: 50%; background: var(--c-primary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">${firstName.charAt(0)}</div>`}
-            <span style="font-size: .85rem; font-weight: 600; color: var(--c-text);">${firstName}</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px; color: var(--c-muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
-          </div>
-          <div class="profile-menu" id="menu-${firstName.toLowerCase()}">
-            <button class="profile-menu-item" onclick="alert('Ustawienia konta wkrótce!')">
-              <span style="font-size: 1.1rem;">👤</span> Konto
-            </button>
-            <button class="profile-menu-item" onclick="alert('Ustawienia aplikacji wkrótce!')">
-              <span style="font-size: 1.1rem;">⚙️</span> Ustawienia
-            </button>
-            <button class="profile-menu-item" onclick="window.location.href='${getAdminHref()}'">
-              <span style="font-size: 1.1rem;">🛠️</span> Panel admina
-            </button>
-            <div class="profile-menu-divider"></div>
-            <button class="profile-menu-item" onclick="logout()" style="color: var(--c-red);">
-              <span style="font-size: 1.1rem;">🚪</span> Wyloguj
-            </button>
-          </div>
-        </div >
-        `;
-    });
+    window.__currentSupabaseUser = user;
+    renderAuthContainers(user);
 
     // Page-specific UI updates for logged-in users
     const heroLeft = document.getElementById('e8-hero-left');
@@ -823,11 +1144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (heroRight) heroRight.style.display = 'none';
       dashboardView.style.display = 'block';
 
-      if (welcomeMsg) {
-        const fullName = user.user_metadata?.full_name || user.email;
-        const firstName = fullName.split(' ')[0];
-        welcomeMsg.textContent = `Cześć, ${firstName}! 👋`;
-      }
+      updateWelcomeMessage(user);
 
       // Hide all marketing/guest sections
       const selectorsToHide = ['.preview', '.why', '.categories', '.pricing', '.author', '#e8-seo-text'];
@@ -843,49 +1160,76 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // Always remove loading class to reveal the page (whether logged in or guest)
   document.body.classList.remove('auth-loading');
+
+  const settingsClose = document.getElementById('settings-modal-close');
+  const settingsCloseBg = document.getElementById('settings-modal-close-bg');
+  const settingsSave = document.getElementById('settings-save-btn');
+  if (settingsClose && !settingsClose.dataset.bound) {
+    settingsClose.dataset.bound = '1';
+    settingsClose.addEventListener('click', closeSettingsModal);
+  }
+  if (settingsCloseBg && !settingsCloseBg.dataset.bound) {
+    settingsCloseBg.dataset.bound = '1';
+    settingsCloseBg.addEventListener('click', closeSettingsModal);
+  }
+  if (settingsSave && !settingsSave.dataset.bound) {
+    settingsSave.dataset.bound = '1';
+    settingsSave.addEventListener('click', saveSettings);
+  }
+
+  const upgradeBtn = document.getElementById('dash-upgrade-btn');
+  if (upgradeBtn && !upgradeBtn.dataset.bound) {
+    upgradeBtn.dataset.bound = '1';
+    upgradeBtn.addEventListener('click', () => {
+      const currentUser = window.__currentSupabaseUser;
+      if (hasStudentPlan(currentUser)) {
+        showToast('Masz już aktywny plan Uczeń. ✅');
+      } else {
+        showToast('Ulepszenie konta przyjęte. Dokończymy aktywację w płatnościach.');
+      }
+    });
+  }
 });
 
-async function persistQuizSession(total, percent) {
+async function persistQuizSession(total) {
   await ensureSupabaseClient();
-  if (!supabaseClient) return;
+  if (!supabaseClient) return null;
 
   const { data: authData } = await supabaseClient.auth.getUser();
   const user = authData?.user;
-  if (!user) return;
+  if (!user) return null;
 
   const durationSeconds = quizStartedAt ? Math.max(1, Math.round((Date.now() - quizStartedAt) / 1000)) : null;
+  const sessionPayload = {
+    user_id: user.id,
+    branch: 'e8',
+    score,
+    total_questions: total,
+    duration_seconds: durationSeconds
+  };
 
   try {
+    console.log('SESSION INSERT PAYLOAD', sessionPayload);
     const { data: session, error: sessionError } = await supabaseClient
       .from('quiz_sessions')
-      .insert({
-        user_id: user.id,
-        quiz_type: 'e8',
-        score,
-        total_questions: total,
-        percent,
-        duration_seconds: durationSeconds
-      })
+      .insert(sessionPayload)
       .select('id')
       .single();
+    console.log('SESSION INSERT RESULT', { session, error: sessionError });
 
     if (sessionError || !session) {
       console.error('quiz_sessions insert error:', sessionError);
-      return;
+      return null;
     }
 
     const answersRows = sessionQuestions.map((q, i) => {
       const selectedIndex = answers[i];
       const selectedAnswer = selectedIndex === null ? null : (q.answers[selectedIndex] || null);
-      const correctAnswer = q.answers[q.correct] || null;
       return {
         session_id: session.id,
         user_id: user.id,
         question_id: q.id ? String(q.id) : null,
-        branch: q.type || null,
-        question_text: q.question || '',
         selected_answer: selectedAnswer,
-        correct_answer: correctAnswer,
         is_correct: selectedIndex === q.correct
       };
     });
@@ -893,10 +1237,13 @@ async function persistQuizSession(total, percent) {
     const { error: answersError } = await supabaseClient
       .from('quiz_answers')
       .insert(answersRows);
+    console.log('ANSWERS INSERT RESULT', { error: answersError, count: answersRows.length });
 
     if (answersError) console.error('quiz_answers insert error:', answersError);
+    return { user, sessionId: session.id };
   } catch (err) {
     console.error('persistQuizSession failed:', err);
+    return null;
   }
 }
 
@@ -907,18 +1254,33 @@ function fallbackStats() {
     accuracy: 0,
     questions: 0,
     avgTime: 0,
-    history: []
+    history: [],
+    activityDays: []
   };
+}
+
+function toLocalDateKey(value) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function calculateStreakFromSessions(sessions) {
   if (!sessions.length) return 0;
-  const dayKeys = [...new Set(sessions.map((s) => new Date(s.completed_at || s.created_at).toISOString().slice(0, 10)))].sort().reverse();
+  const dayKeys = [...new Set(
+    sessions
+      .map((s) => toLocalDateKey(s.completed_at || s.created_at))
+      .filter(Boolean)
+  )].sort().reverse();
   let streak = 0;
   let cursor = new Date();
   cursor.setHours(0, 0, 0, 0);
   for (const key of dayKeys) {
-    const day = new Date(`${key}T00:00:00.000Z`);
+    const [year, month, dayNum] = key.split('-').map(Number);
+    const day = new Date(year, month - 1, dayNum);
     const diff = Math.round((cursor - day) / 86400000);
     if (diff === streak) streak++;
     else if (diff > streak) break;
@@ -926,61 +1288,127 @@ function calculateStreakFromSessions(sessions) {
   return streak;
 }
 
+function buildRecentActivityDays(sessions, totalDays = 28) {
+  const activeDayKeys = new Set(
+    sessions
+      .map((s) => s.completed_at || s.created_at)
+      .filter(Boolean)
+      .map((value) => toLocalDateKey(value))
+      .filter(Boolean)
+  );
+
+  const end = new Date();
+  end.setHours(0, 0, 0, 0);
+  const activity = [];
+
+  for (let i = 0; i < totalDays; i++) {
+    const day = new Date(end);
+    day.setDate(end.getDate() - i);
+    const key = toLocalDateKey(day);
+    activity.push({
+      key,
+      active: activeDayKeys.has(key)
+    });
+  }
+
+  return activity;
+}
+
 async function fetchStatsFromSupabase(user) {
   await ensureSupabaseClient();
-  if (!supabaseClient || !user) return null;
+  const userId = typeof user === 'string' ? user : user?.id;
+  if (!supabaseClient || !userId) return null;
 
-  const { data: sessions, error } = await supabaseClient
-    .from('quiz_sessions')
-    .select('id, score, total_questions, percent, duration_seconds, completed_at, created_at')
-    .eq('user_id', user.id)
-    .eq('quiz_type', 'e8')
-    .order('completed_at', { ascending: false })
-    .limit(50);
+  try {
+    console.log('fetchStatsFromSupabase START', { userId });
 
-  if (error || !sessions) {
-    console.error('fetchStatsFromSupabase error:', error);
-    return null;
+    const { data: sessions, error } = await supabaseClient
+      .from('quiz_sessions')
+      .select('id, score, total_questions, duration_seconds, completed_at, created_at, branch')
+      .eq('user_id', userId)
+      .eq('branch', 'e8')
+      .order('completed_at', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(50);
+
+    console.log('quiz_sessions RAW data', sessions);
+    console.log('quiz_sessions RAW error', error);
+
+    if (error) {
+      console.error('fetchStatsFromSupabase error:', error);
+      return {
+        accuracy: 0,
+        avgTime: 0,
+        history: [],
+        questions: 0,
+        sets: 0,
+        streak: 0,
+        activityDays: []
+      };
+    }
+
+    if (!Array.isArray(sessions) || !sessions.length) {
+      return {
+        accuracy: 0,
+        avgTime: 0,
+        history: [],
+        questions: 0,
+        sets: 0,
+        streak: 0,
+        activityDays: []
+      };
+    }
+
+    const totalSets = sessions.length;
+    const totalQuestions = sessions.reduce((sum, s) => sum + Number(s.total_questions || 0), 0);
+    const totalCorrect = sessions.reduce((sum, s) => sum + Number(s.score || 0), 0);
+    const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+    const timedSessions = sessions.filter((s) => Number(s.duration_seconds || 0) > 0);
+    const avgTime = timedSessions.length
+      ? Math.round(timedSessions.reduce((sum, s) => sum + Number(s.duration_seconds || 0), 0) / timedSessions.length)
+      : 0;
+    const streak = calculateStreakFromSessions(sessions);
+    const history = sessions.slice(0, 20).map((s, idx) => ({
+      id: idx + 1,
+      score: Number(s.score || 0),
+      total: Number(s.total_questions || 0),
+      time: `${Number(s.duration_seconds || 0)}s`
+    }));
+    const activityDays = buildRecentActivityDays(sessions, 28);
+
+    return {
+      accuracy,
+      avgTime,
+      history,
+      questions: totalQuestions,
+      sets: totalSets,
+      streak,
+      activityDays
+    };
+  } catch (err) {
+    console.error('fetchStatsFromSupabase catch:', err);
+    return {
+      accuracy: 0,
+      avgTime: 0,
+      history: [],
+      questions: 0,
+      sets: 0,
+      streak: 0,
+      activityDays: []
+    };
   }
-
-  if (!sessions.length) {
-    return { streak: 0, sets: 0, accuracy: 0, questions: 0, avgTime: 0, history: [] };
-  }
-
-  const totalSets = sessions.length;
-  const totalQuestions = sessions.reduce((sum, s) => sum + Number(s.total_questions || 0), 0);
-  const totalCorrect = sessions.reduce((sum, s) => sum + Number(s.score || 0), 0);
-  const accuracy = totalQuestions ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
-  const durationRows = sessions.filter((s) => Number(s.duration_seconds || 0) > 0);
-  const avgTime = durationRows.length ? Math.round(durationRows.reduce((sum, s) => sum + Number(s.duration_seconds), 0) / durationRows.length) : 0;
-  const streak = calculateStreakFromSessions(sessions);
-
-  const history = sessions.slice(0, 2).map((s, idx) => ({
-    id: idx + 1,
-    score: Number(s.score || 0),
-    total: Number(s.total_questions || 0),
-    time: `${Number(s.duration_seconds || 0)}s`
-  }));
-
-  return {
-    streak,
-    sets: totalSets,
-    accuracy,
-    questions: totalQuestions,
-    avgTime,
-    history
-  };
 }
 
 async function updateDashboardStats(user) {
+  console.log('DASHBOARD REFRESH START', { userId: user?.id || null });
   const stats = (await fetchStatsFromSupabase(user)) || fallbackStats();
+  console.log('DASHBOARD DATA RESULT', stats);
 
   // Update UI elements
   const elProgPercent = document.getElementById('dash-prog-percent');
   const elProgBar = document.getElementById('dash-prog-bar');
-  const elStreak = document.getElementById('dash-streak');
-  const elSets = document.getElementById('dash-sets');
-  const elAccuracyTop = document.getElementById('dash-accuracy-top');
+  const elActivityGrid = document.getElementById('dash-activity-grid');
+  const elActivityMeta = document.getElementById('dash-activity-meta');
   const elAccuracy = document.getElementById('dash-accuracy');
   const elAvgTime = document.getElementById('dash-avg-time');
   const elQuestions = document.getElementById('dash-questions');
@@ -988,27 +1416,87 @@ async function updateDashboardStats(user) {
 
   if (elProgPercent) elProgPercent.textContent = `${stats.accuracy}%`;
   if (elProgBar) elProgBar.style.width = `${stats.accuracy}%`;
-  if (elStreak) elStreak.textContent = stats.streak;
-  if (elSets) elSets.textContent = stats.sets;
-  if (elAccuracyTop) elAccuracyTop.textContent = stats.accuracy;
   if (elAccuracy) elAccuracy.textContent = `${stats.accuracy}%`;
   if (elAvgTime) elAvgTime.innerHTML = `${stats.avgTime}s`;
   if (elQuestions) elQuestions.textContent = stats.questions;
+  if (elActivityMeta) {
+    const remaining = Math.max(0, 14 - Number(stats.streak || 0));
+    elActivityMeta.textContent = remaining === 0
+      ? 'Cel 14 dni osiągnięty! 🔥'
+      : `Brakuje ${remaining} ${remaining === 1 ? 'dnia' : 'dni'} do celu.`;
+  }
+
+  if (elActivityGrid) {
+    const activityDays = Array.isArray(stats.activityDays) ? stats.activityDays : [];
+    const fallbackDays = activityDays.length ? activityDays : new Array(28).fill(null).map((_, idx) => ({ key: `day-${idx + 1}`, active: false }));
+    elActivityGrid.innerHTML = fallbackDays.map((day) => (
+      `<span class="dash-activity-dot ${day.active ? 'is-active' : ''}" title="${day.key}"></span>`
+    )).join('');
+  }
 
   if (elHistoryList) {
-    if (stats.history.length > 0) {
-      elHistoryList.innerHTML = stats.history.map(item => `
+    const historyItems = Array.isArray(stats.history) ? stats.history : [];
+    if (historyItems.length > 0) {
+      const firstItem = historyItems[0];
+      const firstCardHtml = `
         <div class="dash-history-card">
           <div class="dash-history-info">
-            <h4>Zestaw #${item.id}</h4>
-            <p>${item.time} • Egzamin E8</p>
+            <h4>Zestaw #${firstItem.id || ''}</h4>
+            <p>${firstItem.time || `${Number(firstItem.duration_seconds || 0)}s`} • Egzamin E8</p>
           </div>
           <div class="dash-history-score">
-            <span class="score-val">${item.score}/${item.total}</span>
-            <span class="score-pct">${Math.round((item.score / item.total) * 100)}%</span>
+            <span class="score-val">${Number(firstItem.score || 0)}/${Number(firstItem.total || firstItem.total_questions || 0)}</span>
+            <span class="score-pct">${Math.round((Number(firstItem.score || 0) / Math.max(1, Number(firstItem.total || firstItem.total_questions || 0))) * 100)}%</span>
           </div>
         </div>
-      `).join('');
+      `;
+
+      const toggleHtml = historyItems.length > 1
+        ? `<button id="dash-history-toggle" type="button" class="dash-history-toggle">Pokaż więcej (${historyItems.length - 1})</button>`
+        : '';
+
+      elHistoryList.innerHTML = `${firstCardHtml}${toggleHtml}`;
+
+      const toggleBtn = document.getElementById('dash-history-toggle');
+      const modal = document.getElementById('dash-history-modal');
+      const modalList = document.getElementById('dash-history-modal-list');
+      const modalClose = document.getElementById('dash-history-modal-close');
+      const modalCloseBg = document.getElementById('dash-history-modal-close-bg');
+
+      const closeModal = () => {
+        if (modal) modal.classList.add('hidden');
+        document.body.style.overflow = '';
+      };
+
+      if (toggleBtn && modal && modalList) {
+        toggleBtn.addEventListener('click', () => {
+          modalList.innerHTML = historyItems.map(item => `
+            <div class="dash-history-card">
+              <div class="dash-history-info">
+                <h4>Zestaw #${item.id || ''}</h4>
+                <p>${item.time || `${Number(item.duration_seconds || 0)}s`} • Egzamin E8</p>
+              </div>
+              <div class="dash-history-score">
+                <span class="score-val">${Number(item.score || 0)}/${Number(item.total || item.total_questions || 0)}</span>
+                <span class="score-pct">${Math.round((Number(item.score || 0) / Math.max(1, Number(item.total || item.total_questions || 0))) * 100)}%</span>
+              </div>
+            </div>
+          `).join('');
+
+          modal.classList.remove('hidden');
+          document.body.style.overflow = 'hidden';
+        });
+      }
+
+      if (modalClose && !modalClose.dataset.bound) {
+        modalClose.dataset.bound = '1';
+        modalClose.addEventListener('click', closeModal);
+      }
+
+      if (modalCloseBg && !modalCloseBg.dataset.bound) {
+        modalCloseBg.dataset.bound = '1';
+        modalCloseBg.addEventListener('click', closeModal);
+      }
     } else {
       elHistoryList.innerHTML = `
         <div class="dash-history-empty">

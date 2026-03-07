@@ -1,21 +1,25 @@
 const fs = require('fs');
 const jsdom = require('jsdom');
 const { JSDOM } = jsdom;
-const dom = new JSDOM('<!DOCTYPE html><p>Test</p>');
-global.window = dom.window;
-global.document = dom.window.document;
-global.navigator = dom.window.navigator;
-global.IntersectionObserver = class IntersectionObserver {
-  observe() {}
-  unobserve() {}
+
+const html = fs.readFileSync('index.html', 'utf8');
+const scriptCode = fs.readFileSync('scripts.js', 'utf8');
+
+const dom = new JSDOM(html, {
+  url: "http://127.0.0.1:8080/",
+  runScripts: "dangerously"
+});
+
+// Polyfill for IntersectionObserver
+dom.window.IntersectionObserver = class IntersectionObserver {
+  observe() { }
+  unobserve() { }
 };
 
-const code = fs.readFileSync('scripts.js', 'utf8');
-
 try {
-  eval(code);
-  console.log('Script executed successfully. loginGoogle type:', typeof loginGoogle);
+  dom.window.eval(scriptCode);
+  console.log('Script executed. typeof loginGoogle:', typeof dom.window.loginGoogle);
 } catch (e) {
-  console.error('ERROR CAUGHT!!!');
-  console.error(e.stack);
+  console.log('CRASH CAUGHT IN index.html CONTEXT!!!');
+  console.log(e.stack);
 }

@@ -956,26 +956,24 @@ a {
 .mock-expl-row {
   display: flex;
   align-items: stretch;
-  /* Kluczowe: rozciąga dzieci do tej samej wysokości */
   gap: 8px;
   margin-bottom: 8px;
 }
 
 .mock-pill {
+  width: 65px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 65px;
-  /* Stała szerokość zgodnie z wymogiem */
-  flex-shrink: 0;
-
+  padding: 6px 8px;
   font-size: .48rem;
   font-weight: 800;
+  line-height: 1;
   text-transform: uppercase;
   letter-spacing: .04em;
   border-radius: 4px;
   white-space: nowrap;
-  line-height: 1;
 }
 
 .mock-pill.why {
@@ -988,6 +986,19 @@ a {
   background: rgba(108, 99, 255, .25);
   color: #857dff;
   border: 1px solid rgba(108, 99, 255, .5);
+}
+
+.mock-expl-copy {
+  flex: 1;
+  font-size: .68rem;
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--c-label);
+}
+
+.mock-expl-copy strong,
+.mock-expl-copy b {
+  font-weight: 700;
 }
 
 .mock-text-bright {

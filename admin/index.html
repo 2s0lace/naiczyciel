@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Admina — nAIczyciel</title>
+  <meta name="description" content="Panel administracyjny nAIczyciel: pytania, kategorie, statystyki i publikacja zestawów." />
+  <link rel="stylesheet" href="../shared/base.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+
+<body>
+  <nav class="navbar">
+    <div class="navbar__inner">
+      <a href="../" class="navbar__logo">
+        <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
+      </a>
+      <div class="auth-container" id="admin-auth-container"></div>
+    </div>
+  </nav>
+
+  <main class="admin container">
+    <section class="admin__hero">
+      <p class="admin__eyebrow">Panel administracyjny</p>
+      <h1>nAIczyciel Admin</h1>
+      <p class="admin__sub">Zarządzanie treścią quizów i szybki podgląd danych.</p>
+    </section>
+
+    <section id="admin-guard" class="admin__guard hidden">
+      <h2>Wymagane logowanie</h2>
+      <p>Musisz być zalogowany, aby korzystać z panelu admina.</p>
+      <a class="admin__login-link" href="../auth/">Przejdź do logowania</a>
+    </section>
+
+    <section id="admin-app" class="admin__app hidden">
+      <div class="admin__tabs" role="tablist" aria-label="Sekcje admina">
+        <button class="admin__tab is-active" data-tab="questions" role="tab" aria-selected="true">Pytania</button>
+        <button class="admin__tab" data-tab="categories" role="tab" aria-selected="false">Kategorie</button>
+        <button class="admin__tab" data-tab="stats" role="tab" aria-selected="false">Statystyki</button>
+        <button class="admin__tab" data-tab="publish" role="tab" aria-selected="false">Publikacja</button>
+      </div>
+
+      <section class="admin__panel" id="panel-questions" role="tabpanel">
+        <div class="admin__panel-head">
+          <h2>Zarządzanie pytaniami</h2>
+          <button id="seed-questions-btn" class="admin__btn admin__btn--ghost">Załaduj próbne</button>
+        </div>
+
+        <form id="question-form" class="admin__form">
+          <input type="hidden" id="q-id" />
+          <div class="admin__form-grid">
+            <label>
+              Typ
+              <select id="q-type" required>
+                <option value="reactions">Reakcje językowe</option>
+                <option value="reading">Reading</option>
+                <option value="vocabulary">Słownictwo</option>
+                <option value="grammar">Gramatyka</option>
+              </select>
+            </label>
+            <label>
+              Temat
+              <input id="q-topic" required placeholder="np. Szkoła" />
+            </label>
+            <label>
+              Poziom
+              <input id="q-level" required placeholder="np. A2" value="A2" />
+            </label>
+            <label>
+              Poprawna odpowiedź (index 0-2)
+              <input id="q-correct" type="number" min="0" max="2" required value="0" />
+            </label>
+          </div>
+          <label>
+            Pytanie
+            <textarea id="q-question" required rows="3" placeholder="Treść pytania"></textarea>
+          </label>
+          <label>
+            Odpowiedzi (oddzielone " | ")
+            <input id="q-answers" required placeholder="A... | B... | C..." />
+          </label>
+          <div class="admin__form-grid">
+            <label>
+              Dlaczego
+              <textarea id="q-why" required rows="2"></textarea>
+            </label>
+            <label>
+              Uważaj
+              <textarea id="q-watch" required rows="2"></textarea>
+            </label>
+            <label>
+              Wzorzec
+              <textarea id="q-pattern" required rows="2"></textarea>
+            </label>
+          </div>
+          <div class="admin__actions">
+            <button type="submit" class="admin__btn">Zapisz pytanie</button>
+            <button type="button" id="clear-question-btn" class="admin__btn admin__btn--ghost">Wyczyść</button>
+          </div>
+        </form>
+
+        <div class="admin__table-wrap">
+          <table class="admin__table" id="questions-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Typ</th>
+                <th>Temat</th>
+                <th>Pytanie</th>
+                <th>Akcje</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin__panel hidden" id="panel-categories" role="tabpanel">
+        <div class="admin__panel-head">
+          <h2>Zarządzanie kategoriami</h2>
+        </div>
+        <form id="category-form" class="admin__form">
+          <div class="admin__form-grid admin__form-grid--4">
+            <label>
+              Klucz
+              <input id="cat-key" required placeholder="np. reactions" />
+            </label>
+            <label>
+              Nazwa
+              <input id="cat-label" required placeholder="np. Reakcje językowe" />
+            </label>
+            <label>
+              Kolor
+              <input id="cat-color" placeholder="#6c63ff" value="#6c63ff" />
+            </label>
+            <label class="admin__checkbox">
+              <input type="checkbox" id="cat-active" checked />
+              Aktywna
+            </label>
+          </div>
+          <label>
+            Opis
+            <input id="cat-desc" placeholder="Krótki opis kategorii" />
+          </label>
+          <div class="admin__actions">
+            <button type="submit" class="admin__btn">Dodaj kategorię</button>
+          </div>
+        </form>
+
+        <div id="categories-list" class="admin__chips"></div>
+      </section>
+
+      <section class="admin__panel hidden" id="panel-stats" role="tabpanel">
+        <div class="admin__panel-head">
+          <h2>Podgląd wyników i statystyk</h2>
+        </div>
+        <div class="admin__stats" id="admin-stats-cards"></div>
+        <div class="admin__table-wrap">
+          <table class="admin__table" id="stats-history-table">
+            <thead>
+              <tr>
+                <th>Zestaw</th>
+                <th>Wynik</th>
+                <th>Czas</th>
+                <th>Data</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="admin__panel hidden" id="panel-publish" role="tabpanel">
+        <div class="admin__panel-head">
+          <h2>Publikacja zestawów</h2>
+        </div>
+        <form id="publish-form" class="admin__form">
+          <div class="admin__form-grid admin__form-grid--3">
+            <label>
+              Nazwa zestawu
+              <input id="set-name" required placeholder="np. E8 #2026-03-07" />
+            </label>
+            <label>
+              Liczba pytań
+              <input id="set-size" type="number" min="1" max="30" value="10" required />
+            </label>
+            <label class="admin__checkbox">
+              <input id="set-published" type="checkbox" checked />
+              Opublikowany
+            </label>
+          </div>
+          <div class="admin__actions">
+            <button type="submit" class="admin__btn">Utwórz zestaw</button>
+          </div>
+        </form>
+
+        <div class="admin__table-wrap">
+          <table class="admin__table" id="sets-table">
+            <thead>
+              <tr>
+                <th>Nazwa</th>
+                <th>Pytania</th>
+                <th>Status</th>
+                <th>Utworzono</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="admin.js"></script>
+</body>
+
+</html>

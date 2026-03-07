@@ -715,6 +715,12 @@ async function logout() {
   window.location.reload();
 }
 
+function getAdminHref() {
+  const path = window.location.pathname || '';
+  const inSubdir = /\/(e8|auth|contact|privacy|terms)\//.test(path);
+  return inSubdir ? '../admin/' : 'admin/';
+}
+
 // Custom dropdown logic
 function toggleDropdown(event, menuId) {
   event.stopPropagation();
@@ -771,6 +777,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             </button>
             <button class="profile-menu-item" onclick="alert('Ustawienia aplikacji wkrótce!')">
               <span style="font-size: 1.1rem;">⚙️</span> Ustawienia
+            </button>
+            <button class="profile-menu-item" onclick="window.location.href='${getAdminHref()}'">
+              <span style="font-size: 1.1rem;">🛠️</span> Panel admina
             </button>
             <div class="profile-menu-divider"></div>
             <button class="profile-menu-item" onclick="logout()" style="color: var(--c-red);">

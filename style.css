@@ -1517,6 +1517,119 @@ a {
   transform: translateY(-1px);
 }
 
+/* ─── Performance Insights ─────────────────────────────── */
+
+/* Topic chips bar — inline under percent */
+.insights-topics-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 8px auto 0;
+  width: 100%;
+  max-width: 320px;
+}
+
+.topic-chip {
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+}
+
+.topic-chip--good {
+  background: rgba(34, 197, 94, .12);
+  color: var(--c-green);
+  border-color: rgba(34, 197, 94, .25);
+}
+
+.topic-chip--bad {
+  background: rgba(245, 158, 11, .1);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, .25);
+}
+
+/* Single words box */
+.insights {
+  width: 100%;
+  max-width: 320px;
+  margin: 10px auto 20px;
+  background: linear-gradient(180deg, rgba(167, 139, 250, .1) 0%, var(--c-surface) 52px);
+  border: 1px solid var(--c-border);
+  border-top-color: rgba(167, 139, 250, .4);
+  border-radius: var(--radius-lg);
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.insights__words-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.insights__words-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.insights__heading {
+  font-family: 'Outfit', sans-serif;
+  font-size: .7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin: 0;
+}
+
+.insights__heading--words {
+  color: #a78bfa;
+}
+
+.insights__toggle,
+.insights__pdf {
+  font-size: .65rem;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--c-border);
+  background: transparent;
+  color: var(--c-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .15s;
+}
+
+.insights__toggle:hover,
+.insights__pdf:hover {
+  background: rgba(255, 255, 255, .05);
+  color: var(--c-text);
+}
+
+.insights__pdf {
+  color: #a78bfa;
+  border-color: rgba(167, 139, 250, .3);
+}
+
+.insights__list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.insights__list--words li {
+  font-size: .82rem;
+  color: var(--c-muted);
+  font-style: italic;
+  padding: 2px 0;
+}
+
 /* Result paywall teaser */
 .result__paywall {
   margin-top: 44px;

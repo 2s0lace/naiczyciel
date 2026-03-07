@@ -354,6 +354,21 @@
     <div class="result__score" id="result-score">8 / 10</div>
     <p class="result__percent" id="result-percent">80% poprawnych odpowiedzi</p>
 
+    <!-- Inline topic accuracy chips -->
+    <div class="insights-topics-bar" id="insights-topics-bar"></div>
+
+    <!-- Words to review — single collapsible box -->
+    <div class="insights" id="insights-panel" style="display:none">
+      <div class="insights__words-header">
+        <h4 class="insights__heading insights__heading--words">Powtórz słownictwo</h4>
+        <div class="insights__words-actions">
+          <button class="insights__toggle" id="insights-toggle" aria-expanded="false">Pokaż ▾</button>
+          <button class="insights__pdf" id="insights-pdf">Eksportuj PDF</button>
+        </div>
+      </div>
+      <ul class="insights__list insights__list--words" id="insights-words-list"></ul>
+    </div>
+
     <div class="result__actions">
       <button class="btn-retry" id="btn-retry">Spróbuj nowego zestawu</button>
       <button class="btn-premium open-modal-btn">Odblokuj pełny dostęp →</button>

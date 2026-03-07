@@ -175,6 +175,7 @@ const questions = [
     question: "Wybierz właściwe słowo:\n\nCan you ___ the table before dinner? We're eating in five minutes.",
     answers: ["A. make", "B. lay", "C. do"],
     correct: 1,
+    keywords: ["lay the table", "make a bed", "do the dishes"],
     explanation: {
       why: "'Lay the table' to stały kolokacja oznaczająca nakrywanie do stołu — nie używamy tu 'make' ani 'do'.",
       watch_out: "lay the table = nakryć do stołu; make a bed = posłać łóżko; do the dishes = zmywać.",
@@ -186,6 +187,7 @@ const questions = [
     question: "Wybierz właściwe słowo:\n\nI didn't feel well this morning, so I decided to ___ the doctor.",
     answers: ["A. visit to", "B. see", "C. look"],
     correct: 1,
+    keywords: ["see the doctor", "feel well", "decide to"],
     explanation: {
       why: "'See the doctor' to naturalna kolokacja oznaczająca wizytę u lekarza — bez przyimka 'to'.",
       watch_out: "see the doctor = iść do lekarza; visit to = błąd ('visit' nie wymaga 'to'); look = patrzeć.",
@@ -199,6 +201,7 @@ const questions = [
     question: "Wybierz poprawną formę:\n\nShe ___ already ___ her homework, so she can go out now.",
     answers: ["A. has / finished", "B. did / finish", "C. is / finishing"],
     correct: 0,
+    keywords: ["has finished", "already", "present perfect"],
     explanation: {
       why: "'Already' z Present Perfect informuje, że czynność jest ukończona przed chwilą — mamy efekt (może wyjść).",
       watch_out: "already + Present Perfect = czynność już zakończona; 'did finish' — czas przeszły bez 'already'; 'is finishing' = właśnie kończy.",
@@ -210,6 +213,7 @@ const questions = [
     question: "Wybierz poprawną formę:\n\nThis exercise is ___ than the last one.",
     answers: ["A. more difficult", "B. difficulter", "C. most difficult"],
     correct: 0,
+    keywords: ["more difficult", "comparative", "than"],
     explanation: {
       why: "'Difficult' to przymiotnik wielosylabowy — stopień wyższy tworzy się przez 'more', nie przez '-er'.",
       watch_out: "difficulter = błąd (nie istnieje); most difficult = stopień najwyższy; 'than' wymaga stopnia wyższego.",
@@ -221,6 +225,7 @@ const questions = [
     question: "Wybierz poprawną odpowiedź:\n\nYou ___ eat in the library. It's not allowed.",
     answers: ["A. should", "B. mustn't", "C. needn't"],
     correct: 1,
+    keywords: ["mustn't", "needn't", "should", "modal verbs"],
     explanation: {
       why: "'Mustn't' wyraża zakaz — nie wolno czegoś robić. Pasuje do sytuacji, gdy coś jest niedozwolone.",
       watch_out: "mustn't = nie wolno (zakaz); needn't = nie musisz (brak obowiązku); should = powinieneś — to rada.",
@@ -253,6 +258,7 @@ let currentIndex = 0;
 let score = 0;
 let answered = false;
 let answers = []; // null | selectedIndex per question
+let userResults = []; // { type, topic, correct, keywords? } per answered question
 
 /* ─── Screens ────────────────────────────────────────────── */
 const screenLanding = document.getElementById('screen-landing');
@@ -314,6 +320,7 @@ function startQuiz() {
   currentIndex = 0;
   score = 0;
   answers = new Array(sessionQuestions.length).fill(null);
+  userResults = [];
   showScreen('quiz');
   renderQuestion();
 }
@@ -369,6 +376,15 @@ function selectAnswer(idx, selectedBtn, q) {
   answered = true;
   answers[currentIndex] = idx;
 
+  // Track result for analytics
+  const isCorrect = idx === q.correct;
+  userResults.push({
+    type: q.type,
+    topic: q.topic,
+    correct: isCorrect,
+    keywords: isCorrect ? [] : (q.keywords || [])
+  });
+
   const buttons = answersEl.querySelectorAll('.answer-btn');
   buttons.forEach((btn, i) => {
     btn.disabled = true;
@@ -409,6 +425,22 @@ prevNavBtn.addEventListener('click', () => {
 
 function showResult() {
   const total = sessionQuestions.length;
+
+  // For any skipped questions, push them into userResults as wrong
+  let skippedCount = 0;
+  answers.forEach((sel, i) => {
+    if (sel === null) {
+      skippedCount++;
+      const q = sessionQuestions[i];
+      userResults.push({
+        type: q.type,
+        topic: q.topic,
+        correct: false,
+        keywords: q.keywords || []
+      });
+    }
+  });
+
   // Calculate score from answers array
   score = answers.reduce((acc, sel, i) => {
     return acc + (sel === sessionQuestions[i].correct ? 1 : 0);
@@ -426,8 +458,100 @@ function showResult() {
   document.getElementById('result-percent').textContent = `${percent}% poprawnych odpowiedzi`;
 
   progressBar.style.width = '100%';
+  renderInsights();
   showScreen('result');
 }
+
+/* ─── Performance Insights ──────────────────────────── */
+const typeNames = {
+  reactions: 'Reakcje językowe',
+  reading: 'Reading',
+  vocabulary: 'Słownictwo',
+  grammar: 'Gramatyka'
+};
+
+function computeTopicStats(results) {
+  const stats = {};
+  results.forEach(r => {
+    const key = r.type; // group by question type for MVP
+    if (!stats[key]) stats[key] = { correct: 0, total: 0 };
+    stats[key].total++;
+    if (r.correct) stats[key].correct++;
+  });
+  for (const key in stats) {
+    stats[key].accuracy = Math.round((stats[key].correct / stats[key].total) * 100);
+  }
+  return stats;
+}
+
+function renderInsights() {
+  const results = userResults;
+
+  // 1. Inline topic accuracy chips under percent
+  const stats = computeTopicStats(results);
+  const topicsBar = document.getElementById('insights-topics-bar');
+  const nonVocabEntries = Object.entries(stats).filter(([t]) => t !== 'vocabulary');
+
+  if (topicsBar) {
+    topicsBar.innerHTML = nonVocabEntries
+      .map(([type, data]) => {
+        const good = data.accuracy >= 70;
+        return `<span class="topic-chip ${good ? 'topic-chip--good' : 'topic-chip--bad'}">${typeNames[type] || type} ${data.accuracy}%</span>`;
+      }).join('');
+  }
+
+  // Compute averaged chip color for the box gradient
+  // amber: (245,158,11) = bad, green: (34,197,94) = good
+  const goodCount = nonVocabEntries.filter(([, d]) => d.accuracy >= 70).length;
+  const ratio = nonVocabEntries.length ? goodCount / nonVocabEntries.length : 0.5;
+  const r = Math.round(245 + (34 - 245) * ratio);
+  const g = Math.round(158 + (197 - 158) * ratio);
+  const b = Math.round(11 + (94 - 11) * ratio);
+  const gradCol = `rgba(${r},${g},${b}`;
+
+  // 2. Words to review — vocabulary type only, collapsible
+  const vocabWords = [...new Set(
+    results
+      .filter(r => !r.correct && r.type === 'vocabulary')
+      .flatMap(r => r.keywords || [])
+  )];
+
+  const panel = document.getElementById('insights-panel');
+  const wordsList = document.getElementById('insights-words-list');
+  if (panel && vocabWords.length) {
+    wordsList.innerHTML = vocabWords.map(w => `<li>${w}</li>`).join('');
+    wordsList.style.display = ''; // expanded by default
+    const toggleBtn = document.getElementById('insights-toggle');
+    if (toggleBtn) { toggleBtn.setAttribute('aria-expanded', 'true'); toggleBtn.textContent = 'Ukryj ▴'; }
+    panel.style.display = '';
+  } else if (panel) {
+    panel.style.display = 'none';
+  }
+}
+
+// Toggle words list
+document.getElementById('insights-toggle').addEventListener('click', function () {
+  const list = document.getElementById('insights-words-list');
+  const open = this.getAttribute('aria-expanded') === 'true';
+  this.setAttribute('aria-expanded', !open);
+  this.textContent = open ? 'Pokaż ▾' : 'Ukryj ▴';
+  list.style.display = open ? 'none' : '';
+});
+
+// PDF export
+document.getElementById('insights-pdf').addEventListener('click', () => {
+  const words = [...document.querySelectorAll('#insights-words-list li')].map(li => li.textContent);
+  if (!words.length) return;
+  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Słownictwo do powtórki</title>
+    <style>body{font-family:sans-serif;padding:32px}h2{margin-bottom:16px}li{font-size:1.1rem;margin:6px 0}</style>
+    </head><body><h2>📝 Słownictwo do powtórki</h2><ul>${words.map(w => `<li>${w}</li>`).join('')}</ul></body></html>`;
+  const win = window.open('', '_blank');
+  if (!win) return;
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  win.print();
+});
 
 /* ─── Retry & Home ───────────────────────────────────────── */
 document.getElementById('btn-retry').addEventListener('click', startQuiz);
@@ -509,10 +633,14 @@ revealEls.forEach(el => revealObserver.observe(el));
 /* ─── "Wkrótce" toast ────────────────────────────────────── */
 const toast = document.getElementById('toast');
 let toastTimer;
-function showToast() {
+function showToast(msg) {
   clearTimeout(toastTimer);
+  toast.textContent = msg || 'Wkrótce! 🚀';
   toast.classList.remove('hidden');
-  toastTimer = setTimeout(() => toast.classList.add('hidden'), 2200);
+  toastTimer = setTimeout(() => {
+    toast.classList.add('hidden');
+    toast.textContent = 'Wkrótce! 🚀'; // reset
+  }, 2800);
 }
 document.querySelectorAll('.soon-tile').forEach(el => {
   el.addEventListener('click', showToast);

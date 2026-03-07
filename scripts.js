@@ -464,7 +464,7 @@ function showResult() {
 
 /* ─── Performance Insights ──────────────────────────── */
 const typeNames = {
-  reactions: 'Reakcje językowe',
+  reactions: 'Reakcje',
   reading: 'Reading',
   vocabulary: 'Słownictwo',
   grammar: 'Gramatyka'

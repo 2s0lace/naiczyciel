@@ -715,6 +715,30 @@ async function logout() {
   window.location.reload();
 }
 
+// Custom dropdown logic
+function toggleDropdown(event, menuId) {
+  event.stopPropagation();
+  const menu = document.getElementById(menuId);
+  if (!menu) return;
+
+  // Close all other open dropdowns first to be safe
+  document.querySelectorAll('.profile-menu.show').forEach(m => {
+    if (m.id !== menuId) m.classList.remove('show');
+  });
+
+  menu.classList.toggle('show');
+}
+
+// Close dropdown if clicked outside
+document.addEventListener('click', (event) => {
+  const isDropdownClick = event.target.closest('.profile-dropdown');
+  if (!isDropdownClick) {
+    document.querySelectorAll('.profile-menu.show').forEach(m => {
+      m.classList.remove('show');
+    });
+  }
+});
+
 // Check session on load and update UI
 document.addEventListener('DOMContentLoaded', async () => {
   if (!supabaseClient) return;
@@ -735,14 +759,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       const firstName = fullName.split(' ')[0];
 
       container.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 4px 12px 4px 4px; border-radius: 99px; border: 1px solid rgba(255,255,255,0.1);">
+        <div class="profile-dropdown" id="profile-dropdown-${firstName.toLowerCase()}">
+          <div class="profile-trigger" onclick="toggleDropdown(event, 'menu-${firstName.toLowerCase()}')">
             ${avatarUrl ? `<img src="${avatarUrl}" alt="Avatar" style="width: 24px; height: 24px; border-radius: 50%;">` : `<div style="width: 24px; height: 24px; border-radius: 50%; background: var(--c-primary); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">${firstName.charAt(0)}</div>`}
             <span style="font-size: .85rem; font-weight: 600; color: var(--c-text);">${firstName}</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-left: 2px; color: var(--c-muted);"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </div>
-          <button onclick="logout()" style="background: transparent; border: none; color: var(--c-muted); font-size: .8rem; cursor: pointer; text-decoration: underline;">Wyloguj</button>
-        </div>
-      `;
+          <div class="profile-menu" id="menu-${firstName.toLowerCase()}">
+            <button class="profile-menu-item" onclick="alert('Ustawienia konta wkrótce!')">
+              <span style="font-size: 1.1rem;">👤</span> Konto
+            </button>
+            <button class="profile-menu-item" onclick="alert('Ustawienia aplikacji wkrótce!')">
+              <span style="font-size: 1.1rem;">⚙️</span> Ustawienia
+            </button>
+            <div class="profile-menu-divider"></div>
+            <button class="profile-menu-item" onclick="logout()" style="color: var(--c-red);">
+              <span style="font-size: 1.1rem;">🚪</span> Wyloguj
+            </button>
+          </div>
+        </div >
+        `;
     });
   }
 });

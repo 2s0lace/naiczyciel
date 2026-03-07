@@ -8,12 +8,6 @@
   <meta name="description"
     content="Szybki, nowoczesny symulator egzaminu ósmoklasisty z angielskiego. Ćwicz reakcje językowe, słownictwo i gramatykę." />
   <link rel="stylesheet" href="../style.css" />
-  <script>
-    // Synchronous auth hint to prevent FOUC (Flash of Unauthenticated Content)
-    if (localStorage.getItem('e8-auth-hint') === 'true') {
-      document.documentElement.classList.add('is-logged-in-hint');
-    }
-  </script>
 </head>
 
 <body class="auth-loading">
@@ -106,15 +100,41 @@
             <div class="hero__phone-screen">
               <!-- Screen 1: Quiz question -->
               <div class="mock-quiz">
-                <div class="mock-tag">💬 Reakcje językowe</div>
+                <div class="mock-tag"><span role="img" aria-label="speech">💬</span> REAKCJE JĘZYKOWE</div>
                 <p class="mock-question">Kolega nie może przyjść na Twoje urodziny i przeprasza. Jak reagujesz?</p>
                 <div class="mock-answers">
                   <div class="mock-ans">A. I hope you liked my party very much.</div>
                   <div class="mock-ans mock-ans--correct">B. What a pity you can't make it!</div>
                   <div class="mock-ans">C. You must buy me a present later.</div>
                 </div>
+
+                <div class="mock-expl"
+                  style="margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px;">
+                  <div class="mock-expl-row" style="margin-bottom: 8px;">
+                    <span class="mock-pill why">DLACZEGO?</span>
+                    <span>Wyrażasz współczucie, że ktoś nie może przyjść — typowa reakcja językowa.</span>
+                  </div>
+                  <div class="mock-expl-row">
+                    <span class="mock-pill pat">WZORZEC</span>
+                    <span>What a pity... → wyrażanie żalu / rozczarowania</span>
+                  </div>
+                </div>
+
+                <div class="mock-divider" style="height: 1px; background: rgba(255,255,255,0.08); margin: 18px 0;">
+                </div>
+
+                <div class="mock-result" style="text-align: center;">
+                  <div style="font-size: 1.8rem; margin-bottom: 8px;">🎉</div>
+                  <p style="font-size: .8rem; color: var(--c-muted); margin-bottom: 4px;">Nieźle, ćwicz dalej!</p>
+                  <div
+                    style="font-size: 2.2rem; font-weight: 900; color: #fff; margin-bottom: 4px; text-shadow: 0 0 15px rgba(255,255,255,0.2);">
+                    7/10</div>
+                  <p style="font-size: .7rem; color: var(--c-muted); margin-bottom: 16px;">70% poprawnych odpowiedzi</p>
+                  <button class="btn-cta"
+                    style="width: 100%; border-radius: 99px; background: rgba(108, 99, 255, 0.2); border: 1px solid var(--c-primary); font-size: 0.8rem; padding: 10px;">Nowy
+                    zestaw →</button>
+                </div>
               </div>
-              <!-- Result divider and score removed for brevity in mockup -->
             </div>
           </div>
           <p class="mock-caption hero__phone-caption">Po każdej odpowiedzi dostajesz wyjaśnienie i rezultat</p>

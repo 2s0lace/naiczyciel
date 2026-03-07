@@ -1383,6 +1383,24 @@ a {
 }
 
 /* ─── Footer ────────────────────────────────────────────── */
+/* Standardized SEO block style */
+.footer-seo {
+  max-width: 640px;
+  margin: 48px auto;
+  padding: 0 24px;
+  text-align: left;
+  opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+  .footer-seo {
+    margin: 24px auto;
+    padding: 0 20px;
+    text-align: center;
+    /* Center text on mobile for better balance */
+  }
+}
+
 .footer {
   padding: 32px 20px;
   border-top: 1px solid var(--c-border);
@@ -1408,6 +1426,15 @@ a {
   justify-content: center;
   gap: 6px 16px;
   margin: 12px 0 8px;
+}
+
+@media (max-width: 768px) {
+  .footer__nav {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    margin: 20px 0;
+  }
 }
 
 .footer__nav a {

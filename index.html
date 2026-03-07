@@ -28,26 +28,97 @@
 
     <!-- Hero -->
     <section class="hero">
-      <!-- Brand: logo + name inline -->
-      <div class="hero__brand">
-        <img src="img/logonaiczyciel.png" alt="" class="hero__brand-logo">
-        <h1 class="hero__brand-name">n<em>AI</em>czyciel <span class="e8-tag">E8</span></h1>
+      <div class="hero__layout">
+
+        <!-- LEFT: brand + steps + CTA -->
+        <div class="hero__left">
+          <div class="hero__brand">
+            <img src="img/logonaiczyciel.png" alt="" class="hero__brand-logo">
+            <h1 class="hero__brand-name">n<em>AI</em>czyciel <span class="e8-tag">E8</span></h1>
+          </div>
+          <div class="hero__soon-tags">
+            <button class="hero__soon-tag is-active">Egzamin ósmoklasisty</button>
+            <button class="hero__soon-tag soon-tile">Matura</button>
+            <button class="hero__soon-tag soon-tile">Edukacja</button>
+          </div>
+
+          <ol class="hero__steps">
+            <li class="hero__step">
+              <span class="hero__step-num">01</span>
+              <div>
+                <h3>Rozwiązuj pytania egzaminacyjne</h3>
+                <p>Ćwicz reakcje językowe, reading i zadania gramatyczne w stylu E8.</p>
+              </div>
+            </li>
+            <li class="hero__step">
+              <span class="hero__step-num">02</span>
+              <div>
+                <h3>Zobacz krótkie wyjaśnienie</h3>
+                <p>Dowiedz się dlaczego odpowiedź jest poprawna. Bez długich definicji.</p>
+              </div>
+            </li>
+            <li class="hero__step">
+              <span class="hero__step-num">03</span>
+              <div>
+                <h3>Sprawdź wynik</h3>
+                <p>Dostajesz wynik i możesz zrobić kolejny zestaw.</p>
+              </div>
+            </li>
+          </ol>
+
+          <button class="hero__cta" id="hero-start-btn">
+            Zacznij próbny quiz
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </button>
+          <p class="hero__cta-subtext">10 pytań &nbsp;•&nbsp; ~2 minuty &nbsp;•&nbsp; od razu zobaczysz wynik</p>
+        </div>
+
+        <!-- RIGHT: phone mockup (desktop only) -->
+        <div class="hero__right" aria-hidden="true">
+          <div class="hero__phone">
+            <div class="hero__phone-bar">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="hero__phone-screen">
+
+              <!-- Screen 1: Quiz question -->
+              <div class="mock-quiz">
+                <div class="mock-tag">💬 Reakcje językowe</div>
+                <p class="mock-question">Kolega nie może przyjść na Twoje urodziny i przeprasza. Jak reagujesz?</p>
+                <div class="mock-answers">
+                  <div class="mock-ans">A. I hope you liked my party very much.</div>
+                  <div class="mock-ans mock-ans--correct">B. What a pity you can't make it!</div>
+                  <div class="mock-ans">C. You must buy me a present later.</div>
+                </div>
+                <div class="mock-expl">
+                  <p class="mock-expl-row"><span class="expl-tag why">Dlaczego?</span>Wyrażasz współczucie, że ktoś nie
+                    może przyjść — typowa reakcja językowa.</p>
+                  <p class="mock-expl-row"><span class="expl-tag pattern">Wzorzec</span>What a pity... → wyrażanie żalu
+                    / rozczarowania</p>
+                </div>
+              </div>
+
+              <!-- Divider -->
+              <div class="mock-divider"></div>
+
+              <!-- Screen 2: Result -->
+              <div class="mock-result">
+                <div class="mock-emoji">🎉</div>
+                <p class="mock-label">Nieźle, ćwicz dalej!</p>
+                <div class="mock-score">7 / 10</div>
+                <p class="mock-percent">70% poprawnych odpowiedzi</p>
+                <button class="mock-btn">Nowy zestaw →</button>
+              </div>
+
+            </div>
+          </div>
+          <p class="mock-caption hero__phone-caption">Po każdej odpowiedzi dostajesz wyjaśnienie i rezultat</p>
+        </div>
+
       </div>
-      <!-- Product tags row -->
-      <div class="hero__soon-tags">
-        <button class="hero__soon-tag is-active">Egzamin ósmoklasisty</button>
-        <button class="hero__soon-tag soon-tile">Matura</button>
-        <button class="hero__soon-tag soon-tile">Edukacja</button>
-      </div>
-      <p class="hero__sub">Szybkie zestawy pytań do E8. Wynik, wyjaśnienia i codzienny trening — bez ścian tekstu.</p>
-      <button class="hero__cta" id="hero-start-btn">
-        Zacznij próbny quiz
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-            stroke-linejoin="round" />
-        </svg>
-      </button>
-      <p class="hero__cta-subtext">10 pytań &nbsp;•&nbsp; ~2 minuty &nbsp;•&nbsp; od razu zobaczysz wynik</p>
     </section>
 
     <!-- Preview question -->
@@ -67,6 +138,20 @@
             rozczarowania</p>
         </div>
         <p class="preview__label">👆 Po każdej odpowiedzi dostajesz wyjaśnienie</p>
+      </div>
+    </section>
+
+    <!-- Author -->
+    <section class="author reveal">
+      <div class="container">
+        <div class="author__card">
+          <div class="author__avatar">👨‍🏫</div>
+          <div class="author__body">
+            <p class="author__quote">Od kilku lat prowadzę korepetycje i zajęcia językowe, a ten projekt stworzyłem,
+              żeby ułatwić uczniom szybki trening przed egzaminem.</p>
+            <span class="author__role">korepetytor / lektor</span>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -139,15 +224,21 @@
             <div class="cat__tile__name">Gramatyka</div>
             <div class="cat__tile__count">3 zadania</div>
           </div>
-          <div class="cat__tile soon-tile">
-            <div class="cat__tile__icon">🎓</div>
-            <div class="cat__tile__name">Matura</div>
-            <div class="cat__tile__count">Wkrótce</div>
-          </div>
-          <div class="cat__tile soon-tile">
-            <div class="cat__tile__icon">🏫</div>
-            <div class="cat__tile__name">Dla edukacji</div>
-            <div class="cat__tile__count">Wkrótce</div>
+          <div class="cat__tile soon-tile" style="display:none"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Methodology -->
+    <section class="author reveal">
+      <div class="container">
+        <div class="author__card">
+          <div class="author__avatar">📄</div>
+          <div class="author__body">
+            <p class="author__quote">Wszystkie zadania są przygotowywane na podstawie oficjalnych arkuszy
+              egzaminacyjnych ósmoklasisty — analizujemy słownictwo, reakcje językowe i wzorce powtarzające się między
+              rocznikami, żeby każde ćwiczenie trafiało dokładnie w to, co pojawia się na egzaminie.</p>
+            <span class="author__role">oparte na arkuszach E8</span>
           </div>
         </div>
       </div>

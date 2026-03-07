@@ -37,99 +37,108 @@
     <section class="hero">
       <div class="hero__layout">
 
-        <!-- LEFT: brand + steps + CTA -->
-        <div class="hero__left">
+        <!-- Marketing View (Visible for guest) -->
+        <div id="e8-marketing-view" style="display: flex; width: 100%; gap: 32px; flex-wrap: wrap;">
+          <!-- LEFT: brand + steps + CTA -->
+          <div class="hero__left" style="flex: 1; min-width: 300px;">
+            <div class="hero__brand">
+              <img src="../img/logonaiczyciel.png" alt="" class="hero__brand-logo">
+              <h1 class="hero__brand-name">n<em>AI</em>czyciel <span class="e8-tag">E8</span></h1>
+            </div>
+            <div class="hero__pills-wrapper">
+              <div class="hero__pills-active">
+                <button class="hero__soon-tag is-active">Egzamin ósmoklasisty</button>
+                <button class="hero__soon-tag is-active"
+                  onclick="window.location.href='../contact/'">Korepetycje</button>
+              </div>
+              <div class="hero__pills-soon-box">
+                <span class="hero__pills-soon-label">Wkrótce:</span>
+                <div class="hero__pills-soon">
+                  <button class="hero__soon-tag soon-tile" disabled>Matura</button>
+                  <button class="hero__soon-tag soon-tile" disabled>Edukacja</button>
+                </div>
+              </div>
+            </div>
+            <ol class="hero__steps">
+              <li class="hero__step">
+                <span class="hero__step-num">01</span>
+                <div>
+                  <h3>Rozwiązuj pytania egzaminacyjne</h3>
+                  <p>Ćwicz reakcje językowe, reading i zadania gramatyczne w stylu E8.</p>
+                </div>
+              </li>
+              <li class="hero__step">
+                <span class="hero__step-num">02</span>
+                <div>
+                  <h3>Zobacz krótkie wyjaśnienie</h3>
+                  <p>Dowiedz się dlaczego odpowiedź jest poprawna. Bez długich definicji.</p>
+                </div>
+              </li>
+              <li class="hero__step">
+                <span class="hero__step-num">03</span>
+                <div>
+                  <h3>Sprawdź wynik</h3>
+                  <p>Dostajesz wynik i możesz zrobić kolejny zestaw.</p>
+                </div>
+              </li>
+            </ol>
+
+            <button class="hero__cta" id="hero-start-btn">
+              Zacznij próbny quiz
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </button>
+            <p class="hero__cta-subtext">10 pytań &nbsp;•&nbsp; ~2 minuty &nbsp;•&nbsp; od razu zobaczysz wynik</p>
+          </div>
+
+          <!-- RIGHT: phone mockup (desktop only) -->
+          <div class="hero__right" aria-hidden="true">
+            <div class="hero__phone">
+              <div class="hero__phone-bar">
+                <span></span><span></span><span></span>
+              </div>
+              <div class="hero__phone-screen">
+                <!-- Screen 1: Quiz question -->
+                <div class="mock-quiz">
+                  <div class="mock-tag">💬 Reakcje językowe</div>
+                  <p class="mock-question">Kolega nie może przyjść na Twoje urodziny i przeprasza. Jak reagujesz?</p>
+                  <div class="mock-answers">
+                    <div class="mock-ans">A. I hope you liked my party very much.</div>
+                    <div class="mock-ans mock-ans--correct">B. What a pity you can't make it!</div>
+                    <div class="mock-ans">C. You must buy me a present later.</div>
+                  </div>
+                </div>
+                <!-- Result divider and score removed for brevity in mockup -->
+              </div>
+            </div>
+            <p class="mock-caption hero__phone-caption">Po każdej odpowiedzi dostajesz wyjaśnienie i rezultat</p>
+          </div>
+        </div>
+
+        <!-- Dashboard View (Visible for authenticated user) -->
+        <div id="e8-dashboard-view" style="display: none; width: 100%; text-align: left;">
           <div class="hero__brand">
             <img src="../img/logonaiczyciel.png" alt="" class="hero__brand-logo">
             <h1 class="hero__brand-name">n<em>AI</em>czyciel <span class="e8-tag">E8</span></h1>
           </div>
-          <div class="hero__pills-wrapper">
-            <div class="hero__pills-active">
-              <button class="hero__soon-tag is-active">Egzamin ósmoklasisty</button>
-              <button class="hero__soon-tag is-active" onclick="window.location.href='../contact/'">Korepetycje</button>
-            </div>
-            <div class="hero__pills-soon-box">
-              <span class="hero__pills-soon-label">Wkrótce:</span>
-              <div class="hero__pills-soon">
-                <button class="hero__soon-tag soon-tile" disabled>Matura</button>
-                <button class="hero__soon-tag soon-tile" disabled>Edukacja</button>
-              </div>
-            </div>
+          <div
+            style="margin-top: 24px; padding: 32px; background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius-lg); max-width: 600px;">
+            <h2 id="e8-welcome-msg" style="font-family: 'Outfit', sans-serif; font-size: 2rem; margin-bottom: 12px;">
+              Cześć! 👋</h2>
+            <p style="color: var(--c-muted); margin-bottom: 32px; font-size: 1.1rem; line-height: 1.5;">Przejdźmy od
+              razu do treningu. Twoje postępy są zapisywane automatycznie.</p>
+
+            <button class="hero__cta" onclick="document.getElementById('nav-start-btn').click()"
+              style="margin: 0; padding: 20px 40px; font-size: 1.2rem;">
+              Rozpocznij nowy zestaw
+              <svg width="20" height="20" viewBox="0 0 16 16" fill="none" style="margin-left: 12px;">
+                <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+            </button>
           </div>
-          <ol class="hero__steps">
-            <li class="hero__step">
-              <span class="hero__step-num">01</span>
-              <div>
-                <h3>Rozwiązuj pytania egzaminacyjne</h3>
-                <p>Ćwicz reakcje językowe, reading i zadania gramatyczne w stylu E8.</p>
-              </div>
-            </li>
-            <li class="hero__step">
-              <span class="hero__step-num">02</span>
-              <div>
-                <h3>Zobacz krótkie wyjaśnienie</h3>
-                <p>Dowiedz się dlaczego odpowiedź jest poprawna. Bez długich definicji.</p>
-              </div>
-            </li>
-            <li class="hero__step">
-              <span class="hero__step-num">03</span>
-              <div>
-                <h3>Sprawdź wynik</h3>
-                <p>Dostajesz wynik i możesz zrobić kolejny zestaw.</p>
-              </div>
-            </li>
-          </ol>
-
-          <button class="hero__cta" id="hero-start-btn">
-            Zacznij próbny quiz
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
-          </button>
-          <p class="hero__cta-subtext">10 pytań &nbsp;•&nbsp; ~2 minuty &nbsp;•&nbsp; od razu zobaczysz wynik</p>
-        </div>
-
-        <!-- RIGHT: phone mockup (desktop only) -->
-        <div class="hero__right" aria-hidden="true">
-          <div class="hero__phone">
-            <div class="hero__phone-bar">
-              <span></span><span></span><span></span>
-            </div>
-            <div class="hero__phone-screen">
-
-              <!-- Screen 1: Quiz question -->
-              <div class="mock-quiz">
-                <div class="mock-tag">💬 Reakcje językowe</div>
-                <p class="mock-question">Kolega nie może przyjść na Twoje urodziny i przeprasza. Jak reagujesz?</p>
-                <div class="mock-answers">
-                  <div class="mock-ans">A. I hope you liked my party very much.</div>
-                  <div class="mock-ans mock-ans--correct">B. What a pity you can't make it!</div>
-                  <div class="mock-ans">C. You must buy me a present later.</div>
-                </div>
-                <div class="mock-expl">
-                  <p class="mock-expl-row"><span class="expl-tag why">Dlaczego?</span>Wyrażasz współczucie, że ktoś nie
-                    może przyjść — typowa reakcja językowa.</p>
-                  <p class="mock-expl-row"><span class="expl-tag pattern">Wzorzec</span>What a pity... → wyrażanie żalu
-                    / rozczarowania</p>
-                </div>
-              </div>
-
-              <!-- Divider -->
-              <div class="mock-divider"></div>
-
-              <!-- Screen 2: Result -->
-              <div class="mock-result">
-                <div class="mock-emoji">🎉</div>
-                <p class="mock-label">Nieźle, ćwicz dalej!</p>
-                <div class="mock-score">7 / 10</div>
-                <p class="mock-percent">70% poprawnych odpowiedzi</p>
-                <button class="mock-btn">Nowy zestaw →</button>
-              </div>
-
-            </div>
-          </div>
-          <p class="mock-caption hero__phone-caption">Po każdej odpowiedzi dostajesz wyjaśnienie i rezultat</p>
         </div>
 
       </div>

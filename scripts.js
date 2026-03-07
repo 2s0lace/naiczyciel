@@ -780,5 +780,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         </div >
         `;
     });
+
+    // Page-specific UI updates for logged-in users
+    const marketingView = document.getElementById('e8-marketing-view');
+    const dashboardView = document.getElementById('e8-dashboard-view');
+    const welcomeMsg = document.getElementById('e8-welcome-msg');
+    const previewSection = document.querySelector('.preview');
+
+    if (marketingView && dashboardView) {
+      marketingView.style.display = 'none';
+      dashboardView.style.display = 'block';
+
+      if (welcomeMsg) {
+        const fullName = user.user_metadata?.full_name || user.email;
+        const firstName = fullName.split(' ')[0];
+        welcomeMsg.textContent = `Cześć, ${firstName}! 👋`;
+      }
+
+      // Hide additional marketing persuasions
+      if (previewSection) {
+        previewSection.style.display = 'none';
+      }
+    }
   }
 });

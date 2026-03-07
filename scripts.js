@@ -782,13 +782,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // Page-specific UI updates for logged-in users
-    const marketingView = document.getElementById('e8-marketing-view');
+    const heroLeft = document.getElementById('e8-hero-left');
+    const heroRight = document.getElementById('e8-hero-right');
     const dashboardView = document.getElementById('e8-dashboard-view');
     const welcomeMsg = document.getElementById('e8-welcome-msg');
     const previewSection = document.querySelector('.preview');
 
-    if (marketingView && dashboardView) {
-      marketingView.style.display = 'none';
+    if (dashboardView && (heroLeft || heroRight)) {
+      if (heroLeft) heroLeft.style.display = 'none';
+      if (heroRight) heroRight.style.display = 'none';
       dashboardView.style.display = 'block';
 
       if (welcomeMsg) {

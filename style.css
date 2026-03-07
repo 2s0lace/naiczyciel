@@ -967,16 +967,16 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: .42rem;
+  font-size: .48rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .04em;
-  padding: 4px 6px;
+  padding: 0 6px;
   border-radius: 4px;
   flex-shrink: 0;
   white-space: nowrap;
   line-height: 1;
-  height: auto;
+  height: 16px;
   align-self: flex-start;
 }
 
@@ -990,6 +990,15 @@ a {
   background: rgba(108, 99, 255, .25);
   color: #857dff;
   border: 1px solid rgba(108, 99, 255, .5);
+}
+
+.mock-text-bright {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.mock-text-pure {
+  color: #fff !important;
+  font-weight: 700;
 }
 
 

@@ -803,7 +803,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Hide all marketing/guest sections
-      const selectorsToHide = ['.preview', '.why', '.categories', '.pricing', '.author', '.footer'];
+      const selectorsToHide = ['.preview', '.why', '.categories', '.pricing', '.author'];
       selectorsToHide.forEach(selector => {
         document.querySelectorAll(selector).forEach(el => {
           el.style.display = 'none';

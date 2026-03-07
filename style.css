@@ -954,29 +954,28 @@ a {
 }
 
 .mock-expl-row {
-  font-size: .58rem;
-  color: var(--c-label);
-  line-height: 1.4;
   display: flex;
   align-items: stretch;
+  /* Kluczowe: rozciąga dzieci do tej samej wysokości */
   gap: 8px;
   margin-bottom: 8px;
 }
 
 .mock-pill {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
+  width: 65px;
+  /* Stała szerokość zgodnie z wymogiem */
+  flex-shrink: 0;
+
   font-size: .48rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .04em;
-  padding: 0 6px;
   border-radius: 4px;
-  flex-shrink: 0;
   white-space: nowrap;
   line-height: 1;
-  min-height: 18px;
 }
 
 .mock-pill.why {

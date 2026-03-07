@@ -217,11 +217,47 @@ a {
 }
 
 /* Soon product tag pills */
-.hero__soon-tags {
+.hero__pills-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.hero__pills-active {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+@media (min-width: 600px) {
+  .hero__pills-active {
+    flex-direction: row;
+  }
+}
+
+.hero__pills-soon-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 6px 14px;
+}
+
+.hero__pills-soon-label {
+  font-size: .65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--c-muted);
+  letter-spacing: .06em;
+}
+
+.hero__pills-soon {
   display: flex;
   gap: 8px;
-  justify-content: center;
-  margin-bottom: 24px;
 }
 
 .hero__soon-tag {
@@ -237,7 +273,7 @@ a {
   transition: border-color var(--transition), color var(--transition);
 }
 
-.hero__soon-tag:hover {
+.hero__soon-tag:hover:not(:disabled) {
   border-color: var(--c-primary);
   color: var(--c-label);
 }
@@ -247,6 +283,11 @@ a {
   background: rgba(108, 99, 255, .18);
   border-color: rgba(108, 99, 255, .5);
   color: var(--c-primary-h);
+  cursor: pointer;
+}
+
+.hero__soon-tag:disabled {
+  opacity: 0.6;
   cursor: default;
 }
 

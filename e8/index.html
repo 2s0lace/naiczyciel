@@ -36,12 +36,19 @@
             <img src="../img/logonaiczyciel.png" alt="" class="hero__brand-logo">
             <h1 class="hero__brand-name">n<em>AI</em>czyciel <span class="e8-tag">E8</span></h1>
           </div>
-          <div class="hero__soon-tags">
-            <button class="hero__soon-tag is-active">Egzamin ósmoklasisty</button>
-            <button class="hero__soon-tag soon-tile">Matura</button>
-            <button class="hero__soon-tag soon-tile">Edukacja</button>
+          <div class="hero__pills-wrapper">
+            <div class="hero__pills-active">
+              <button class="hero__soon-tag is-active">Egzamin ósmoklasisty</button>
+              <button class="hero__soon-tag is-active" onclick="window.location.href='../contact/'">Korepetycje</button>
+            </div>
+            <div class="hero__pills-soon-box">
+              <span class="hero__pills-soon-label">Wkrótce:</span>
+              <div class="hero__pills-soon">
+                <button class="hero__soon-tag soon-tile" disabled>Matura</button>
+                <button class="hero__soon-tag soon-tile" disabled>Edukacja</button>
+              </div>
+            </div>
           </div>
-
           <ol class="hero__steps">
             <li class="hero__step">
               <span class="hero__step-num">01</span>
@@ -138,6 +145,45 @@
             rozczarowania</p>
         </div>
         <p class="preview__label">👆 Po każdej odpowiedzi dostajesz wyjaśnienie</p>
+
+        <div class="mock-divider" style="margin: 20px 0; border-top: 1px solid var(--c-border);"></div>
+
+        <details class="preview__result-details" style="cursor: pointer; padding: 4px 0;">
+          <summary style="font-size: .85rem; font-weight: 700; color: var(--c-primary-h); outline: none;">Zobacz jak
+            wygląda wynik (rozwijane) ▾</summary>
+          <div class="mock-result" style="margin-top: 16px;">
+            <div class="mock-emoji">🎉</div>
+            <p class="mock-label">Nieźle, ćwicz dalej!</p>
+            <div class="mock-score" style="display: flex; align-items: center; justify-content: center;">
+              <div style="position: relative; width: 80px; height: 80px; margin: 0 auto;">
+                <svg viewBox="0 0 100 100"
+                  style="position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg);">
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(108, 99, 255, .15)" stroke-width="8"></circle>
+                  <circle cx="50" cy="50" r="45" fill="none" stroke="url(#mock-grad)" stroke-width="8"
+                    stroke-dasharray="283" stroke-dashoffset="85" stroke-linecap="round"></circle>
+                  <defs>
+                    <linearGradient id="mock-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#6c63ff" />
+                      <stop offset="100%" stop-color="#b06ef3" />
+                    </linearGradient>
+                  </defs>
+                </svg>
+                <div
+                  style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: 900; color: var(--c-text);">
+                  7/10</div>
+              </div>
+            </div>
+            <p class="mock-percent" style="margin-top: 12px; font-weight: 700; font-size: .8rem; color: #a78bfa;">70%
+              poprawnych odpowiedzi</p>
+
+            <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px 0;">
+              <span class="topic-chip topic-chip--good">Reakcje 70%</span>
+              <span class="topic-chip topic-chip--good">Gramatyka 70%</span>
+            </div>
+
+            <button class="mock-btn">Nowy zestaw →</button>
+          </div>
+        </details>
       </div>
     </section>
 

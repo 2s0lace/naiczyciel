@@ -601,6 +601,7 @@ if (startBtn) startBtn.addEventListener('click', startQuiz);
 /* ─── Paywall Modal ──────────────────────────────────────── */
 const modalOverlay = document.getElementById('modal-overlay');
 const modal = document.getElementById('modal');
+const modalHandle = document.querySelector('.modal__handle');
 const modalBuyBtn = document.getElementById('modal-buy-btn');
 const modalCloseBtn = document.getElementById('modal-close-btn');
 const modalComing = document.getElementById('modal-coming-soon');
@@ -614,7 +615,13 @@ const stripeLinks = {
 };
 
 function openModal() {
+  if (!window.__currentSupabaseUser) {
+    console.log('PREMIUM UI LOCK TRIGGERED', { target: 'open-modal-guest' });
+    showToast('Najpierw zaloguj się, aby przejść do płatności.');
+    return;
+  }
   modalOverlay.classList.remove('hidden');
+  if (modal) modal.style.transform = '';
   document.body.style.overflow = 'hidden';
   modalComing.style.display = 'none';
   document.querySelectorAll('.modal__plan').forEach(el => {
@@ -624,7 +631,63 @@ function openModal() {
 
 function closeModal() {
   modalOverlay.classList.add('hidden');
+  if (modal) modal.style.transform = '';
   document.body.style.overflow = '';
+}
+
+function initModalDragHandle() {
+  if (!modal || !modalHandle || modalHandle.dataset.boundDrag === '1') return;
+  modalHandle.dataset.boundDrag = '1';
+
+  let startY = 0;
+  let deltaY = 0;
+  let dragging = false;
+
+  const onMove = (clientY) => {
+    deltaY = clientY - startY;
+    const clamped = Math.max(-80, Math.min(420, deltaY));
+    modal.style.transform = `translateY(${clamped}px)`;
+  };
+
+  const onEnd = () => {
+    if (!dragging) return;
+    dragging = false;
+    if (deltaY > 130) {
+      closeModal();
+    } else {
+      modal.style.transform = 'translateY(0)';
+    }
+    deltaY = 0;
+  };
+
+  modalHandle.addEventListener('touchstart', (event) => {
+    if (!modalOverlay || modalOverlay.classList.contains('hidden')) return;
+    dragging = true;
+    startY = event.touches[0].clientY;
+    deltaY = 0;
+  }, { passive: true });
+
+  modalHandle.addEventListener('touchmove', (event) => {
+    if (!dragging) return;
+    onMove(event.touches[0].clientY);
+  }, { passive: true });
+
+  modalHandle.addEventListener('touchend', onEnd);
+
+  modalHandle.addEventListener('mousedown', (event) => {
+    if (!modalOverlay || modalOverlay.classList.contains('hidden')) return;
+    dragging = true;
+    startY = event.clientY;
+    deltaY = 0;
+    event.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (event) => {
+    if (!dragging) return;
+    onMove(event.clientY);
+  });
+
+  document.addEventListener('mouseup', onEnd);
 }
 
 // Plan selection inside modal
@@ -695,6 +758,12 @@ document.querySelectorAll('.soon-tile').forEach(btn => {
 /* ─── SUPABASE AUTH ────────────────────────────────────── */
 let supabaseClient = null;
 window.supabaseClient = null;
+let currentUserProfile = null;
+let currentUserIsAdmin = false;
+let currentUserHasPremium = false;
+window.__currentUserProfile = null;
+window.__currentUserIsAdmin = false;
+window.__currentUserHasPremium = false;
 
 async function ensureSupabaseClient() {
   if (supabaseClient) return supabaseClient;
@@ -980,6 +1049,9 @@ function getDisplayNameStorageKey(userId) {
 
 function getDisplayName(user) {
   if (!user) return 'Uczeń';
+  if (currentUserProfile?.username && String(currentUserProfile.username).trim()) {
+    return String(currentUserProfile.username).trim();
+  }
   const custom = localStorage.getItem(getDisplayNameStorageKey(user.id));
   if (custom && custom.trim()) return custom.trim();
   const metaName = user.user_metadata?.full_name || user.user_metadata?.name || '';
@@ -991,18 +1063,103 @@ function getFirstName(displayName) {
   return String(displayName || 'Uczeń').trim().split(' ')[0] || 'Uczeń';
 }
 
-function hasStudentPlan(user) {
-  if (!user) return false;
-  const values = [
-    user.user_metadata?.plan,
-    user.user_metadata?.subscription,
-    user.user_metadata?.tier,
-    localStorage.getItem(`naiczyciel_plan_${user.id}`)
-  ]
-    .filter(Boolean)
-    .map((v) => String(v).toLowerCase().trim());
+function isAdmin(profile) {
+  const result = profile?.role === 'admin';
+  console.log('ADMIN ACCESS CHECK', { role: profile?.role ?? null, result });
+  return result;
+}
 
-  return values.some((v) => v === 'uczen' || v === 'uczeń' || v === 'student');
+function hasPremium(profile) {
+  let result = false;
+  if (!profile) {
+    result = false;
+  } else if (profile.role === 'admin') {
+    result = true;
+  } else if (profile.access_level === 'premium_lifetime') {
+    result = true;
+  } else if (
+    profile.access_level === 'premium' &&
+    profile.premium_until &&
+    new Date(profile.premium_until) > new Date()
+  ) {
+    result = true;
+  }
+  console.log('PREMIUM ACCESS CHECK', {
+    role: profile?.role ?? null,
+    access_level: profile?.access_level ?? null,
+    premium_until: profile?.premium_until ?? null,
+    result
+  });
+  return result;
+}
+
+function setAccessState(profile) {
+  currentUserProfile = profile || null;
+  currentUserIsAdmin = isAdmin(currentUserProfile);
+  currentUserHasPremium = hasPremium(currentUserProfile);
+  window.__currentUserProfile = currentUserProfile;
+  window.__currentUserIsAdmin = currentUserIsAdmin;
+  window.__currentUserHasPremium = currentUserHasPremium;
+}
+
+async function loadProfileForUser(user) {
+  if (!user?.id) return null;
+  await ensureSupabaseClient();
+  if (!supabaseClient) return null;
+  console.log('PROFILE LOAD START', { userId: user.id });
+  const { data: profile, error } = await supabaseClient
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .maybeSingle();
+  console.log('PROFILE LOAD RESULT', { profile, error });
+  if (error) return null;
+  return profile || null;
+}
+
+function applyPremiumUiState() {
+  const premiumButtons = document.querySelectorAll('.btn-premium');
+  const paywallCards = document.querySelectorAll('.result__paywall');
+  const premiumLockedTargets = [document.getElementById('insights-pdf')].filter(Boolean);
+  const upgradeTitle = document.querySelector('.dash-upgrade-title');
+  const upgradeBtn = document.getElementById('dash-upgrade-btn');
+  const pricingSection = document.getElementById('e8-pricing');
+
+  if (currentUserHasPremium) {
+    premiumButtons.forEach((el) => (el.style.display = 'none'));
+    paywallCards.forEach((el) => (el.style.display = 'none'));
+    premiumLockedTargets.forEach((el) => {
+      el.classList.remove('is-locked');
+      el.disabled = false;
+      delete el.dataset.premiumLocked;
+    });
+    if (upgradeTitle) upgradeTitle.textContent = currentUserIsAdmin ? 'Tryb admina: pełny dostęp.' : 'Premium aktywne. Wszystkie funkcje odblokowane.';
+    if (upgradeBtn) {
+      upgradeBtn.textContent = currentUserIsAdmin ? 'Admin ✓' : 'Premium ✓';
+    }
+    return;
+  }
+
+  premiumButtons.forEach((el) => (el.style.display = ''));
+  paywallCards.forEach((el) => (el.style.display = ''));
+  if (pricingSection) pricingSection.style.display = '';
+  premiumLockedTargets.forEach((el) => {
+    el.classList.add('is-locked');
+    el.dataset.premiumLocked = '1';
+  });
+  if (upgradeTitle) upgradeTitle.textContent = 'Ulepsz po większą ilość funkcji!';
+  if (upgradeBtn) upgradeBtn.textContent = 'Ulepsz';
+
+  premiumLockedTargets.forEach((el) => {
+    if (el.dataset.boundPremiumLock === '1') return;
+    el.dataset.boundPremiumLock = '1';
+    el.addEventListener('click', (event) => {
+      if (currentUserHasPremium) return;
+      event.preventDefault();
+      console.log('PREMIUM UI LOCK TRIGGERED', { target: el.id || el.className || 'unknown' });
+      openModal();
+    });
+  });
 }
 
 function renderAuthContainers(user) {
@@ -1014,6 +1171,11 @@ function renderAuthContainers(user) {
   const safeFirstName = escapeHtml(firstName);
   const menuId = `menu-${(user.id || 'user').slice(0, 8)}`;
   const dropdownId = `profile-dropdown-${(user.id || 'user').slice(0, 8)}`;
+  const adminMenuItem = currentUserIsAdmin
+    ? `<button class="profile-menu-item" onclick="window.location.href='${getAdminHref()}'">
+            <span style="font-size: 1.1rem;">🛠️</span> Panel admina
+          </button>`
+    : '';
 
   authContainers.forEach(container => {
     container.innerHTML = `
@@ -1027,9 +1189,7 @@ function renderAuthContainers(user) {
           <button class="profile-menu-item" onclick="openSettingsModal()">
             <span style="font-size: 1.1rem;">⚙️</span> Ustawienia
           </button>
-          <button class="profile-menu-item" onclick="window.location.href='${getAdminHref()}'">
-            <span style="font-size: 1.1rem;">🛠️</span> Panel admina
-          </button>
+          ${adminMenuItem}
           <div class="profile-menu-divider"></div>
           <button class="profile-menu-item" onclick="logout()" style="color: var(--c-red);">
             <span style="font-size: 1.1rem;">🚪</span> Wyloguj
@@ -1079,10 +1239,15 @@ async function saveSettings() {
     try {
       await supabaseClient
         .from('profiles')
-        .upsert({ id: user.id, email: user.email, full_name: name }, { onConflict: 'id' });
+        .upsert({ id: user.id, email: user.email, username: name }, { onConflict: 'id' });
     } catch (err) {
       console.error('profiles upsert failed:', err);
     }
+  }
+
+  if (currentUserProfile) {
+    currentUserProfile = { ...currentUserProfile, username: name, email: user.email };
+    setAccessState(currentUserProfile);
   }
 
   window.__currentSupabaseUser = {
@@ -1115,7 +1280,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   initHeroPreviewStack();
   initLandingAccordions();
   initMobileDashboardSlider();
+  initModalDragHandle();
   await ensureSupabaseClient();
+  setAccessState(null);
+  applyPremiumUiState();
   if (!supabaseClient) {
     document.body.classList.remove('auth-loading');
     return;
@@ -1126,6 +1294,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (user) {
     console.log('Zalogowany uczeń:', user);
+    const profile = await loadProfileForUser(user);
+    setAccessState(profile);
     window.__currentSupabaseUser = user;
     renderAuthContainers(user);
 
@@ -1156,7 +1326,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       await updateDashboardStats(user);
     }
+  } else {
+    setAccessState(null);
   }
+
+  applyPremiumUiState();
 
   // Always remove loading class to reveal the page (whether logged in or guest)
   document.body.classList.remove('auth-loading');
@@ -1181,11 +1355,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (upgradeBtn && !upgradeBtn.dataset.bound) {
     upgradeBtn.dataset.bound = '1';
     upgradeBtn.addEventListener('click', () => {
-      const currentUser = window.__currentSupabaseUser;
-      if (hasStudentPlan(currentUser)) {
-        showToast('Masz już aktywny plan Uczeń. ✅');
+      if (currentUserHasPremium) {
+        return;
       } else {
-        showToast('Ulepszenie konta przyjęte. Dokończymy aktywację w płatnościach.');
+        console.log('PREMIUM UI LOCK TRIGGERED', { target: 'dash-upgrade-btn' });
+        openModal();
       }
     });
   }

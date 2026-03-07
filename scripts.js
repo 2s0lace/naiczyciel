@@ -490,39 +490,38 @@ function renderInsights() {
   // 1. Inline topic accuracy chips under percent
   const stats = computeTopicStats(results);
   const topicsBar = document.getElementById('insights-topics-bar');
-  const nonVocabEntries = Object.entries(stats).filter(([t]) => t !== 'vocabulary');
 
   if (topicsBar) {
-    topicsBar.innerHTML = nonVocabEntries
+    topicsBar.innerHTML = Object.entries(stats)
       .map(([type, data]) => {
         const good = data.accuracy >= 70;
         return `<span class="topic-chip ${good ? 'topic-chip--good' : 'topic-chip--bad'}">${typeNames[type] || type} ${data.accuracy}%</span>`;
       }).join('');
   }
 
-  // Compute averaged chip color for the box gradient
-  // amber: (245,158,11) = bad, green: (34,197,94) = good
-  const goodCount = nonVocabEntries.filter(([, d]) => d.accuracy >= 70).length;
-  const ratio = nonVocabEntries.length ? goodCount / nonVocabEntries.length : 0.5;
-  const r = Math.round(245 + (34 - 245) * ratio);
-  const g = Math.round(158 + (197 - 158) * ratio);
-  const b = Math.round(11 + (94 - 11) * ratio);
-  const gradCol = `rgba(${r},${g},${b}`;
-
-  // 2. Words to review — vocabulary type only, collapsible
+  // Words to review — vocabulary type only, collapsible
   const vocabWords = [...new Set(
     results
       .filter(r => !r.correct && r.type === 'vocabulary')
       .flatMap(r => r.keywords || [])
   )];
 
+  // Show box whenever vocabulary questions were answered
+  const hasVocab = results.some(r => r.type === 'vocabulary');
   const panel = document.getElementById('insights-panel');
   const wordsList = document.getElementById('insights-words-list');
-  if (panel && vocabWords.length) {
-    wordsList.innerHTML = vocabWords.map(w => `<li>${w}</li>`).join('');
-    wordsList.style.display = ''; // expanded by default
-    const toggleBtn = document.getElementById('insights-toggle');
-    if (toggleBtn) { toggleBtn.setAttribute('aria-expanded', 'true'); toggleBtn.textContent = 'Ukryj ▴'; }
+  if (panel && hasVocab) {
+    if (vocabWords.length) {
+      wordsList.innerHTML = vocabWords.map(w => `<li>${w}</li>`).join('');
+      wordsList.style.display = ''; // expanded by default
+      const toggleBtn = document.getElementById('insights-toggle');
+      if (toggleBtn) { toggleBtn.setAttribute('aria-expanded', 'true'); toggleBtn.textContent = 'Ukryj ▴'; }
+    } else {
+      wordsList.innerHTML = '<li style="color:var(--c-green);font-style:normal;">✔ Brak słów do powtórki — świetnie!</li>';
+      wordsList.style.display = '';
+      const toggleBtn = document.getElementById('insights-toggle');
+      if (toggleBtn) { toggleBtn.setAttribute('aria-expanded', 'true'); toggleBtn.textContent = 'Ukryj ▴'; }
+    }
     panel.style.display = '';
   } else if (panel) {
     panel.style.display = 'none';

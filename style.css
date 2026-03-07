@@ -1552,7 +1552,7 @@ a {
   gap: 6px;
   margin: 8px auto 0;
   width: 100%;
-  max-width: 320px;
+  max-width: 400px;
 }
 
 .topic-chip {
@@ -1578,7 +1578,7 @@ a {
 /* Single words box */
 .insights {
   width: 100%;
-  max-width: 320px;
+  max-width: 400px;
   margin: 10px auto 20px;
   background: linear-gradient(180deg, rgba(167, 139, 250, .1) 0%, var(--c-surface) 52px);
   border: 1px solid var(--c-border);

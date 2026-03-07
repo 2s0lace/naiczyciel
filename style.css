@@ -728,6 +728,9 @@ a {
   border: 1px solid var(--c-border);
   border-radius: 32px;
   overflow: hidden;
+  transform: scale(0.9);
+  transform-origin: top center;
+  margin-bottom: -40px;
   box-shadow:
     0 0 0 1px rgba(108, 99, 255, .15),
     0 24px 64px rgba(108, 99, 255, .18),
@@ -761,7 +764,7 @@ a {
 }
 
 .hero__phone-screen {
-  padding: 32px 24px 36px;
+  padding: 18px 16px 20px;
 }
 
 .mock-result {
@@ -875,7 +878,7 @@ a {
   font-weight: 800;
   padding: 4px 12px;
   border-radius: 99px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   letter-spacing: .05em;
   text-transform: uppercase;
 }
@@ -898,16 +901,36 @@ a {
   padding-top: 8px;
 }
 
-/* Quiz body: answers full-width, explanation below */
-.mock-quiz-body {
-  display: block;
+.mock-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
-.mock-footer {
-  font-size: .62rem;
-  color: var(--c-muted);
-  text-align: center;
-  margin-top: 8px;
+.mock-answers {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mock-btn-cta {
+  width: 100%;
+  border-radius: 99px;
+  background: var(--c-primary) !important;
+  color: #fff !important;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 10px;
+  border: none;
+  box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.mock-btn-cta:hover {
+  transform: translateY(-1px);
+  background: var(--c-primary-h) !important;
 }
 
 .mock-caption {
@@ -941,16 +964,20 @@ a {
 }
 
 .mock-pill {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: .42rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: .04em;
-  padding: 1px 4px;
-  border-radius: 3px;
+  padding: 3px 6px;
+  border-radius: 4px;
   flex-shrink: 0;
   white-space: nowrap;
-  line-height: 1.4;
+  line-height: 1;
+  height: fit-content;
+  align-self: flex-start;
 }
 
 .mock-pill.why {

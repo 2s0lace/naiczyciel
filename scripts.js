@@ -531,37 +531,47 @@ function renderInsights() {
 }
 
 // Toggle words list
-document.getElementById('insights-toggle').addEventListener('click', function () {
-  const list = document.getElementById('insights-words-list');
-  const open = this.getAttribute('aria-expanded') === 'true';
-  this.setAttribute('aria-expanded', !open);
-  this.textContent = open ? 'Pokaż ▾' : 'Ukryj ▴';
-  list.style.display = open ? 'none' : '';
-});
+const insightsToggleBtn = document.getElementById('insights-toggle');
+if (insightsToggleBtn) {
+  insightsToggleBtn.addEventListener('click', function () {
+    const list = document.getElementById('insights-words-list');
+    const open = this.getAttribute('aria-expanded') === 'true';
+    this.setAttribute('aria-expanded', !open);
+    this.textContent = open ? 'Pokaż ▾' : 'Ukryj ▴';
+    if (list) list.style.display = open ? 'none' : '';
+  });
+}
 
 // PDF export
-document.getElementById('insights-pdf').addEventListener('click', () => {
-  const words = [...document.querySelectorAll('#insights-words-list li')].map(li => li.textContent);
-  if (!words.length) return;
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Słownictwo do powtórki</title>
-    <style>body{font-family:sans-serif;padding:32px}h2{margin-bottom:16px}li{font-size:1.1rem;margin:6px 0}</style>
-    </head><body><h2>📝 Słownictwo do powtórki</h2><ul>${words.map(w => `<li>${w}</li>`).join('')}</ul></body></html>`;
-  const win = window.open('', '_blank');
-  if (!win) return;
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  win.print();
-});
+const insightsPdfBtn = document.getElementById('insights-pdf');
+if (insightsPdfBtn) {
+  insightsPdfBtn.addEventListener('click', () => {
+    const words = [...document.querySelectorAll('#insights-words-list li')].map(li => li.textContent);
+    if (!words.length) return;
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Słownictwo do powtórki</title>
+      <style>body{font-family:sans-serif;padding:32px}h2{margin-bottom:16px}li{font-size:1.1rem;margin:6px 0}</style>
+      </head><body><h2>📝 Słownictwo do powtórki</h2><ul>${words.map(w => `<li>${w}</li>`).join('')}</ul></body></html>`;
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.focus();
+    win.print();
+  });
+}
 
 /* ─── Retry & Home ───────────────────────────────────────── */
-document.getElementById('btn-retry').addEventListener('click', startQuiz);
-document.getElementById('btn-home').addEventListener('click', () => showScreen('landing'));
-document.getElementById('nav-logo-home').addEventListener('click', (e) => { e.preventDefault(); showScreen('landing'); });
+if (btnRetry) btnRetry.addEventListener('click', startQuiz);
+if (btnHome) btnHome.addEventListener('click', () => showScreen('landing'));
+const navLogoHome = document.getElementById('nav-logo-home');
+if (navLogoHome) {
+  navLogoHome.addEventListener('click', (e) => { e.preventDefault(); showScreen('landing'); });
+}
 
 /* ─── Start buttons ──────────────────────────────────────── */
-document.getElementById('hero-start-btn').addEventListener('click', startQuiz);
-document.getElementById('nav-start-btn').addEventListener('click', startQuiz);
+const heroStartBtn = document.getElementById('hero-start-btn');
+if (heroStartBtn) heroStartBtn.addEventListener('click', startQuiz);
+if (startBtn) startBtn.addEventListener('click', startQuiz);
 
 /* ─── Paywall Modal ──────────────────────────────────────── */
 const modalOverlay = document.getElementById('modal-overlay');
@@ -603,21 +613,25 @@ document.querySelectorAll('.modal__plan').forEach(el => {
 });
 
 // Buy button → redirect to Stripe
-modalBuyBtn.addEventListener('click', () => {
-  const url = stripeLinks[selectedPlan];
-  if (url) {
-    window.location.href = url;
-  } else {
-    // Uczeń+ not yet available
-    modalComing.style.display = 'block';
-    modalComing.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-});
+if (modalBuyBtn) {
+  modalBuyBtn.addEventListener('click', () => {
+    const url = stripeLinks[selectedPlan];
+    if (url) {
+      window.location.href = url;
+    } else {
+      // Uczeń+ not yet available
+      modalComing.style.display = 'block';
+      modalComing.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+}
 
-modalCloseBtn.addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', (e) => {
-  if (e.target === modalOverlay) closeModal();
-});
+if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+if (modalOverlay) {
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) closeModal();
+  });
+}
 
 // All open-modal buttons
 document.querySelectorAll('.open-modal-btn').forEach(btn => {
@@ -635,6 +649,7 @@ revealEls.forEach(el => revealObserver.observe(el));
 const toast = document.getElementById('toast');
 let toastTimer;
 function showToast(msg) {
+  if (!toast) return;
   clearTimeout(toastTimer);
   toast.textContent = msg || 'Wkrótce! 🚀';
   toast.classList.remove('hidden');

@@ -1072,6 +1072,31 @@ a {
   margin-bottom: 8px;
 }
 
+.footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 16px;
+  margin: 12px 0 8px;
+}
+
+.footer__nav a {
+  font-size: .78rem;
+  color: var(--c-muted);
+  text-decoration: none;
+  transition: color .15s;
+}
+
+.footer__nav a:hover {
+  color: var(--c-text);
+}
+
+.footer__copy {
+  font-size: .75rem;
+  color: var(--c-muted);
+  margin-top: 4px;
+}
+
 /* ═══════════════════════════════════════════════════════════
    QUIZ SCREEN
 ═══════════════════════════════════════════════════════════ */

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kontakt — nAIczyciel</title>
+    <meta name="description"
+        content="Skontaktuj się z twórcą nAIczyciel.pl — korepetytorem i lektorem języka angielskiego." />
+    <link rel="canonical" href="https://naiczyciel.pl/contact/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        .contact-wrap {
+            min-height: calc(100vh - 80px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 64px 24px;
+            gap: 16px;
+        }
+
+        .contact-wrap h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+        }
+
+        .contact-wrap p {
+            font-size: .95rem;
+            color: var(--c-muted);
+            max-width: 380px;
+            line-height: 1.7;
+        }
+
+        .contact-card {
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-lg);
+            padding: 28px 36px;
+            margin-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-width: 280px;
+        }
+
+        .contact-card a {
+            color: var(--c-primary-h);
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 1rem;
+        }
+
+        .contact-card a:hover {
+            text-decoration: underline;
+        }
+
+        .contact-label {
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .07em;
+            color: var(--c-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar__logo" id="nav-logo-home">
+            <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
+        </a>
+        <a href="/" class="btn-cta btn-cta--sm">← Powrót</a>
+    </nav>
+
+    <main>
+        <section class="contact-wrap">
+            <h1>Kontakt</h1>
+            <p>Masz pytanie o serwis, płatność lub chcesz porozmawiać o korepetycjach? Napisz — odpowiem szybko.</p>
+
+            <div class="contact-card">
+                <span class="contact-label">E-mail</span>
+                <a href="mailto:kontakt@naiczyciel.pl">kontakt@naiczyciel.pl</a>
+            </div>
+
+            <p style="margin-top:16px; font-size:.85rem;">
+                👨‍🏫 Korepetytor / lektor języka angielskiego &nbsp;·&nbsp; Twórca nAIczyciel
+            </p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer__logo">nAIczyciel E8</div>
+        <nav class="footer__nav">
+            <a href="/">Strona główna</a>
+            <a href="/e8/">Quiz E8</a>
+            <a href="/privacy/">Polityka prywatności</a>
+            <a href="/terms/">Regulamin</a>
+        </nav>
+        <p class="footer__copy">© 2026 nAIczyciel</p>
+    </footer>
+</body>
+
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quiz Angielski Egzamin Ósmoklasisty E8 — nAIczyciel</title>
+    <meta name="description"
+        content="Darmowy quiz angielski oparty na arkuszach egzaminacyjnych ósmoklasisty. Reakcje językowe, reading, słownictwo, gramatyka — ćwicz to, co naprawdę pojawia się na E8." />
+    <link rel="canonical" href="https://naiczyciel.pl/e8/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        .e8-hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 48px 24px;
+            gap: 20px;
+        }
+
+        .e8-badge {
+            font-size: .72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: var(--c-primary-h);
+            background: rgba(108, 99, 255, .1);
+            border: 1px solid rgba(108, 99, 255, .25);
+            border-radius: 20px;
+            padding: 4px 14px;
+        }
+
+        .e8-hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: clamp(2rem, 6vw, 3rem);
+            font-weight: 900;
+            line-height: 1.15;
+            max-width: 540px;
+        }
+
+        .e8-hero p {
+            font-size: 1rem;
+            color: var(--c-muted);
+            max-width: 420px;
+            line-height: 1.7;
+        }
+
+        .e8-types {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 8px 0;
+        }
+
+        .e8-type {
+            font-size: .78rem;
+            font-weight: 600;
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-sm);
+            padding: 5px 12px;
+            color: var(--c-muted);
+        }
+
+        .e8-cta {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--c-primary), var(--c-primary-h));
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            padding: 14px 36px;
+            border-radius: 50px;
+            text-decoration: none;
+            margin-top: 8px;
+            box-shadow: 0 8px 24px rgba(108, 99, 255, .35);
+            transition: transform .15s, box-shadow .15s;
+        }
+
+        .e8-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px rgba(108, 99, 255, .45);
+        }
+
+        .e8-note {
+            font-size: .78rem;
+            color: var(--c-muted);
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <a href="/" class="navbar__logo" id="nav-logo-home">
+            <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
+        </a>
+        <a href="/" class="btn-cta btn-cta--sm">← Strona główna</a>
+    </nav>
+
+    <main>
+        <section class="e8-hero">
+            <span class="e8-badge">Egzamin Ósmoklasisty — Angielski</span>
+            <h1>Quiz oparty na&nbsp;prawdziwych arkuszach E8</h1>
+            <p>Ćwiczysz dokładnie to, co pojawia się na egzaminie — reakcje językowe, reading, słownictwo i gramatykę z
+                analizą poprzednich roczników.</p>
+            <div class="e8-types">
+                <span class="e8-type">💬 Reakcje językowe</span>
+                <span class="e8-type">📖 Reading</span>
+                <span class="e8-type">🔤 Słownictwo</span>
+                <span class="e8-type">📝 Gramatyka</span>
+            </div>
+            <a href="/#quiz" class="e8-cta">Zacznij darmowy quiz →</a>
+            <p class="e8-note">Bez rejestracji · Działa na telefonie</p>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="footer__logo">nAIczyciel E8</div>
+        <nav class="footer__nav">
+            <a href="/">Strona główna</a>
+            <a href="/privacy/">Polityka prywatności</a>
+            <a href="/terms/">Regulamin</a>
+            <a href="/contact/">Kontakt</a>
+        </nav>
+        <p class="footer__copy">© 2026 nAIczyciel</p>
+    </footer>
+</body>
+
+</html>

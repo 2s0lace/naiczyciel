@@ -39,6 +39,22 @@ body.auth-loading #e8-seo-text {
   pointer-events: none !important;
 }
 
+/* Auth Hint - Instant state switch based on localStorage hint */
+.is-logged-in-hint #e8-hero-left,
+.is-logged-in-hint #e8-hero-right,
+.is-logged-in-hint .preview,
+.is-logged-in-hint .why,
+.is-logged-in-hint .categories,
+.is-logged-in-hint .pricing,
+.is-logged-in-hint .author,
+.is-logged-in-hint #e8-seo-text {
+  display: none !important;
+}
+
+.is-logged-in-hint #e8-dashboard-view {
+  display: block !important;
+}
+
 /* ─── Reset ─────────────────────────────────────────────── */
 *,
 *::before,

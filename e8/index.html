@@ -8,6 +8,12 @@
   <meta name="description"
     content="Szybki, nowoczesny symulator egzaminu ósmoklasisty z angielskiego. Ćwicz reakcje językowe, słownictwo i gramatykę." />
   <link rel="stylesheet" href="../style.css" />
+  <script>
+    // Synchronous auth hint to prevent FOUC (Flash of Unauthenticated Content)
+    if (localStorage.getItem('e8-auth-hint') === 'true') {
+      document.documentElement.classList.add('is-logged-in-hint');
+    }
+  </script>
 </head>
 
 <body class="auth-loading">

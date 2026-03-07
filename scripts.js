@@ -812,11 +812,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       updateDashboardStats(user);
     }
+    // Set hint for next fast load
+    localStorage.setItem('e8-auth-hint', 'true');
+  } else {
+    // No user found, clear hint
+    localStorage.removeItem('e8-auth-hint');
+    document.documentElement.classList.remove('is-logged-in-hint');
   }
 
   // Always remove loading class to reveal the page (whether logged in or guest)
   document.body.classList.remove('auth-loading');
 });
+
+// Logout function
+async function logout() {
+  if (!supabaseClient) return;
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    alert('Błąd podczas wylogowywania: ' + error.message);
+  } else {
+    localStorage.removeItem('e8-auth-hint');
+    window.location.reload();
+  }
+}
 
 function updateDashboardStats(user) {
   // Mock data for now (later can be fetched from Supabase 'profiles' or 'stats' table)

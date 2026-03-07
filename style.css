@@ -954,13 +954,13 @@ a {
 }
 
 .mock-expl-row {
-  font-size: .62rem;
+  font-size: .58rem;
   color: var(--c-label);
   line-height: 1.4;
   display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  font-size: .58rem;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 8px;
 }
 
 .mock-pill {
@@ -976,8 +976,7 @@ a {
   flex-shrink: 0;
   white-space: nowrap;
   line-height: 1;
-  height: 16px;
-  align-self: flex-start;
+  min-height: 18px;
 }
 
 .mock-pill.why {

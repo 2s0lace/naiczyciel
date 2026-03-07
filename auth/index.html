@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zaloguj się — nAIczyciel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        .auth-page {
+            min-height: calc(100vh - 70px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        .auth-box {
+            background: var(--c-surface);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-lg);
+            padding: 40px 32px;
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .auth-box h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 14px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-md);
+            color: var(--c-text);
+            margin-bottom: 12px;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: var(--c-primary);
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--c-primary) 0%, var(--c-secondary) 100%);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: opacity 0.2s;
+        }
+
+        .auth-btn:hover {
+            opacity: 0.9;
+        }
+
+        .auth-divider {
+            text-align: center;
+            color: var(--c-muted);
+            font-size: 0.85rem;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .auth-divider::before,
+        .auth-divider::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 42%;
+            height: 1px;
+            background: var(--c-border);
+        }
+
+        .auth-divider::before {
+            left: 0;
+        }
+
+        .auth-divider::after {
+            right: 0;
+        }
+
+        .auth-google {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--c-text);
+            border: 1px solid var(--c-border);
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.2s;
+        }
+
+        .auth-google:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-switch {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--c-muted);
+            margin-top: 24px;
+        }
+
+        .auth-switch a {
+            color: var(--c-primary-h);
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .auth-switch a:hover {
+            text-decoration: underline;
+        }
+
+        .auth-alert {
+            padding: 12px 16px;
+            border-radius: var(--radius-md);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+            display: none;
+            line-height: 1.5;
+        }
+
+        .auth-alert.error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            display: block;
+        }
+
+        .auth-alert.success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            color: #10b981;
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="navbar__inner">
+            <a href="../" class="navbar__logo">
+                <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
+            </a>
+            <!-- No login button here since we're ON the login page -->
+        </div>
+    </nav>
+
+    <main class="auth-page">
+        <div class="auth-box">
+            <h1 id="auth-title">Zaloguj się</h1>
+
+            <div id="auth-alert" class="auth-alert"></div>
+
+            <form id="auth-form">
+                <input type="email" id="auth-email" class="auth-input" placeholder="Adres e-mail" required />
+                <input type="password" id="auth-password" class="auth-input" placeholder="Hasło" required
+                    minlength="6" />
+                <button type="submit" class="auth-btn" id="auth-submit">Zaloguj</button>
+            </form>
+
+            <div class="auth-divider">lub</div>
+
+            <button class="auth-google" onclick="loginGoogle()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        fill="#4285F4" />
+                    <path
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        fill="#34A853" />
+                    <path
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                        fill="#FBBC05" />
+                    <path
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                        fill="#EA4335" />
+                </svg>
+                Kontynuuj z Google
+            </button>
+
+            <div class="auth-switch">
+                <span id="auth-switch-text">Nie masz konta?</span>
+                <a id="auth-switch-link" onclick="toggleAuthMode()">Zarejestruj się</a>
+            </div>
+        </div>
+    </main>
+
+    <!-- Supabase & Global scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../scripts.js"></script>
+
+    <script>
+        let isLogin = true;
+        const form = document.getElementById('auth-form');
+        const title = document.getElementById('auth-title');
+        const submitBtn = document.getElementById('auth-submit');
+        const switchText = document.getElementById('auth-switch-text');
+        const switchLink = document.getElementById('auth-switch-link');
+        const alertBox = document.getElementById('auth-alert');
+
+        function showAlert(msg, isSuccess = false) {
+            alertBox.textContent = msg;
+            alertBox.className = 'auth-alert ' + (isSuccess ? 'success' : 'error');
+        }
+
+        function hideAlert() {
+            alertBox.className = 'auth-alert';
+            alertBox.textContent = '';
+        }
+
+        function toggleAuthMode() {
+            isLogin = !isLogin;
+            hideAlert();
+            if (isLogin) {
+                title.textContent = 'Zaloguj się';
+                submitBtn.textContent = 'Zaloguj';
+                switchText.textContent = 'Nie masz konta?';
+                switchLink.textContent = 'Zarejestruj się';
+            } else {
+                title.textContent = 'Rejestracja';
+                submitBtn.textContent = 'Załóż darmowe konto';
+                switchText.textContent = 'Masz już konto?';
+                switchLink.textContent = 'Zaloguj się';
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideAlert();
+            submitBtn.disabled = true;
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Ładowanie...';
+
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+
+            if (!window.supabaseClient) {
+                showAlert('Błąd: Brak połączenia z bazą danych.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+                return;
+            }
+
+            if (isLogin) {
+                const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+                if (error) {
+                    showAlert(error.message === 'Invalid login credentials' ? 'Nieprawidłowy adres e-mail lub hasło.' : error.message);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                } else {
+                    // Success, redirect to previous page or home
+                    window.location.href = '../';
+                }
+            } else {
+                const { data, error } = await supabaseClient.auth.signUp({ email, password });
+                if (error) {
+                    showAlert(error.message);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                } else {
+                    // If no session created, means we need email confirmation
+                    if (data.session == null) {
+                        showAlert('Konto utworzone! Aby się zalogować, potwierdź swój adres e-mail klikając w link w wiadomości od nas.', true);
+                        form.reset();
+                    } else {
+                        // Auto logged in
+                        window.location.href = '../';
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            }
+        });
+
+        // If user is already logged in, kick them out of auth page
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (supabaseClient) {
+                const { data } = await supabaseClient.auth.getUser();
+                if (data?.user) {
+                    window.location.href = '../';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

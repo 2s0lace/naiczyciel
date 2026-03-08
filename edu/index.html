@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nAIczyciel EDU — Landing</title>
+  <meta name="description"
+    content="nAIczyciel EDU — szybkie tworzenie testów online dla nauczyciela, korepetytora i lektora." />
+  <link rel="icon" type="image/png" href="../img/logo.png" />
+  <link rel="stylesheet" href="../shared/base.css" />
+  <link rel="stylesheet" href="./edu.css" />
+</head>
+
+<body class="edu-theme auth-loading">
+  <nav class="navbar">
+    <div class="navbar__inner">
+      <a href="../" class="navbar__logo">
+        <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
+      </a>
+      <div class="auth-container">
+        <a href="../auth/" class="navbar__cta navbar__cta-link">Zaloguj się</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="edu-main edu-landing-main">
+    <section class="edu-premium-hero" data-edu-hero data-active-step="1">
+      <div class="edu-premium-bg" aria-hidden="true">
+        <div class="edu-matrix-fall"></div>
+        <div class="edu-right-gradient"></div>
+      </div>
+
+      <header class="edu-premium-center">
+        <div class="edu-premium-heading">
+          <img src="../img/logo.png" alt="" class="edu-premium-heading-logo" />
+          <h1 class="edu-premium-title">n<em>AI</em>czyciel EDU</h1>
+        </div>
+        <p class="edu-premium-claim">GENERACJA SZYBSZA NIŻ ZALEGŁE PREZENTACJE</p>
+      </header>
+
+      <div class="edu-hero-flow" id="edu-hero-flow">
+        <div class="edu-step-switcher" role="tablist" aria-label="Kroki działania generatora">
+          <button type="button" class="edu-step-card is-active" data-step="1" role="tab" aria-selected="true">
+            <span class="edu-step-no">01</span>
+            <h3>Ustawiasz parametry testu</h3>
+            <p>Temat, poziom, liczba pytań i typ pytań.</p>
+          </button>
+
+          <button type="button" class="edu-step-card" data-step="2" role="tab" aria-selected="false">
+            <span class="edu-step-no">02</span>
+            <h3>Generujesz i poprawiasz pytania</h3>
+            <p>Lista pytań, edycja, regenerate i delete.</p>
+          </button>
+
+          <button type="button" class="edu-step-card" data-step="3" role="tab" aria-selected="false">
+            <span class="edu-step-no">03</span>
+            <h3>Udostępniasz test uczniowi linkiem</h3>
+            <p>Link, przycisk udostępnienia i finalny output.</p>
+          </button>
+
+          <a href="./generator.html" class="edu-btn edu-btn--primary-lg edu-step-cta">Otwórz generator EDU</a>
+        </div>
+
+        <div class="edu-phone-wrap" aria-live="polite">
+          <div class="edu-phone">
+            <div class="edu-phone__bar">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="edu-phone__screen edu-phone-ui">
+              <section class="edu-phone-block" data-phone-block="config">
+                <h4>Konfiguracja</h4>
+                <div class="edu-phone-grid">
+                  <span>Temat: Present Simple</span>
+                  <span>Poziom: klasa 7-8</span>
+                  <span>Liczba pytań: 10</span>
+                  <span>Typ: mix</span>
+                </div>
+              </section>
+
+              <section class="edu-phone-block" data-phone-block="questions">
+                <h4>Pytania</h4>
+                <div class="edu-phone-question-list">
+                  <div class="edu-phone-question-row">
+                    <span>Pytanie #1</span>
+                    <div class="edu-phone-actions"><b>Edytuj</b><b>Regenerate</b><b>Delete</b></div>
+                  </div>
+                  <div class="edu-phone-question-row">
+                    <span>Pytanie #2</span>
+                    <div class="edu-phone-actions"><b>Edytuj</b><b>Regenerate</b><b>Delete</b></div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="edu-phone-block" data-phone-block="share">
+                <h4>Udostępnianie</h4>
+                <div class="edu-phone-share-row">
+                  <span class="edu-phone-link">/edu/test.html?id=edu_123</span>
+                  <button type="button">Udostępnij</button>
+                </div>
+                <p class="edu-phone-output">Output: link gotowy do wysłania uczniowi.</p>
+              </section>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="edu-footer">
+    <div class="edu-footer__inner">
+      <div class="edu-footer__brand">
+        <h3>n<em>AI</em>czyciel EDU</h3>
+        <p>Szybkie MVP do tworzenia testów online dla uczniów. Prosto, konkretnie i gotowe pod API.</p>
+      </div>
+
+      <nav class="edu-footer__nav" aria-label="Nawigacja EDU">
+        <a href="./">Landing</a>
+        <a href="./generator.html">Generator</a>
+        <a href="./test.html?id=demo">Widok ucznia</a>
+        <a href="../e8/">E8</a>
+      </nav>
+
+      <div class="edu-footer__meta">
+        <span>© 2026 nAIczyciel</span>
+        <span>Status: MVP EDU</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/supabase-config.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script src="../scripts.js"></script>
+  <script src="./edu-landing.js"></script>
+</body>
+
+</html>

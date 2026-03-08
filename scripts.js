@@ -1293,6 +1293,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const user = data?.user;
 
   if (user) {
+    document.body.classList.add('is-authenticated');
     console.log('Zalogowany uczeń:', user);
     const profile = await loadProfileForUser(user);
     setAccessState(profile);
@@ -1327,6 +1328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await updateDashboardStats(user);
     }
   } else {
+    document.body.classList.remove('is-authenticated');
     setAccessState(null);
   }
 

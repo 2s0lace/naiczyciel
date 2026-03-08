@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nAIczyciel EDU — Generator</title>
+  <meta name="description" content="Panel nauczyciela do szybkiego generowania i udostępniania testów online." />
+  <link rel="icon" type="image/png" href="../img/logo.png" />
+  <link rel="stylesheet" href="../shared/base.css" />
+  <link rel="stylesheet" href="./edu.css" />
+</head>
+
+<body class="edu-theme auth-loading">
+  <nav class="navbar">
+    <div class="navbar__inner">
+      <a href="../" class="navbar__logo">
+        <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
+      </a>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="./" class="navbar__cta navbar__cta-link">Landing EDU</a>
+        <div class="auth-container">
+          <a href="../auth/" class="navbar__cta navbar__cta-link">Zaloguj się</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="edu-main">
+    <section class="edu-hero">
+      <h1>Generator testów EDU</h1>
+      <p>Twórz test, popraw pytania i wygeneruj link dla ucznia.</p>
+    </section>
+
+    <section id="edu-generator-section" class="edu-builder">
+      <aside class="edu-panel">
+        <h2>Generator testu</h2>
+        <form id="edu-generator-form" class="edu-form">
+          <div class="edu-form__group">
+            <label for="subject">subject</label>
+            <input id="subject" name="subject" type="text" value="Język angielski" required />
+          </div>
+
+          <div class="edu-form__group">
+            <label for="topic">topic</label>
+            <input id="topic" name="topic" type="text" value="Present Simple i Present Continuous" required />
+          </div>
+
+          <div class="edu-form__row">
+            <div class="edu-form__group">
+              <label for="gradeOrAge">gradeOrAge</label>
+              <input id="gradeOrAge" name="gradeOrAge" type="text" value="klasa 7-8" required />
+            </div>
+            <div class="edu-form__group">
+              <label for="difficulty">difficulty</label>
+              <select id="difficulty" name="difficulty">
+                <option value="easy">easy</option>
+                <option value="medium" selected>medium</option>
+                <option value="hard">hard</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="edu-form__row">
+            <div class="edu-form__group">
+              <label for="questionCount">questionCount</label>
+              <input id="questionCount" name="questionCount" type="number" min="1" max="30" value="10" required />
+            </div>
+            <div class="edu-form__group">
+              <label for="questionType">questionType</label>
+              <select id="questionType" name="questionType">
+                <option value="multiple-choice">multiple-choice</option>
+                <option value="true-false">true-false</option>
+                <option value="open">open</option>
+                <option value="mix" selected>mix</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="edu-form__group">
+            <label for="instructionLanguage">instructionLanguage</label>
+            <select id="instructionLanguage" name="instructionLanguage">
+              <option value="pl" selected>pl</option>
+              <option value="en">en</option>
+            </select>
+          </div>
+
+          <div class="edu-form__group">
+            <label for="extraInstructions">extraInstructions</label>
+            <textarea id="extraInstructions" name="extraInstructions"
+              placeholder="Np. Dodaj 2 pytania powtórkowe pod koniec testu."></textarea>
+          </div>
+
+          <button class="edu-btn" type="submit">Generuj test</button>
+        </form>
+        <p id="edu-status" class="edu-status" aria-live="polite"></p>
+      </aside>
+
+      <div class="edu-panel">
+        <h2>Podgląd testu</h2>
+        <div id="edu-preview"></div>
+
+        <div id="edu-test-actions" class="edu-test-actions hidden">
+          <button id="edu-regenerate-all" class="edu-btn edu-btn--ghost" type="button">Regeneruj wszystko</button>
+          <button id="edu-save-test" class="edu-btn edu-btn--ghost" type="button">Zapisz test</button>
+          <button id="edu-copy-test" class="edu-btn edu-btn--ghost" type="button">Kopiuj test</button>
+          <button id="edu-generate-link" class="edu-btn" type="button">Generuj link</button>
+        </div>
+
+        <section id="edu-share" class="edu-share hidden">
+          <h3>Udostępnianie linku</h3>
+          <div class="edu-share__row">
+            <input id="edu-share-link" type="text" readonly />
+            <button id="edu-copy-link" class="edu-btn edu-btn--ghost" type="button">Kopiuj link</button>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="edu-saved">
+      <h2>Zapisane testy</h2>
+      <div id="edu-saved-tests" class="edu-saved__list"></div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/supabase-config.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script src="../scripts.js"></script>
+  <script type="module" src="./edu.js"></script>
+</body>
+
+</html>

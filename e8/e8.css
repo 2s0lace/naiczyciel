@@ -2016,12 +2016,16 @@ section.why {
     opacity: 1;
   }
 
-  #e8-pricing {
+  body.is-authenticated #e8-pricing {
     display: none !important;
   }
 
-  .pricing-mobile-cta {
+  body.is-authenticated .pricing-mobile-cta {
     display: block;
+  }
+
+  body:not(.is-authenticated) .pricing-mobile-cta {
+    display: none !important;
   }
 }
 

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>nAIczyciel EDU — Test ucznia</title>
+  <meta name="description" content="Widok ucznia do rozwiązania testu wygenerowanego przez nauczyciela." />
+  <link rel="icon" type="image/png" href="../img/logo.png" />
+  <link rel="stylesheet" href="../shared/base.css" />
+  <link rel="stylesheet" href="./edu.css" />
+</head>
+
+<body class="edu-theme auth-loading">
+  <nav class="navbar">
+    <div class="navbar__inner">
+      <a href="../" class="navbar__logo">
+        <img src="../img/logonaiczyciel.png" alt="nAIczyciel logo" class="navbar__logo-img" />
+      </a>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <a href="./generator.html" class="navbar__cta navbar__cta-link">Powrót do generatora</a>
+        <div class="auth-container">
+          <a href="../auth/" class="navbar__cta navbar__cta-link">Zaloguj się</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <main class="edu-test-layout">
+    <section id="edu-test-not-found" class="edu-student hidden">
+      <h1>Nie znaleziono testu</h1>
+      <p class="edu-student__meta">Sprawdź, czy link jest poprawny albo wygeneruj test ponownie.</p>
+      <a class="edu-back-link" href="./">Wróć do landing EDU</a>
+    </section>
+
+    <section id="edu-test-app" class="edu-student">
+      <h1 id="edu-test-title">Test ucznia</h1>
+      <p id="edu-test-meta" class="edu-student__meta"></p>
+
+      <form id="edu-test-form" class="edu-student-form">
+        <div class="edu-student-name">
+          <label for="edu-student-name-input">Imię ucznia</label>
+          <input id="edu-student-name-input" name="studentName" type="text" placeholder="Np. Ania" />
+        </div>
+
+        <div id="edu-test-questions"></div>
+
+        <button class="edu-btn" type="submit">Wyślij odpowiedzi</button>
+      </form>
+
+      <section id="edu-test-result" class="edu-test-result hidden"></section>
+      <a class="edu-back-link" href="./generator.html">Wróć do generatora</a>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../shared/supabase-config.js"></script>
+  <script src="../shared/supabase-client.js"></script>
+  <script src="../scripts.js"></script>
+  <script type="module" src="./edu-test.js"></script>
+</body>
+
+</html>

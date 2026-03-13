@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { clearRoleCookie, setRoleCookie } from "@/lib/auth/role";
+import { setRoleCookie } from "@/lib/auth/role";
 import { resolveRoleForSession } from "@/lib/auth/client-role";
 import { normalizeAvatarKey } from "@/lib/avatar/presets";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -51,14 +51,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
       return;
     }
 
-
-    if (isRegister && password !== confirmPassword) {
-      setError("HasĹ‚a nie sÄ… takie same.");
-      return;
-    }
-
     if (password.length < 6) {
-      setError("HasĹ‚o musi mieÄ‡ co najmniej 6 znakĂłw.");
+      setError("Hasło musi mieć co najmniej 6 znaków.");
       return;
     }
 
@@ -66,45 +60,6 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
     try {
       const supabase = getSupabaseBrowserClient();
-
-      if (isRegister) {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              role: "user",
-              dashboard_onboarding_completed: false,
-            },
-          },
-        });
-
-        if (signUpError) {
-          setError(signUpError.message);
-          return;
-        }
-
-        if (data.session && data.user) {
-          const role = await resolveRoleForSession({
-            supabase,
-            session: data.session,
-          });
-
-          setRoleCookie(role);
-
-          const nextPath = resolvePostAuthPath();
-          const avatarKey = normalizeAvatarKey(data.user.user_metadata?.avatar_key);
-          const redirectPath = avatarKey ? nextPath : resolveAvatarPath(nextPath, true);
-
-          router.push(redirectPath);
-          router.refresh();
-          return;
-        }
-
-        clearRoleCookie();
-        setInfo("Konto utworzone. SprawdĹş email i potwierdĹş rejestracjÄ™, a potem zaloguj siÄ™.");
-        return;
-      }
 
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email,
@@ -131,7 +86,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       router.push(redirectPath);
       router.refresh();
     } catch (unexpectedError) {
-      const message = unexpectedError instanceof Error ? unexpectedError.message : "WystÄ…piĹ‚ nieoczekiwany bĹ‚Ä…d.";
+      const message = unexpectedError instanceof Error ? unexpectedError.message : "Wystąpił nieoczekiwany błąd.";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -162,7 +117,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         setIsGoogleLoading(false);
       }
     } catch (unexpectedError) {
-      const message = unexpectedError instanceof Error ? unexpectedError.message : "WystÄ…piĹ‚ nieoczekiwany bĹ‚Ä…d.";
+      const message = unexpectedError instanceof Error ? unexpectedError.message : "Wystąpił nieoczekiwany błąd.";
       setError(message);
       setIsGoogleLoading(false);
     }
@@ -171,9 +126,9 @@ export default function AuthForm({ mode }: AuthFormProps) {
   return (
     <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-[0_20px_44px_-34px_rgba(0,0,0,0.95)] sm:p-7">
       <div className="mb-6 space-y-2 text-center sm:mb-7">
-        <h1 className="text-2xl font-bold text-white">{isRegister ? "ZaĹ‚ĂłĹĽ konto" : "Zaloguj siÄ™"}</h1>
+        <h1 className="text-2xl font-bold text-white">{isRegister ? "Załóż konto" : "Zaloguj się"}</h1>
         <p className="text-sm text-gray-300">
-          {isRegister ? "UtwĂłrz konto i zacznij Ä‡wiczyÄ‡ E8." : "Zaloguj siÄ™, aby kontynuowaÄ‡ naukÄ™."}
+          {isRegister ? "Utwórz konto i zacznij ćwiczyć E8." : "Zaloguj się, aby kontynuować naukę."}
         </p>
       </div>
 
@@ -196,7 +151,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
         <div className="space-y-1.5">
           <label htmlFor="password" className="text-xs font-semibold tracking-wide text-gray-300 uppercase">
-            HasĹ‚o
+            Hasło
           </label>
           <input
             id="password"
@@ -206,14 +161,14 @@ export default function AuthForm({ mode }: AuthFormProps) {
             required
             autoComplete={isRegister ? "new-password" : "current-password"}
             className="w-full rounded-xl border border-white/14 bg-[#090d1f] px-3.5 py-2.5 text-sm text-white outline-none transition-[border-color,box-shadow] duration-150 focus:border-indigo-300/55 focus:ring-2 focus:ring-indigo-400/20"
-            placeholder="â€˘â€˘â€˘â€˘â€˘â€˘â€˘â€˘"
+            placeholder="********"
           />
         </div>
 
         {isRegister ? (
           <div className="space-y-1.5">
             <label htmlFor="confirmPassword" className="text-xs font-semibold tracking-wide text-gray-300 uppercase">
-              PowtĂłrz hasĹ‚o
+              Powtórz hasło
             </label>
             <input
               id="confirmPassword"
@@ -223,7 +178,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
               required
               autoComplete="new-password"
               className="w-full rounded-xl border border-white/14 bg-[#090d1f] px-3.5 py-2.5 text-sm text-white outline-none transition-[border-color,box-shadow] duration-150 focus:border-indigo-300/55 focus:ring-2 focus:ring-indigo-400/20"
-              placeholder="â€˘â€˘â€˘â€˘â€˘â€˘â€˘â€˘"
+              placeholder="********"
             />
           </div>
         ) : null}
@@ -236,7 +191,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           disabled={isLoading || isGoogleLoading}
           className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white transition-[transform,background-color,box-shadow] duration-150 hover:bg-indigo-500 active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-70"
         >
-          {isLoading ? "Przetwarzanie..." : isRegister ? "UtwĂłrz konto" : "Zaloguj siÄ™"}
+          {isLoading ? "Przetwarzanie..." : isRegister ? "Utwórz konto" : "Zaloguj się"}
         </button>
 
         <div className="flex items-center gap-3">
@@ -273,12 +228,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
         </button>
       </form>
 
-      <p className="mt-5 text-center text-sm text-gray-300">
-        Rejestracja jest chwilowo wstrzymana.
-      </p>
+      <p className="mt-5 text-center text-sm text-gray-300">Rejestracja jest chwilowo wstrzymana.</p>
     </div>
   );
 }
-
-
-

@@ -1,0 +1,204 @@
+﻿@import "tailwindcss";
+
+:root {
+  --color-bg: #070b14;
+  --color-surface: #0f1626;
+  --color-surface-muted: #111b30;
+  --color-border: #263452;
+  --color-app: #eef3ff;
+  --color-app-muted: #a0b1d2;
+  --color-student: #6c86ff;
+  --color-student-soft: #3f4f91;
+  --color-teacher: #57d4a0;
+  --color-teacher-soft: #2f765a;
+  --color-focus: #90a5ff;
+  --color-background: #050510;
+  --color-primary: #6366f1;
+  --color-primary-glow: #4f46e5;
+  --color-success: #10b981;
+  --color-error: #ef4444;
+  --radius-card: 1.25rem;
+  --space-section: 3.25rem;
+  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@theme inline {
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-border: var(--color-border);
+  --color-app: var(--color-app);
+  --color-app-muted: var(--color-app-muted);
+  --color-student: var(--color-student);
+  --color-teacher: var(--color-teacher);
+  --color-background: var(--color-background);
+  --color-primary: var(--color-primary);
+  --color-primary-glow: var(--color-primary-glow);
+  --color-success: var(--color-success);
+  --color-error: var(--color-error);
+  --radius-card: var(--radius-card);
+}
+
+* {
+  border-color: var(--color-border);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at 10% -20%, #182443 0%, #070b14 52%);
+  color: var(--color-app);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.page-shell {
+  width: 100%;
+  max-width: var(--page-shell-max, 72rem);
+  margin-inline: auto;
+  padding-inline: 1rem;
+}
+
+.section-space {
+  padding-block: var(--space-section);
+}
+
+.type-kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-app-muted);
+}
+
+.type-h1 {
+  font-size: clamp(2rem, 8vw, 3.4rem);
+  line-height: 1.08;
+  font-weight: 700;
+  text-wrap: balance;
+}
+
+.type-h2 {
+  font-size: clamp(1.5rem, 6vw, 2.2rem);
+  line-height: 1.15;
+  font-weight: 650;
+  text-wrap: balance;
+}
+
+.type-lead {
+  font-size: clamp(1rem, 4.2vw, 1.125rem);
+  line-height: 1.6;
+  color: var(--color-app-muted);
+}
+
+.glow-student {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-student) 20%, transparent),
+    0 24px 70px -40px color-mix(in srgb, var(--color-student) 40%, transparent);
+}
+
+.glow-teacher {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-teacher) 20%, transparent),
+    0 24px 70px -40px color-mix(in srgb, var(--color-teacher) 40%, transparent);
+}
+
+@keyframes bounce-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2.8s ease-in-out infinite;
+}
+
+@keyframes motion-fade-up {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.motion-fade-up {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: motion-fade-up var(--motion-duration, 500ms) var(--ease-premium) forwards;
+  animation-delay: var(--motion-delay, 0ms);
+}
+
+.motion-scroll-reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity var(--motion-duration, 500ms) var(--ease-premium),
+    transform var(--motion-duration, 500ms) var(--ease-premium);
+}
+
+.motion-scroll-reveal[data-inview="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-fade-up {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .motion-scroll-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .page-shell {
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-shell {
+    padding-inline: 2rem;
+  }
+}
+
+
+.font-prompt {
+  font-family: var(--font-prompt), "Inter", sans-serif;
+}
+
+.font-prompt-800 {
+  font-family: var(--font-prompt), "Inter", sans-serif;
+  font-weight: 800;
+}
+
+.font-prompt-900 {
+  font-family: var(--font-prompt), "Inter", sans-serif;
+  font-weight: 900;
+}
+
+
+.prompt-black {
+  font-family: "Prompt", sans-serif;
+  font-weight: 900;
+  font-style: normal;
+}
+
+
+.figtree-black {
+  font-family: var(--font-figtree), "Inter", sans-serif;
+  font-weight: 900;
+  font-style: normal;
+}

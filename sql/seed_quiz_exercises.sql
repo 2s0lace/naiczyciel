@@ -1,0 +1,161 @@
+﻿-- Seed: 10 reaction exercises for public.quiz_exercises
+-- Safe to run multiple times (UPSERT by id)
+
+insert into public.quiz_exercises (
+  id,
+  status,
+  category,
+  task_type,
+  difficulty,
+  tags,
+  source,
+  is_public,
+  title,
+  instruction,
+  content,
+  correct_answer,
+  explanation,
+  hint,
+  analytics,
+  meta,
+  created_at,
+  updated_at
+)
+values
+(
+  'seed_reactions_01',
+  'active',
+  'reactions',
+  'single_choice_short',
+  'easy',
+  array['seed','reactions','apology'],
+  'internal',
+  true,
+  'Codzienne reakcje #1',
+  'Choose the best answer.',
+  $$ {"prompt":"X: I'm sorry I'm late. The bus didn't arrive.\nY: ______","options":[{"id":"A","text":"Never mind."},{"id":"B","text":"It doesn't care."},{"id":"C","text":"No one asks."}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"W tej sytuacji naturalna reakcja to uspokojenie rozmowcy.","pattern":"apology -> reassurance","watch_out":"Unikaj doslownego tlumaczenia z polskiego."} $$::jsonb,
+  $$ {"short":"Skup sie na uspokajajacej reakcji."} $$::jsonb,
+  $$ {"focus_label":"Codzienne reakcje","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()),
+  timezone('utc', now())
+),
+(
+  'seed_reactions_02','active','reactions','single_choice_short','easy',array['seed','reactions','empathy'],'internal',true,
+  'Wsparcie #2','Choose the best answer.',
+  $$ {"prompt":"X: I didn't pass the driving test.\nY: ______","options":[{"id":"A","text":"That's a pity."},{"id":"B","text":"Great for you."},{"id":"C","text":"How lucky!"}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"To neutralna i empatyczna reakcja na zla wiadomosc.","pattern":"bad news -> empathy","watch_out":"Nie uzywaj ironii przy negatywnych wiadomosciach."} $$::jsonb,
+  $$ {"short":"Wybierz odpowiedz wspierajaca, nie ironiczna."} $$::jsonb,
+  $$ {"focus_label":"Wsparcie","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()), timezone('utc', now())
+),
+(
+  'seed_reactions_03','active','reactions','single_choice_short','easy',array['seed','reactions','requests'],'internal',true,
+  'Prosby #3','Choose the best answer.',
+  $$ {"prompt":"X: Could you help me with this report?\nY: ______","options":[{"id":"A","text":"Sure, no problem."},{"id":"B","text":"No, you can me."},{"id":"C","text":"This report helps me not."}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"To naturalna i uprzejma zgoda na prosbe.","pattern":"request -> willing response","watch_out":"Unikaj nienaturalnych kalek jezykowych."} $$::jsonb,
+  $$ {"short":"Zwracaj uwage na uprzejma zgode."} $$::jsonb,
+  $$ {"focus_label":"Prosby","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()), timezone('utc', now())
+),
+(
+  'seed_reactions_04','active','reactions','single_choice_short','easy',array['seed','reactions','congratulations'],'internal',true,
+  'Dobre wiadomosci #4','Choose the best answer.',
+  $$ {"prompt":"X: I got the job!\nY: ______","options":[{"id":"A","text":"Congratulations!"},{"id":"B","text":"That's too bad."},{"id":"C","text":"You are lost."}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"Najbardziej naturalna reakcja to gratulacje.","pattern":"success -> congratulations","watch_out":"Nie odpowiadaj negatywnie na dobra wiadomosc."} $$::jsonb,
+  $$ {"short":"Przy sukcesie wybierz gratulacje."} $$::jsonb,
+  $$ {"focus_label":"Dobre wiadomosci","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()), timezone('utc', now())
+),
+(
+  'seed_reactions_05','active','reactions','single_choice_short','medium',array['seed','reactions','planning'],'internal',true,
+  'Planowanie #5','Choose the best answer.',
+  $$ {"prompt":"X: Let's meet at 6 PM.\nY: ______","options":[{"id":"A","text":"Sounds good."},{"id":"B","text":"I don't listen."},{"id":"C","text":"This is no sound."}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"To krotkie i naturalne potwierdzenie ustalenia.","pattern":"suggestion -> agreement","watch_out":"Unikaj niejednoznacznych odpowiedzi typu maybe yes."} $$::jsonb,
+  $$ {"short":"Szukaj zwięzlego potwierdzenia."} $$::jsonb,
+  $$ {"focus_label":"Planowanie","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()), timezone('utc', now())
+),
+(
+  'seed_reactions_06','active','reactions','single_choice_short','medium',array['seed','reactions','thanks'],'internal',true,
+  'Pomoc #6','Choose the best answer.',
+  $$ {"prompt":"X: Thank you for your help.\nY: ______","options":[{"id":"A","text":"You're welcome."},{"id":"B","text":"Welcome you too."},{"id":"C","text":"No, thank you me."}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"To standardowa odpowiedz na podziekowanie.","pattern":"thanks -> polite response","watch_out":"Nie wybieraj odpowiedzi brzmiacej jak odmowa."} $$::jsonb,
+  $$ {"short":"Po podziekowaniu wybierz uprzejma odpowiedz."} $$::jsonb,
+  $$ {"focus_label":"Pomoc","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()), timezone('utc', now())
+),
+(
+  'seed_reactions_07','active','reactions','single_choice_short','medium',array['seed','reactions','meetings'],'internal',true,
+  'Spotkania #7','Choose the best answer.',
+  $$ {"prompt":"X: Sorry, I can't make it today.\nY: ______","options":[{"id":"A","text":"No worries, we can reschedule."},{"id":"B","text":"You always can't."},{"id":"C","text":"Never call me."}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"Poprawna reakcja sygnalizuje zrozumienie i elastycznosc.","pattern":"cancellation -> understanding","watch_out":"Nie reaguj oskarzajaco przy neutralnym odwolaniu."} $$::jsonb,
+  $$ {"short":"Wybierz spokojna i wspierajaca reakcje."} $$::jsonb,
+  $$ {"focus_label":"Spotkania","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()), timezone('utc', now())
+),
+(
+  'seed_reactions_08','active','reactions','single_choice_short','hard',array['seed','reactions','opinion'],'internal',true,
+  'Opinia #8','Choose the best answer.',
+  $$ {"prompt":"X: Do you mind if I open the window?\nY: ______","options":[{"id":"A","text":"Not at all."},{"id":"B","text":"Yes, open now always."},{"id":"C","text":"I mind no open."}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"W tym pytaniu poprawna odpowiedz oznacza zgode.","pattern":"do you mind -> permission","watch_out":"Nie pomyl yes/no przy konstrukcji do you mind."} $$::jsonb,
+  $$ {"short":"Pamietaj: Not at all = zgoda."} $$::jsonb,
+  $$ {"focus_label":"Opinia","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()), timezone('utc', now())
+),
+(
+  'seed_reactions_09','active','reactions','single_choice_short','hard',array['seed','reactions','appreciation'],'internal',true,
+  'Spotkania #9','Choose the best answer.',
+  $$ {"prompt":"X: Thanks for waiting for me.\nY: ______","options":[{"id":"A","text":"No problem at all."},{"id":"B","text":"You must wait."},{"id":"C","text":"Waiting is your fault."}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"Naturalna reakcja potwierdza, ze to nie byl problem.","pattern":"appreciation -> reassurance","watch_out":"Unikaj chlodnej lub obwiniajacej odpowiedzi."} $$::jsonb,
+  $$ {"short":"Postaw na uspokajajacy ton."} $$::jsonb,
+  $$ {"focus_label":"Spotkania","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()), timezone('utc', now())
+),
+(
+  'seed_reactions_10','active','reactions','single_choice_short','hard',array['seed','reactions','apology'],'internal',true,
+  'Przeprosiny #10','Choose the best answer.',
+  $$ {"prompt":"X: Sorry, I forgot to call you yesterday.\nY: ______","options":[{"id":"A","text":"It's okay, don't worry."},{"id":"B","text":"You never call no one."},{"id":"C","text":"I am angry forever."}]} $$::jsonb,
+  $$ {"option_id":"A"} $$::jsonb,
+  $$ {"why":"W tym kontekscie najlepsza jest spokojna akceptacja przeprosin.","pattern":"apology -> acceptance","watch_out":"Nie eskaluj tonu, gdy sytuacja jest neutralna."} $$::jsonb,
+  $$ {"short":"Wybierz lagodna reakcje akceptacji."} $$::jsonb,
+  $$ {"focus_label":"Przeprosiny","skill":"functional_language"} $$::jsonb,
+  $$ {"created_at":"2026-03-11T00:00:00Z","updated_at":"2026-03-11T00:00:00Z"} $$::jsonb,
+  timezone('utc', now()), timezone('utc', now())
+)
+on conflict (id) do update
+set
+  status = excluded.status,
+  category = excluded.category,
+  task_type = excluded.task_type,
+  difficulty = excluded.difficulty,
+  tags = excluded.tags,
+  source = excluded.source,
+  is_public = excluded.is_public,
+  title = excluded.title,
+  instruction = excluded.instruction,
+  content = excluded.content,
+  correct_answer = excluded.correct_answer,
+  explanation = excluded.explanation,
+  hint = excluded.hint,
+  analytics = excluded.analytics,
+  meta = excluded.meta,
+  updated_at = timezone('utc', now());

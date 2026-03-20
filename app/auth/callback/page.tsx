@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { clearRoleCookie, setRoleCookie } from "@/lib/auth/role";
+import { hasConfiguredDisplayName } from "@/lib/auth/display-name";
 import { resolveRoleForSession } from "@/lib/auth/client-role";
 import { normalizeAvatarKey } from "@/lib/avatar/presets";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -15,10 +16,14 @@ function resolvePostAuthPath(): string {
   return "/";
 }
 
-function resolveAvatarPath(nextPath: string): string {
+function resolveAvatarPath(nextPath: string, forceSelection: boolean): string {
   const params = new URLSearchParams();
   params.set("next", nextPath);
-  params.set("force", "1");
+
+  if (forceSelection) {
+    params.set("force", "1");
+  }
+
   return `/auth/avatar?${params.toString()}`;
 }
 
@@ -65,7 +70,8 @@ export default function AuthCallbackPage() {
 
             const nextPath = resolvePostAuthPath();
             const avatarKey = normalizeAvatarKey(data.session.user.user_metadata?.avatar_key);
-            const redirectPath = avatarKey ? nextPath : resolveAvatarPath(nextPath);
+            const hasDisplayName = hasConfiguredDisplayName(data.session.user.user_metadata);
+            const redirectPath = avatarKey && hasDisplayName ? nextPath : resolveAvatarPath(nextPath, !avatarKey);
 
             router.replace(redirectPath);
             router.refresh();

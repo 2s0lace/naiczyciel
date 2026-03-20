@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import Image from "next/image";
@@ -7,6 +7,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import AvatarPicker from "@/components/avatar/avatar-picker";
 import { clearRoleCookie, isAdminEmail, setRoleCookie } from "@/lib/auth/role";
+import {
+  isSafeDisplayNameCandidate,
+  resolveDisplayNameFromMetadata,
+  sanitizeDisplayNameInput,
+} from "@/lib/auth/display-name";
 import { resolveRoleForSession } from "@/lib/auth/client-role";
 import { DEFAULT_AVATAR_KEY, normalizeAvatarKey, resolveAvatarSrc, type AvatarKey } from "@/lib/avatar/presets";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -54,6 +59,10 @@ export default function AccountPage() {
   const [isAvatarSaving, setIsAvatarSaving] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarMessage, setAvatarMessage] = useState<string | null>(null);
+  const [displayNameInput, setDisplayNameInput] = useState("");
+  const [isDisplayNameSaving, setIsDisplayNameSaving] = useState(false);
+  const [displayNameError, setDisplayNameError] = useState<string | null>(null);
+  const [displayNameMessage, setDisplayNameMessage] = useState<string | null>(null);
   const [isTutorialResetting, setIsTutorialResetting] = useState(false);
   const [tutorialError, setTutorialError] = useState<string | null>(null);
   const [tutorialMessage, setTutorialMessage] = useState<string | null>(null);
@@ -94,10 +103,16 @@ export default function AccountPage() {
 
         setUser(ensured.user);
         setSelectedAvatarKey(ensured.avatarKey);
+        setDisplayNameInput(resolveDisplayNameFromMetadata(ensured.user.user_metadata, ""));
+        setDisplayNameError(null);
+        setDisplayNameMessage(null);
       } else {
         setUser(null);
         setRole("user");
         setSelectedAvatarKey(null);
+        setDisplayNameInput("");
+        setDisplayNameError(null);
+        setDisplayNameMessage(null);
         clearRoleCookie();
       }
 
@@ -135,12 +150,18 @@ export default function AccountPage() {
 
           setUser(ensured.user);
           setSelectedAvatarKey(ensured.avatarKey);
+          setDisplayNameInput(resolveDisplayNameFromMetadata(ensured.user.user_metadata, ""));
+          setDisplayNameError(null);
+          setDisplayNameMessage(null);
           setIsLoading(false);
         })();
       } else {
         setUser(null);
         setRole("user");
         setSelectedAvatarKey(null);
+        setDisplayNameInput("");
+        setDisplayNameError(null);
+        setDisplayNameMessage(null);
         setIsLoading(false);
         clearRoleCookie();
       }
@@ -162,6 +183,9 @@ export default function AccountPage() {
       setUser(null);
       setRole("user");
       setSelectedAvatarKey(null);
+      setDisplayNameInput("");
+      setDisplayNameError(null);
+      setDisplayNameMessage(null);
       router.push("/");
       router.refresh();
     } finally {
@@ -208,11 +232,63 @@ export default function AccountPage() {
       setAvatarMessage("Avatar zapisany.");
       router.refresh();
     } catch (unexpectedError) {
-      const message = unexpectedError instanceof Error ? unexpectedError.message : "Nie uda\u0142o si\u0119 zapisa\u0107 avatara.";
+      const message = unexpectedError instanceof Error ? unexpectedError.message : "Nie udało się zapisać avatara.";
       setAvatarError(message);
       setSelectedAvatarKey(previousAvatarKey ?? DEFAULT_AVATAR_KEY);
     } finally {
       setIsAvatarSaving(false);
+    }
+  };
+
+  const handleDisplayNameSave = async () => {
+    if (!user || isDisplayNameSaving) {
+      return;
+    }
+
+    const nextDisplayName = sanitizeDisplayNameInput(displayNameInput);
+
+    if (!isSafeDisplayNameCandidate(nextDisplayName)) {
+      setDisplayNameError("Podaj imie 2-24 znaki, bez cyfr i symboli.");
+      setDisplayNameMessage(null);
+      return;
+    }
+
+    setIsDisplayNameSaving(true);
+    setDisplayNameError(null);
+    setDisplayNameMessage(null);
+
+    try {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.auth.updateUser({
+        data: {
+          ...(user.user_metadata ?? {}),
+          display_name: nextDisplayName,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const nextUser =
+        data.user ??
+        ({
+          ...user,
+          user_metadata: {
+            ...(user.user_metadata ?? {}),
+            display_name: nextDisplayName,
+          },
+        } as User);
+
+      setUser(nextUser);
+      setDisplayNameInput(resolveDisplayNameFromMetadata(nextUser.user_metadata, nextDisplayName));
+      setDisplayNameMessage("Imie zapisane.");
+      router.refresh();
+    } catch (unexpectedError) {
+      const message = unexpectedError instanceof Error ? unexpectedError.message : "Nie udalo sie zapisac imienia.";
+      setDisplayNameError(message);
+    } finally {
+      setIsDisplayNameSaving(false);
     }
   };
 
@@ -248,11 +324,11 @@ export default function AccountPage() {
             },
           } as User),
       );
-      setTutorialMessage("Tutorial zostanie pokazany przy wej\u015bciu do panelu ucznia.");
+      setTutorialMessage("Tutorial zostanie pokazany przy wejściu do panelu ucznia.");
       router.push("/e8");
       router.refresh();
     } catch (unexpectedError) {
-      const message = unexpectedError instanceof Error ? unexpectedError.message : "Nie uda\u0142o si\u0119 uruchomi\u0107 tutorialu.";
+      const message = unexpectedError instanceof Error ? unexpectedError.message : "Nie udało się uruchomić tutorialu.";
       setTutorialError(message);
     } finally {
       setIsTutorialResetting(false);
@@ -317,18 +393,18 @@ export default function AccountPage() {
           {isLoading ? (
             <div className="space-y-3 text-center">
               <h1 className="text-2xl font-bold text-white">Twoje konto</h1>
-              <p className="text-sm text-gray-300">{"Sprawdzam sesj\u0119..."}</p>
+              <p className="text-sm text-gray-300">{"Sprawdzam sesję..."}</p>
             </div>
           ) : !user ? (
             <div className="space-y-5 text-center">
               <h1 className="text-2xl font-bold text-white">Twoje konto</h1>
-              <p className="text-sm text-gray-300">{"Zaloguj si\u0119, aby zobaczy\u0107 ustawienia profilu."}</p>
+              <p className="text-sm text-gray-300">{"Zaloguj się, aby zobaczyć ustawienia profilu."}</p>
               <div className="flex items-center justify-center gap-3">
                 <Link
                   href="/login"
                   className="rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-[background-color,transform] duration-150 hover:bg-indigo-500 active:scale-[0.985]"
                 >
-                  {"Zaloguj si\u0119"}
+                  {"Zaloguj się"}
                 </Link>
 </div>
             </div>
@@ -346,9 +422,9 @@ export default function AccountPage() {
                   />
 
                   <div className="min-w-0 flex-1">
-                    <p className="text-2xl font-bold text-white">Hej!</p>
+                    <p className="text-2xl font-bold text-white">{`Hej, ${resolveDisplayNameFromMetadata(user.user_metadata, "Ty")}!`}</p>
                     <p className="mt-1 text-sm text-indigo-100/82">Tutaj zmienisz avatar i ustawienia profilu.</p>
-                    <p className="mt-1 text-xs text-indigo-200/70">{"Wi\u0119cej funkcji wkr\u00F3tce."}</p>
+                    <p className="mt-1 text-xs text-indigo-200/70">{"Więcej funkcji wkrótce."}</p>
                   </div>
                 </div>
 
@@ -361,13 +437,41 @@ export default function AccountPage() {
                     <span className="text-[11px] font-semibold tracking-wide text-gray-400 uppercase">Rola</span>
                     <span className="text-sm capitalize text-white">{effectiveRole}</span>
                   </div>
+                  <div className="border-t border-white/10 pt-3">
+                    <span className="text-[11px] font-semibold tracking-wide text-gray-400 uppercase">Imie</span>
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={displayNameInput}
+                        onChange={(event) => {
+                          setDisplayNameInput(event.target.value);
+                          setDisplayNameError(null);
+                          setDisplayNameMessage(null);
+                        }}
+                        maxLength={24}
+                        autoComplete="given-name"
+                        placeholder="Wpisz imie"
+                        className="w-full rounded-lg border border-white/14 bg-[#090d1f] px-3 py-2 text-sm text-white outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-gray-400/70 focus:border-indigo-300/45 focus:ring-2 focus:ring-indigo-400/16"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleDisplayNameSave}
+                        disabled={isDisplayNameSaving}
+                        className="shrink-0 rounded-lg border border-white/14 bg-white/[0.04] px-3 py-2 text-xs font-semibold text-indigo-100 transition-[border-color,background-color] duration-150 hover:border-white/24 hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isDisplayNameSaving ? "Zapisywanie..." : "Zapisz"}
+                      </button>
+                    </div>
+                    {displayNameError ? <p className="mt-2 text-xs text-red-300">{displayNameError}</p> : null}
+                    {displayNameMessage ? <p className="mt-2 text-xs text-emerald-300">{displayNameMessage}</p> : null}
+                  </div>
                 </div>
               </header>
 
               <section className="space-y-3 rounded-2xl border border-indigo-200/22 bg-[linear-gradient(150deg,rgba(12,18,38,0.94),rgba(9,14,31,0.92))] p-4 shadow-[0_16px_34px_-24px_rgba(79,70,229,0.7)]">
                 <div>
-                  <h2 className="text-sm font-semibold text-white">{"Tw\u00F3j avatar"}</h2>
-                  <p className="mt-1 text-xs text-indigo-100/78">{"Wybierz styl, kt\u00F3ry b\u0119dzie widoczny w Twoim koncie."}</p>
+                  <h2 className="text-sm font-semibold text-white">{"Twój avatar"}</h2>
+                  <p className="mt-1 text-xs text-indigo-100/78">{"Wybierz styl, który będzie widoczny w Twoim koncie."}</p>
                 </div>
 
                 <AvatarPicker
@@ -386,7 +490,7 @@ export default function AccountPage() {
                 <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
                   <div>
                     <h2 className="text-sm font-semibold text-white">Przewodnik po panelu</h2>
-                    <p className="mt-1 text-xs text-gray-300">{"Mo\u017Cesz uruchomi\u0107 tutorial ponownie."}</p>
+                    <p className="mt-1 text-xs text-gray-300">{"Możesz uruchomić tutorial ponownie."}</p>
                   </div>
 
                   <button
@@ -405,13 +509,13 @@ export default function AccountPage() {
                 <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3.5">
                   <div>
                     <h2 className="text-sm font-semibold text-white">Szybka notatka</h2>
-                    <p className="mt-1 text-xs text-gray-300">{"Notatka jest zapisywana tylko w tej przegl\u0105darce."}</p>
+                    <p className="mt-1 text-xs text-gray-300">{"Notatka jest zapisywana tylko w tej przeglądarce."}</p>
                   </div>
 
                   <textarea
                     value={localNote}
                     onChange={(event) => handleLocalNoteChange(event.target.value)}
-                    placeholder={isLocalNoteReady ? "Wpisz notatk\u0119..." : "\u0141adowanie notatki..."}
+                    placeholder={isLocalNoteReady ? "Wpisz notatkę..." : "Ładowanie notatki..."}
                     rows={4}
                     className="w-full resize-y rounded-xl border border-white/12 bg-[#0c1228] px-3 py-2 text-sm text-white outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-gray-400/80 focus:border-indigo-200/35 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.18)]"
                   />
@@ -432,13 +536,13 @@ export default function AccountPage() {
 
         {!isLoading && user && isAdmin ? (
           <div className="mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-            <p className="text-[11px] font-semibold tracking-[0.08em] text-indigo-200/72 uppercase">{"Narz\u0119dzia admina"}</p>
-            <p className="mt-1 text-xs text-gray-300">{"To oddzielna sekcja do zarz\u0105dzania pytaniami."}</p>
+            <p className="text-[11px] font-semibold tracking-[0.08em] text-indigo-200/72 uppercase">{"Narzędzia admina"}</p>
+            <p className="mt-1 text-xs text-gray-300">{"To oddzielna sekcja do zarządzania pytaniami."}</p>
             <Link
               href="/konto/pytania"
               className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-white/16 bg-white/[0.03] px-4 py-2.5 text-sm font-semibold text-indigo-100 transition-[border-color,background-color,transform] duration-150 hover:border-white/28 hover:bg-white/[0.07] active:scale-[0.99]"
             >
-              {"Otw\u00F3rz panel pyta\u0144"}
+              {"Otwórz panel pytań"}
             </Link>
           </div>
         ) : null}

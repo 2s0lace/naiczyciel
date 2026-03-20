@@ -1,9 +1,9 @@
 ﻿"use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { setRoleCookie } from "@/lib/auth/role";
+import { hasConfiguredDisplayName } from "@/lib/auth/display-name";
 import { resolveRoleForSession } from "@/lib/auth/client-role";
 import { normalizeAvatarKey } from "@/lib/avatar/presets";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -81,7 +81,8 @@ export default function AuthForm({ mode }: AuthFormProps) {
 
       const nextPath = resolvePostAuthPath();
       const avatarKey = normalizeAvatarKey(data.user.user_metadata?.avatar_key);
-      const redirectPath = avatarKey ? nextPath : resolveAvatarPath(nextPath, false);
+      const hasDisplayName = hasConfiguredDisplayName(data.user.user_metadata);
+      const redirectPath = avatarKey && hasDisplayName ? nextPath : resolveAvatarPath(nextPath, !avatarKey);
 
       router.push(redirectPath);
       router.refresh();

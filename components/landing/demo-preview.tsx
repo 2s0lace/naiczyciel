@@ -156,7 +156,9 @@ export default function DemoPreview({ activeTab }: DemoPreviewProps) {
       : "translate-y-3 scale-[0.995] opacity-0 blur-[1px] duration-[0ms]";
 
   return (
-    <section className={sectionClass}>
+    <section
+      className={`${sectionClass} -mx-2 w-[calc(100%+1rem)] sm:mx-0 sm:w-full lg:[transform-origin:center_center] lg:[transform:perspective(1200px)_translateX(-10px)_rotateY(-5deg)_rotateX(1deg)] lg:shadow-[20px_20px_60px_rgba(0,0,0,0.5)] lg:[transition:transform_0.4s_ease,box-shadow_0.4s_ease] lg:hover:[transform:perspective(1200px)_translateX(-10px)_rotateY(0deg)_rotateX(0deg)]`}
+    >
       <div className={`transition-[opacity,transform,filter] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform motion-reduce:transition-none motion-reduce:transform-none ${motionClass}`}>
         {isAccount ? (
           <>

@@ -6,6 +6,11 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import AvatarPicker from "@/components/avatar/avatar-picker";
 import { setRoleCookie } from "@/lib/auth/role";
+import {
+  isSafeDisplayNameCandidate,
+  resolveDisplayNameFromMetadata,
+  sanitizeDisplayNameInput,
+} from "@/lib/auth/display-name";
 import { resolveRoleForSession } from "@/lib/auth/client-role";
 import { DEFAULT_AVATAR_KEY, normalizeAvatarKey, type AvatarKey } from "@/lib/avatar/presets";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -28,6 +33,8 @@ export default function AvatarSelectionPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [displayNameInput, setDisplayNameInput] = useState("");
+  const [displayNameError, setDisplayNameError] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -57,6 +64,7 @@ export default function AvatarSelectionPage() {
         }
 
         setUser(nextUser);
+        setDisplayNameInput(resolveDisplayNameFromMetadata(nextUser.user_metadata, ""));
 
         const existingAvatar = normalizeAvatarKey(nextUser.user_metadata?.avatar_key);
         setSelectedAvatarKey(shouldForceSelection ? null : existingAvatar);
@@ -74,7 +82,8 @@ export default function AvatarSelectionPage() {
     };
   }, [router]);
 
-  const canContinue = !isSaving && Boolean(selectedAvatarKey);
+  const normalizedDisplayName = sanitizeDisplayNameInput(displayNameInput);
+  const canContinue = !isSaving && Boolean(selectedAvatarKey) && isSafeDisplayNameCandidate(normalizedDisplayName);
 
   const handleSave = async () => {
     if (!user) {
@@ -82,9 +91,16 @@ export default function AvatarSelectionPage() {
     }
 
     const avatarKey = selectedAvatarKey ?? DEFAULT_AVATAR_KEY;
+    const nextDisplayName = sanitizeDisplayNameInput(displayNameInput);
+
+    if (!isSafeDisplayNameCandidate(nextDisplayName)) {
+      setDisplayNameError("Podaj imie (2-24 znaki, bez cyfr i symboli).");
+      return;
+    }
 
     setIsSaving(true);
     setErrorMessage(null);
+    setDisplayNameError(null);
 
     try {
       const supabase = getSupabaseBrowserClient();
@@ -92,6 +108,7 @@ export default function AvatarSelectionPage() {
         data: {
           ...(user.user_metadata ?? {}),
           avatar_key: avatarKey,
+          display_name: nextDisplayName,
         },
       });
 
@@ -150,6 +167,25 @@ export default function AvatarSelectionPage() {
             </p>
           </div>
 
+          <div className="mx-auto mt-6 w-full max-w-[31rem] space-y-1.5">
+            <label htmlFor="displayName" className="text-xs font-semibold tracking-[0.08em] text-indigo-100/76 uppercase">
+              Imie
+            </label>
+            <input
+              id="displayName"
+              type="text"
+              value={displayNameInput}
+              onChange={(event) => {
+                setDisplayNameInput(event.target.value);
+                setDisplayNameError(null);
+              }}
+              maxLength={24}
+              autoComplete="given-name"
+              placeholder="Wpisz imie"
+              className="w-full rounded-xl border border-white/14 bg-[#0b132c] px-3.5 py-2.5 text-sm text-white outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-indigo-100/45 focus:border-indigo-200/40 focus:shadow-[0_0_0_2px_rgba(99,102,241,0.2)]"
+            />
+          </div>
+
           <div className="mt-7 rounded-2xl border border-white/10 bg-[linear-gradient(150deg,rgba(12,18,36,0.78),rgba(8,13,28,0.72))] px-4 py-5 sm:px-6">
             <AvatarPicker
               selectedKey={selectedAvatarKey}
@@ -160,6 +196,7 @@ export default function AvatarSelectionPage() {
             />
           </div>
 
+          {displayNameError ? <p className="mt-4 text-center text-sm text-red-300">{displayNameError}</p> : null}
           {errorMessage ? <p className="mt-4 text-center text-sm text-red-300">{errorMessage}</p> : null}
 
           <div className="mt-7 flex justify-center">

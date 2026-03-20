@@ -1,5 +1,11 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import {
+  AI_GENERATION_RATE_LIMIT_ACTION,
+  buildRateLimitErrorPayload,
+  enforceAiRateLimit,
+} from "@/lib/ai/rate-limit";
+import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
 import { getOpenAIServerClient } from "@/lib/openai/server";
 
 type RouteContext = {
@@ -120,27 +126,32 @@ function validatePayload(body: FeedbackBody): { ok: true; payload: SanitizedPayl
 }
 
 function buildPrompt(payload: SanitizedPayload) {
-  return [
-    "Tworzysz krotkie podsumowanie po mini-quizie dla ucznia na mobile.",
-    "Pisz po polsku, prosto i konkretnie.",
-    "",
+  const sessionDetails = [
     `Tryb: ${payload.mode}`,
     `Wynik: ${payload.correctAnswers}/${payload.totalQuestions} (${payload.scorePercent}%)`,
-    `Najmocniejszy obszar: ${payload.strongestArea}`,
-    `Najslabszy obszar: ${payload.weakestArea}`,
+    `Mocna strona (metryka): ${payload.strongestArea}`,
+    `Do poprawy (metryka): ${payload.weakestArea}`,
+  ].join(" | ");
+
+  return [
+    "Jestes nauczycielem angielskiego po wlasnie zakonczonej lekcji z uczniem.",
+    `Wyniki tej sesji: ${sessionDetails}`,
     "",
-    "Wymagany format (dokladnie 4 linie):",
-    "Diagnoza: ...",
-    "Mocna strona: ...",
+    "Napisz krotki raport w 4 sekcjach, kazda to 1-2 zdania:",
+    "- Ocena ogolna: co poszlo, bez owijania w bawelne",
+    "- Mocne strony: co konkretnie zrozumial dobrze",
+    "- Do poprawy: jeden konkretny blad, ktory sie powtarzal",
+    "- Nastepny krok: jedno cwiczenie na dzis, bardzo konkretne",
+    "",
+    "Oddaj wynik dokladnie w 4 liniach:",
+    "Ocena ogolna: ...",
+    "Mocne strony: ...",
     "Do poprawy: ...",
-    "Na teraz: ...",
+    "Nastepny krok: ...",
     "",
-    "Zasady:",
-    "- max 1 krotkie zdanie w kazdej linii",
-    "- bez markdown, bez numeracji, bez list",
-    "- bez ogolnikow i bez motywacyjnych frazesow",
-    "- kazda linia ma byc konkretna i praktyczna",
-    "- lacznie max 50 slow",
+    "Cieply ton, po polsku, bez polskich znakow diakrytycznych.",
+    "Piszesz do 14-latka, ktory chce zdac egzamin - motywuj, nie strasz.",
+    "Bez markdown i bez dodatkowych linii.",
   ].join("\n");
 }
 
@@ -168,6 +179,23 @@ export async function POST(request: Request, context: RouteContext) {
         { error: "Brak konfiguracji OpenAI API.", details: "Skontaktuj sie z administratorem." },
         { status: 503 },
       );
+    }
+
+    const access = await resolveAccessTierFromRequest(request);
+    const rateLimit = await enforceAiRateLimit({
+      request,
+      action: AI_GENERATION_RATE_LIMIT_ACTION,
+      userId: access.userId,
+      role: access.role,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(buildRateLimitErrorPayload(rateLimit), {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+        },
+      });
     }
 
     const prompt = buildPrompt(validated.payload);
@@ -253,3 +281,6 @@ export async function POST(request: Request, context: RouteContext) {
     );
   }
 }
+
+
+

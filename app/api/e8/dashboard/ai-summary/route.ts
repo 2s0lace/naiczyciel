@@ -1,5 +1,10 @@
-﻿import OpenAI from "openai";
+import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import {
+  AI_GENERATION_RATE_LIMIT_ACTION,
+  buildRateLimitErrorPayload,
+  enforceAiRateLimit,
+} from "@/lib/ai/rate-limit";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
 import { getOpenAIServerClient } from "@/lib/openai/server";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
@@ -216,22 +221,19 @@ function buildPrompt(sessions: SessionRow[]): string {
   });
 
   return [
-    "Jestes trenerem jezyka angielskiego dla ucznia E8.",
-    "Napisz bardzo krotkie i konkretne podsumowanie 5 ostatnich sesji.",
-    "Pisz po polsku.",
+    "Jestes przyjaznym nauczycielem angielskiego.",
+    "Masz wyniki z ostatnich 5 sesji ucznia:",
     "",
-    "Dane sesji:",
     ...lines,
     "",
-    "Format odpowiedzi (dokladnie 3 linie):",
-    "Trend: ...",
-    "Mocna strona: ...",
-    "Nastepny krok: ...",
+    "Napisz krotkie podsumowanie - maksymalnie 3 zdania.",
+    "Jedno zdanie o tym, co idzie dobrze (konkretnie).",
+    "Jedno zdanie o tym, gdzie sie potyka (konkretnie, z przykladem bledu).",
+    "Jedno zdanie o tym, co powinien przecwiczyc dzis.",
     "",
-    "Zasady:",
-    "- max 14 slow na linie",
-    "- zero markdown, zero list, zero emoji",
-    "- konkretnie, bez ogolnikow i bez frazesow",
+    "Pisz cieplo, jak nauczyciel do ucznia, ktorego lubisz.",
+    "Po polsku, bez formatowania i bez etykiet typu 'Trend:' czy 'Mocna strona:'.",
+    "Tylko naturalny tekst, jak SMS.",
   ].join("\n");
 }
 
@@ -293,6 +295,22 @@ export async function GET(request: Request) {
   }
 
   try {
+    const rateLimit = await enforceAiRateLimit({
+      request,
+      action: AI_GENERATION_RATE_LIMIT_ACTION,
+      userId: access.userId,
+      role: access.role,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(buildRateLimitErrorPayload(rateLimit), {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+        },
+      });
+    }
+
     const openai = getOpenAIServerClient();
     const prompt = buildPrompt(sessions);
 
@@ -383,5 +401,6 @@ export async function GET(request: Request) {
     );
   }
 }
+
 
 

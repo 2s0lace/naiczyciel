@@ -154,18 +154,18 @@ function MobileHeroStepSwitcher({ activeTab }: { activeTab: FeatureType }) {
 
 function DesktopHeroStepsList({ activeTab }: { activeTab: FeatureType }) {
   return (
-    <ol className="mt-3.5 hidden w-full max-w-[320px] text-left sm:max-w-[360px] md:mt-4 md:block md:max-w-[420px] lg:max-w-[30rem]">
+    <ol className="mt-3.5 hidden w-full max-w-[320px] text-left sm:max-w-[360px] md:mt-4 md:block md:max-w-[420px] lg:max-w-[30rem] min-[1440px]:mt-5 min-[1440px]:max-w-[34rem] min-[2200px]:max-w-[40rem]">
       {steps.map((step, index) => {
         const isActive = step.tab === activeTab;
 
         return (
           <li
             key={step.id}
-            className="group motion-fade-up grid grid-cols-[auto_1fr] items-center gap-x-3 py-2"
+            className="group motion-fade-up grid grid-cols-[auto_1fr] items-center gap-x-3 py-2 min-[1440px]:gap-x-4 min-[1440px]:py-2.5 min-[2200px]:py-3"
             style={{ animationDelay: `${280 + index * 60}ms`, animationDuration: "430ms" }}
           >
             <span
-              className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full border px-1.5 text-[10px] font-bold tracking-[0.12em] transition-[background-color,border-color,color,transform] duration-180 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transform-none ${
+              className={`inline-flex h-6 min-w-6 items-center justify-center rounded-full border px-1.5 text-[10px] font-bold tracking-[0.12em] transition-[background-color,border-color,color,transform] duration-180 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transform-none min-[1440px]:h-7 min-[1440px]:min-w-7 min-[1440px]:text-[11px] min-[2200px]:h-8 min-[2200px]:min-w-8 min-[2200px]:text-xs ${
                 isActive
                   ? "border-transparent bg-indigo-500/[0.24] text-indigo-100"
                   : "border-indigo-300/16 bg-indigo-500/[0.08] text-indigo-100/78 lg:group-hover:border-indigo-200/30 lg:group-hover:bg-indigo-500/[0.16] lg:group-hover:text-indigo-100 lg:group-hover:scale-[1.03]"
@@ -175,8 +175,8 @@ function DesktopHeroStepsList({ activeTab }: { activeTab: FeatureType }) {
             </span>
 
             <p
-              className={`w-fit text-[0.82rem] leading-snug font-semibold transition-[color,background-color,border-color] duration-180 ease-[cubic-bezier(0.22,1,0.36,1)] md:text-[0.86rem] ${
-                isActive ? "rounded-md bg-indigo-500/[0.1] px-2 py-1 text-white" : "text-white/80 lg:group-hover:text-white/92"
+              className={`w-fit text-[0.82rem] leading-snug font-semibold transition-[color,background-color,border-color] duration-180 ease-[cubic-bezier(0.22,1,0.36,1)] md:text-[0.86rem] min-[1440px]:text-[0.95rem] min-[2200px]:text-[1.05rem] ${
+                isActive ? "rounded-md bg-indigo-500/[0.1] px-2 py-1 text-white min-[1440px]:px-2.5 min-[1440px]:py-1.5" : "text-white/80 lg:group-hover:text-white/92"
               }`}
             >
               {step.title}

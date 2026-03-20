@@ -241,21 +241,34 @@ export async function GET(request: Request, context: RouteContext) {
     const selectedSet = explicitSelectedSet ?? autoAssignedSet;
     const mode = (selectedSet?.mode ?? modeHint) as QuizMode;
     const sessionRequestedCount = asFiniteNumber(sessionLookup.row.requested_count);
-    const effectiveCount = clampQuestionCount(
+    const requestedCountResolved = clampQuestionCount(
       selectedSet?.questionCount ?? (Number.isFinite(requestedCount) ? requestedCount : sessionRequestedCount ?? 10),
     );
+    const questionPoolSize =
+      Array.isArray(selectedSet?.questionIds) && selectedSet.questionIds.length > 0
+        ? selectedSet.questionIds.length
+        : null;
+    const effectiveCount =
+      questionPoolSize && questionPoolSize > 0
+        ? Math.min(requestedCountResolved, questionPoolSize)
+        : requestedCountResolved;
+    const includeDraftQuestions = access.role === "admin";
 
-    const [questions, answers] = await Promise.all([
-      selectedSet?.questionIds && selectedSet.questionIds.length > 0
+    const hasExplicitSetIds = Boolean(selectedSet?.questionIds && selectedSet.questionIds.length > 0);
+
+    const [primaryQuestions, answers] = await Promise.all([
+      hasExplicitSetIds
         ? fetchQuestionsForExerciseIds({
             supabase,
-            exerciseIds: selectedSet.questionIds,
+            exerciseIds: selectedSet?.questionIds ?? [],
             count: effectiveCount,
+            includeDraft: includeDraftQuestions,
           })
         : fetchQuestionsForMode({
             supabase,
             mode,
             count: effectiveCount,
+            includeDraft: includeDraftQuestions,
           }),
       fetchSessionAnswers({
         supabase,
@@ -263,7 +276,24 @@ export async function GET(request: Request, context: RouteContext) {
       }),
     ]);
 
-    if (questions.length < effectiveCount) {
+    let questions = primaryQuestions;
+
+    if (hasExplicitSetIds && questions.length < effectiveCount) {
+      const fallbackByMode = await fetchQuestionsForMode({
+        supabase,
+        mode,
+        count: effectiveCount,
+        includeDraft: includeDraftQuestions,
+      });
+
+      if (fallbackByMode.length >= 5) {
+        questions = fallbackByMode;
+      }
+    }
+
+    const minimumPlayableCount = hasExplicitSetIds ? effectiveCount : Math.min(5, effectiveCount);
+
+    if (questions.length < minimumPlayableCount) {
       const details = selectedSet
         ? await buildSetParseFailureDetails({
             supabase,

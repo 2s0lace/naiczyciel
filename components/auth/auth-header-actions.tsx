@@ -162,7 +162,7 @@ export default function AuthHeaderActions({
           type="button"
           onClick={() => setIsMenuOpen((prev) => !prev)}
           className={cn(
-            "group relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-white/16 bg-[#0b1226]/92 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_24px_-20px_rgba(59,130,246,0.7)] transition-[border-color,background-color,transform,box-shadow] duration-150 hover:border-indigo-200/45 hover:bg-[#111b38] hover:shadow-[0_12px_24px_-18px_rgba(99,102,241,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/45",
+            "group relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/16 bg-[#0b1226]/92 p-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_10px_24px_-20px_rgba(59,130,246,0.7)] transition-[border-color,background-color,transform,box-shadow] duration-150 hover:border-indigo-200/45 hover:bg-[#111b38] hover:shadow-[0_12px_24px_-18px_rgba(99,102,241,0.95)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/45 after:pointer-events-none after:absolute after:-inset-2 after:-z-10 after:rounded-full after:bg-[radial-gradient(circle,rgba(96,165,250,0.2)_0%,rgba(96,165,250,0.12)_40%,rgba(96,165,250,0)_74%)]",
             accountClassName,
           )}
           aria-label="Menu konta"
@@ -170,13 +170,13 @@ export default function AuthHeaderActions({
           aria-haspopup="menu"
           data-tour="dashboard-account"
         >
-          <span className="pointer-events-none absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.16),rgba(255,255,255,0)_62%)]" />
+          <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_28%_22%,rgba(255,255,255,0.16),rgba(255,255,255,0)_62%)]" />
           <Image
             src={avatarSrc}
             alt="Avatar użytkownika"
             width={36}
             height={36}
-            className="relative h-[110%] w-[110%] translate-y-[1px] object-contain"
+            className="relative h-[110%] w-[110%] translate-y-[1px] rounded-full object-cover"
             unoptimized
           />
         </button>

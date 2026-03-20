@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { validateExerciseRecord, type UniversalExerciseRecord } from "@/lib/quiz/admin-exercise";
 import type { QuizAnswerSnapshot, QuizQuestion } from "@/lib/quiz/types";
 
 type QuestionRow = {
@@ -70,6 +71,88 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   }
 
   return parsed as Record<string, unknown>;
+}
+
+function normalizeExerciseRowForValidation(row: ExerciseRow): UniversalExerciseRecord | null {
+  const payload = asRecord(row.payload);
+
+  if (payload) {
+    const validatedPayload = validateExerciseRecord(payload);
+
+    if (validatedPayload.isValid && validatedPayload.exercise) {
+      return validatedPayload.exercise;
+    }
+  }
+
+  const candidate = {
+    id: asText(row.id),
+    status: row.status,
+    category: row.category,
+    task_type: row.task_type,
+    difficulty: row.difficulty,
+    tags: parseJsonLike(row.tags),
+    source: row.source,
+    is_public: row.is_public,
+    title: row.title,
+    instruction: row.instruction,
+    content: parseJsonLike(row.content),
+    correct_answer: parseJsonLike(row.correct_answer),
+    explanation: parseJsonLike(row.explanation),
+    hint: parseJsonLike(row.hint),
+    analytics: parseJsonLike(row.analytics),
+    grammar: parseJsonLike(row.grammar),
+    vocabulary: parseJsonLike(row.vocabulary),
+    meta: asRecord(row.meta) ?? {
+      created_at: asText(row.created_at),
+      updated_at: asText(row.updated_at),
+    },
+  };
+
+  const validatedCandidate = validateExerciseRecord(candidate);
+  return validatedCandidate.isValid ? validatedCandidate.exercise : null;
+}
+
+export type FetchExercisesBySkillParams = {
+  grammar_structure?: string;
+  vocabulary_topic?: string;
+  skill?: string;
+  limit?: number;
+};
+
+export async function fetchExercisesBySkill(
+  params: FetchExercisesBySkillParams,
+): Promise<UniversalExerciseRecord[]> {
+  const grammarStructure = asText(params.grammar_structure);
+  const vocabularyTopic = asText(params.vocabulary_topic);
+  const skill = asText(params.skill);
+  const limit = Number.isFinite(params.limit) ? Math.max(1, Math.min(200, Number(params.limit))) : 40;
+
+  const { getSupabaseServerClient } = await import("@/lib/supabase/server");
+  const supabase = getSupabaseServerClient();
+
+  let query = supabase.from("quiz_exercises").select("*");
+
+  if (grammarStructure) {
+    query = query.contains("grammar", { structures: [grammarStructure] });
+  }
+
+  if (vocabularyTopic) {
+    query = query.contains("vocabulary", { topic: vocabularyTopic });
+  }
+
+  if (skill) {
+    query = query.contains("analytics", { skill });
+  }
+
+  const result = await query.limit(limit);
+
+  if (result.error || !result.data || result.data.length === 0) {
+    return [];
+  }
+
+  return (result.data as ExerciseRow[])
+    .map((row) => normalizeExerciseRowForValidation(row))
+    .filter((exercise): exercise is UniversalExerciseRecord => Boolean(exercise));
 }
 
 function constrainToThreeOptions(
@@ -153,7 +236,8 @@ function normalizeQuestion(row: QuestionRow, options: OptionRow[]): QuizQuestion
 
 function normalizeQuestionFromExerciseRow(row: ExerciseRow): QuizQuestion | null {
   const payload = asRecord(row.payload);
-  const base = payload ?? row;
+  const hasPayloadFields = Boolean(payload && Object.keys(payload).length > 0);
+  const base: Record<string, unknown> = hasPayloadFields && payload ? payload : row;
 
   const taskType = asText(base.task_type, asText(row.task_type));
 
@@ -233,16 +317,25 @@ async function fetchQuestionsFromExercises(params: {
   supabase: SupabaseClient;
   mode: string;
   count: number;
+  includeDraft?: boolean;
 }): Promise<QuizQuestion[]> {
   const { supabase, mode } = params;
   const count = clampQuestionCount(params.count);
+  const includeDraft = params.includeDraft === true;
 
-  const result = await supabase
-    .from("quiz_exercises")
-    .select("*")
-    .eq("status", "active")
-    .eq("category", mode)
-    .limit(count);
+  const result = await (includeDraft
+    ? supabase
+        .from("quiz_exercises")
+        .select("*")
+        .in("status", ["active", "draft"])
+        .eq("category", mode)
+        .limit(count)
+    : supabase
+        .from("quiz_exercises")
+        .select("*")
+        .eq("status", "active")
+        .eq("category", mode)
+        .limit(count));
 
   if (result.error || !result.data || result.data.length === 0) {
     return [];
@@ -264,8 +357,10 @@ export async function fetchQuestionsForExerciseIds(params: {
   supabase: SupabaseClient;
   exerciseIds: string[];
   count?: number;
+  includeDraft?: boolean;
 }): Promise<QuizQuestion[]> {
   const { supabase } = params;
+  const includeDraft = params.includeDraft === true;
   const normalizedIds = normalizeExerciseIds(params.exerciseIds ?? []);
 
   if (normalizedIds.length === 0) {
@@ -278,11 +373,17 @@ export async function fetchQuestionsForExerciseIds(params: {
   const limit = Math.min(normalizedIds.length, requestedCount);
   const selectedIds = normalizedIds.slice(0, limit);
 
-  const result = await supabase
-    .from("quiz_exercises")
-    .select("*")
-    .in("id", selectedIds)
-    .eq("status", "active");
+  const result = await (includeDraft
+    ? supabase
+        .from("quiz_exercises")
+        .select("*")
+        .in("id", selectedIds)
+        .in("status", ["active", "draft"])
+    : supabase
+        .from("quiz_exercises")
+        .select("*")
+        .in("id", selectedIds)
+        .eq("status", "active"));
 
   if (result.error || !result.data || result.data.length === 0) {
     return [];
@@ -319,14 +420,17 @@ export async function fetchQuestionsForMode(params: {
   supabase: SupabaseClient;
   mode: string;
   count: number;
+  includeDraft?: boolean;
 }): Promise<QuizQuestion[]> {
   const { supabase, mode } = params;
   const count = clampQuestionCount(params.count);
+  const includeDraft = params.includeDraft === true;
 
   const exerciseQuestions = await fetchQuestionsFromExercises({
     supabase,
     mode,
     count,
+    includeDraft,
   });
 
   if (exerciseQuestions.length >= 5) {

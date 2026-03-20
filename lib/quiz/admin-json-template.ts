@@ -1,4 +1,4 @@
-﻿import {
+import {
   CATEGORY_TO_TASK_TYPE,
   EXERCISE_CATEGORIES,
   EXERCISE_DIFFICULTIES,
@@ -6,6 +6,34 @@
   EXERCISE_TASK_TYPES,
   type ExerciseCategory,
 } from "@/lib/quiz/admin-exercise";
+
+const GRAMMAR_OPTIONS = [
+  "present_simple",
+  "present_continuous",
+  "present_perfect",
+  "past_simple",
+  "past_continuous",
+  "future_simple",
+  "going_to",
+  "have_to",
+  "would_like_to",
+] as const;
+
+const VOCABULARY_TOPICS = [
+  "czlowiek",
+  "miejsce_zamieszkania",
+  "edukacja",
+  "praca",
+  "zycie_prywatne",
+  "zywienie",
+  "zakupy_uslugi",
+  "podrozowanie",
+  "kultura",
+  "sport",
+  "zdrowie",
+  "nauka_technika",
+  "swiat_przyrody",
+] as const;
 
 function buildCommonBase(now: string, id: string, category: ExerciseCategory) {
   return {
@@ -30,6 +58,14 @@ function buildCommonBase(now: string, id: string, category: ExerciseCategory) {
     analytics: {
       focus_label: "",
       skill: "",
+    },
+    grammar: {
+      structures: [],
+      tenses: [],
+    },
+    vocabulary: {
+      topic: "",
+      key_words: [],
     },
     meta: {
       created_at: now,
@@ -134,13 +170,25 @@ export function buildAdminBulkJsonTemplate(): string {
     _ai_prompt_for_chatgpt: [
       "Generate 1 exercise record for the nAIczyciel admin panel.",
       "Return ONLY JSON (no markdown and no comments).",
-      "Technical keys must stay in English and student-facing content must also be in English.",
-      "Student-facing fields that must be in English: title, instruction, content.*, options[].text, explanation.*, hint.short, analytics.focus_label.",
+      "Technical keys must stay in English.",
+      "Student-facing exercise fields that must be in English: title, instruction, content.*, options[].text.",
+      "explanation.why must be 1 sentence in Polish explaining why the answer is correct.",
+      "explanation.pattern must show the language pattern, e.g. 'miss a train / miss a bus / miss a flight'.",
+      "explanation.watch_out must describe the most common mistake made by Polish students.",
+      "hint.short must be max 8 words in Polish.",
+      "analytics.focus_label must be in Polish, e.g. 'Reagowanie na przeprosiny'.",
+      "analytics.skill must be snake_case English, e.g. 'apology_response'.",
       "Create one exercise at a time (fewest validation errors).",
       "After saving one record, create the next one.",
       "Do not change the category/task_type mapping.",
       "single_choice_short and reading_mc must have exactly 3 options (A/B/C).",
       "In gap_fill_text and gap_fill_word_bank, keep blank IDs consistent between content.blanks and correct_answer.blanks.",
+      "Based on the generated task, automatically fill grammar and vocabulary fields.",
+      `grammar.structures and grammar.tenses must use only these options: ${GRAMMAR_OPTIONS.join(", ")}.`,
+      `vocabulary.topic must be exactly one of: ${VOCABULARY_TOPICS.join(", ")}.`,
+      "vocabulary.key_words must contain keywords from question and answer options.",
+      "Do not invent values outside these lists.",
+      "If no grammar structure matches, return an empty array.",
     ],
     _ai_schema: {
       how_to_use: [
@@ -152,16 +200,18 @@ export function buildAdminBulkJsonTemplate(): string {
       ],
       recommended_workflow: [
         "1) Generate 1 exercise in ChatGPT.",
-        "2) Paste it into the JSON field as { \"exercise\": { ... } }.",
-        "3) Click 'Load to form' and then 'Create'.",
-        "4) Repeat for the next record.",
-        "5) Use bulk list import only after records are verified.",
+        "2) Let ChatGPT auto-tag grammar and vocabulary.",
+        "3) Paste it into the JSON field as { \"exercise\": { ... } }.",
+        "4) Click 'Importuj' (or 'Load to form' + 'Create').",
+        "5) Repeat for the next record.",
       ],
       allowed_values: {
         status: EXERCISE_STATUSES,
         difficulty: EXERCISE_DIFFICULTIES,
         category: EXERCISE_CATEGORIES,
         task_type: EXERCISE_TASK_TYPES,
+        grammar_options: GRAMMAR_OPTIONS,
+        vocabulary_topics: VOCABULARY_TOPICS,
       },
       category_to_task_type: CATEGORY_TO_TASK_TYPE,
       required_common_fields: [
@@ -183,6 +233,10 @@ export function buildAdminBulkJsonTemplate(): string {
         "hint.short",
         "analytics.focus_label",
         "analytics.skill",
+        "grammar.structures",
+        "grammar.tenses",
+        "vocabulary.topic",
+        "vocabulary.key_words",
         "meta.created_at",
         "meta.updated_at",
       ],
@@ -195,4 +249,3 @@ export function buildAdminBulkJsonTemplate(): string {
 
   return JSON.stringify(template, null, 2);
 }
-

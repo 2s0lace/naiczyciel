@@ -66,7 +66,7 @@ function resolveHintText(question: QuizQuestion | null): string {
     }
   }
 
-  return "Zwr\u00F3\u0107 uwag\u0119 na naturalny ton reakcji i unikaj t\u0142umaczenia dos\u0142ownego.";
+  return "Zwróć uwagę na naturalny ton reakcji i unikaj tłumaczenia dosłownego.";
 }
 
 type PersistedQuizProgress = {
@@ -84,18 +84,18 @@ type PersistedQuizProgress = {
 const QUIZ_ONBOARDING_STEPS: QuizOnboardingStep[] = [
   {
     target: "question-area",
-    title: "Rozwi\u0105zuj pytania krok po kroku",
-    body: "Po ka\u017Cdej odpowiedzi od razu zobaczysz feedback.",
+    title: "Rozwiązuj pytania krok po kroku",
+    body: "Po każdej odpowiedzi od razu zobaczysz feedback.",
   },
   {
     target: "hint-action",
     title: "Potrzebujesz podpowiedzi?",
-    body: "Wskaz\u00F3wka naprowadzi Ci\u0119, na co zwr\u00F3ci\u0107 uwag\u0119 - bez zdradzania odpowiedzi.",
+    body: "Wskazówka naprowadzi Cię, na co zwrócić uwagę - bez zdradzania odpowiedzi.",
   },
   {
     target: "fifty-action",
-    title: "Utkn\u0119\u0142a\u015B? U\u017Cyj 50/50",
-    body: "Usunie jedn\u0105 b\u0142\u0119dn\u0105 odpowied\u017A i pomo\u017Ce ruszy\u0107 dalej.",
+    title: "Utknęłaś? Użyj 50/50",
+    body: "Usunie jedną błędną odpowiedź i pomoże ruszyć dalej.",
   },
 ];
 
@@ -1224,18 +1224,18 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   const footerHelperText = useMemo(() => {
     if (reviewModeActive) {
       if (isLastQuestion) {
-        return "Koniec przegl\u0105du. Przejd\u017A do podsumowania.";
+        return "Koniec przeglądu. Przejdź do podsumowania.";
       }
 
-      return "Tryb przegl\u0105du: sprawdzaj wszystkie pytania po kolei.";
+      return "Tryb przeglądu: sprawdzaj wszystkie pytania po kolei.";
     }
 
     if (!isLocked) {
       if (isLastQuestion) {
-        return "Najpierw wybierz odpowied\u017A, aby zobaczy\u0107 podsumowanie.";
+        return "Najpierw wybierz odpowiedź, aby zobaczyć podsumowanie.";
       }
 
-      return "Najpierw wybierz odpowied\u017A, aby przej\u015B\u0107 dalej.";
+      return "Najpierw wybierz odpowiedź, aby przejść dalej.";
     }
 
     return undefined;
@@ -1268,8 +1268,8 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
           <div className="mx-auto max-w-md xl:max-w-[740px]">
             <QuizHeader modeLabel={toModeLabel(mode)} current={0} total={0} elapsedSeconds={elapsedSeconds} soundEnabled={soundEnabled} onToggleSound={toggleSound} />
             <div className="mt-5 rounded-3xl border border-red-300/20 bg-red-500/10 p-5 xl:p-6">
-              <h2 className="text-lg font-semibold text-white">{"Nie uda\u0142o si\u0119 za\u0142adowa\u0107 quizu"}</h2>
-              <p className="mt-2 text-sm text-red-100/90 xl:text-[15px]">{"Spr\u00F3buj ponownie za chwil\u0119 lub uruchom inny zestaw."}</p>
+              <h2 className="text-lg font-semibold text-white">{"Nie udało się załadować quizu"}</h2>
+              <p className="mt-2 text-sm text-red-100/90 xl:text-[15px]">{"Spróbuj ponownie za chwilę lub uruchom inny zestaw."}</p>
               <button
                 type="button"
                 onClick={() => {
@@ -1277,7 +1277,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                 }}
                 className="mt-4 w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-blue-500 py-3 text-sm font-semibold text-white xl:py-3.5"
               >
-                {"Spr\u00F3buj ponownie"}
+                {"Spróbuj ponownie"}
               </button>
             </div>
           </div>
@@ -1308,8 +1308,8 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     (failedSaveCount <= 0
       ? "Natychmiastowy feedback, zapis w tle."
       : failedSaveCount === 1
-        ? "1 odpowied\u017A czeka na synchronizacj\u0119."
-        : `${failedSaveCount} odpowiedzi czekaj\u0105 na synchronizacj\u0119.`);
+        ? "1 odpowiedź czeka na synchronizację."
+        : `${failedSaveCount} odpowiedzi czekają na synchronizację.`);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_50%_-12%,rgba(79,70,229,0.18),rgba(5,5,16,1)_46%)] text-white">
@@ -1370,11 +1370,11 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                   <p className="mt-1.5 text-xs text-indigo-100/70">
                     {currentAnswer.saveState === "pending"
                       ? pendingSaveCount > 0
-                        ? "Odpowied\u017A dodana lokalnie. Synchronizacja trwa w tle."
+                        ? "Odpowiedź dodana lokalnie. Synchronizacja trwa w tle."
                         : "Zapisywanie odpowiedzi..."
                       : currentAnswer.saveState === "error"
-                        ? "Brak po\u0142\u0105czenia. Odpowied\u017A zostanie wys\u0142ana ponownie automatycznie."
-                        : "Odpowied\u017A zapisana."}
+                        ? "Brak połączenia. Odpowiedź zostanie wysłana ponownie automatycznie."
+                        : "Odpowiedź zapisana."}
                   </p>
                 </div>
               ) : null}
@@ -1385,7 +1385,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                 <section className="rounded-2xl border border-white/12 bg-[linear-gradient(165deg,rgba(11,14,31,0.95),rgba(8,10,22,0.97))] p-5 shadow-[0_24px_38px_-30px_rgba(59,130,246,0.55)]">
                   <div className="mt-0">
                     <div className="mb-1.5 flex items-center justify-between text-[11px] text-indigo-100/72">
-                      <span>{"Post\u0119p"}</span>
+                      <span>{"Postęp"}</span>
                       <span>{progressPercent}%</span>
                     </div>
                     <div className="h-1.5 overflow-hidden rounded-full bg-white/8">
@@ -1409,7 +1409,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                     disabled={!canGoNext || sessionStatus === "loading_next"}
                     className="mt-4 w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-blue-500 py-3.5 text-base font-semibold text-white shadow-[0_14px_34px_-22px_rgba(59,130,246,0.8)] transition-all duration-150 active:scale-[0.992] disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    {sessionStatus === "loading_next" ? "\u0141adowanie..." : isLastQuestion ? "Zobacz podsumowanie" : "Dalej"}
+                    {sessionStatus === "loading_next" ? "Ładowanie..." : isLastQuestion ? "Zobacz podsumowanie" : "Dalej"}
                   </button>
 
                   <p className="mt-1.5 text-center text-[11px] text-indigo-100/68">{desktopHelperText}</p>
@@ -1426,11 +1426,11 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                     <p className="mt-1.5 text-[12px] text-indigo-100/70">
                       {currentAnswer.saveState === "pending"
                         ? pendingSaveCount > 0
-                          ? "Odpowied\u017A dodana lokalnie. Synchronizacja trwa w tle."
+                          ? "Odpowiedź dodana lokalnie. Synchronizacja trwa w tle."
                           : "Zapisywanie odpowiedzi..."
                         : currentAnswer.saveState === "error"
-                          ? "Brak po\u0142\u0105czenia. Odpowied\u017A zostanie wys\u0142ana ponownie automatycznie."
-                          : "Odpowied\u017A zapisana."}
+                          ? "Brak połączenia. Odpowiedź zostanie wysłana ponownie automatycznie."
+                          : "Odpowiedź zapisana."}
                     </p>
                   </section>
                 ) : null}
@@ -1460,6 +1460,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     </main>
   );
 }
+
 
 
 

@@ -69,6 +69,34 @@ const DEFAULT_FILTERS: AdminFilters = {
   difficulty: "all",
 };
 
+const GRAMMAR_SELECT_OPTIONS = [
+  "present_simple",
+  "present_continuous",
+  "present_perfect",
+  "past_simple",
+  "past_continuous",
+  "future_simple",
+  "going_to",
+  "have_to",
+  "would_like_to",
+] as const;
+
+const VOCABULARY_TOPIC_OPTIONS = [
+  "czlowiek",
+  "miejsce_zamieszkania",
+  "edukacja",
+  "praca",
+  "zycie_prywatne",
+  "zywienie",
+  "zakupy_uslugi",
+  "podrozowanie",
+  "kultura",
+  "sport",
+  "zdrowie",
+  "nauka_technika",
+  "swiat_przyrody",
+] as const;
+
 function cloneExercise<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
@@ -129,6 +157,8 @@ function rebuildForCategory(current: UniversalExerciseRecord, nextCategory: Exer
     explanation: current.explanation,
     hint: current.hint,
     analytics: current.analytics,
+    grammar: current.grammar,
+    vocabulary: current.vocabulary,
     meta: {
       ...current.meta,
       updated_at: new Date().toISOString(),
@@ -168,16 +198,17 @@ export function AdminQuestionPanel() {
     return { Authorization: `Bearer ${token}` };
   }, []);
 
-  const loadExercises = useCallback(async () => {
+  const loadExercises = useCallback(async (overrideFilters?: AdminFilters) => {
     setIsLoading(true);
     setError(null);
 
     try {
+      const effectiveFilters = overrideFilters ?? filters;
       const params = new URLSearchParams({ limit: "200" });
-      if (filters.category !== "all") params.set("category", filters.category);
-      if (filters.task_type !== "all") params.set("task_type", filters.task_type);
-      if (filters.status !== "all") params.set("status", filters.status);
-      if (filters.difficulty !== "all") params.set("difficulty", filters.difficulty);
+      if (effectiveFilters.category !== "all") params.set("category", effectiveFilters.category);
+      if (effectiveFilters.task_type !== "all") params.set("task_type", effectiveFilters.task_type);
+      if (effectiveFilters.status !== "all") params.set("status", effectiveFilters.status);
+      if (effectiveFilters.difficulty !== "all") params.set("difficulty", effectiveFilters.difficulty);
 
       const authHeaders = await getAuthHeaders();
       const response = await fetch(`/api/e8/admin/questions?${params.toString()}`, {
@@ -316,7 +347,7 @@ export function AdminQuestionPanel() {
   };
 
 
-  const handleLoadJsonToForm = () => {
+  const handleLoadJsonToForm = async () => {
     setError(null);
     setSuccess(null);
     setValidationErrors([]);
@@ -329,7 +360,30 @@ export function AdminQuestionPanel() {
     try {
       const parsed = JSON.parse(jsonInput) as unknown;
       const container = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : null;
-      const candidate = container?.exercise ?? parsed;
+      const rawList = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(container?.exercises)
+          ? container.exercises
+          : Array.isArray(container?.questions)
+            ? container.questions
+            : null;
+
+      if (rawList && rawList.length > 1) {
+        setSuccess("Wykryto wiele rekordow. Uruchamiam import listy JSON.");
+        await handleImportJsonList();
+        return;
+      }
+
+      const listCandidate = Array.isArray(container?.exercises)
+        ? container.exercises[0]
+        : Array.isArray(container?.questions)
+          ? container.questions[0]
+          : null;
+      const listRecord =
+        listCandidate && typeof listCandidate === "object" && !Array.isArray(listCandidate)
+          ? (listCandidate as Record<string, unknown>)
+          : null;
+      const candidate = container?.exercise ?? listRecord?.exercise ?? listCandidate ?? parsed;
       const validation = validateExerciseRecord(candidate);
 
       if (!validation.isValid || !validation.exercise) {
@@ -379,7 +433,9 @@ export function AdminQuestionPanel() {
       const errors: string[] = [];
 
       rawList.forEach((entry, index) => {
-        const validation = validateExerciseRecord(entry);
+        const entryRecord = entry && typeof entry === "object" && !Array.isArray(entry) ? (entry as Record<string, unknown>) : null;
+        const candidate = entryRecord?.exercise ?? entry;
+        const validation = validateExerciseRecord(candidate);
         if (validation.isValid && validation.exercise) {
           validRecords.push(validation.exercise);
         } else {
@@ -415,7 +471,18 @@ export function AdminQuestionPanel() {
 
       setSource(data.source ?? source);
       setSuccess(`Zaimportowano ${validRecords.length} rekordow.`);
-      await loadExercises();
+      const importedMayBeHiddenByFilters =
+        filters.category !== "all" ||
+        filters.task_type !== "all" ||
+        filters.status !== "all" ||
+        filters.difficulty !== "all";
+
+      if (importedMayBeHiddenByFilters) {
+        setFilters(DEFAULT_FILTERS);
+        await loadExercises(DEFAULT_FILTERS);
+      } else {
+        await loadExercises();
+      }
     } catch (importError) {
       setError(importError instanceof Error ? importError.message : "Wystapil blad importu.");
     } finally {
@@ -864,6 +931,78 @@ export function AdminQuestionPanel() {
           <label className="space-y-1"><span className="text-xs text-gray-300">title</span><input value={draft.title} onChange={(e) => updateDraft((n) => { n.title = e.target.value; })} className="w-full rounded-xl border border-white/15 bg-[#070b18] px-3 py-2.5 text-sm text-white" /></label>
           <label className="space-y-1"><span className="text-xs text-gray-300">instruction</span><input value={draft.instruction} onChange={(e) => updateDraft((n) => { n.instruction = e.target.value; })} className="w-full rounded-xl border border-white/15 bg-[#070b18] px-3 py-2.5 text-sm text-white" /></label>
           <label className="space-y-1"><span className="text-xs text-gray-300">tags (csv)</span><input value={tagInput} onChange={(e) => setTagInput(e.target.value)} className="w-full rounded-xl border border-white/15 bg-[#070b18] px-3 py-2.5 text-sm text-white" /></label>
+        </div>
+
+        <div className="mt-3 grid gap-2 rounded-xl border border-white/12 bg-[#070b18] p-3 sm:grid-cols-2">
+          <label className="space-y-1">
+            <span className="text-xs text-gray-300">grammar.structures</span>
+            <select
+              multiple
+              value={draft.grammar.structures}
+              onChange={(e) =>
+                updateDraft((n) => {
+                  n.grammar.structures = Array.from(e.target.selectedOptions).map((option) => option.value);
+                })
+              }
+              className="min-h-[140px] w-full rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white"
+            >
+              {GRAMMAR_SELECT_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-gray-300">grammar.tenses</span>
+            <select
+              multiple
+              value={draft.grammar.tenses}
+              onChange={(e) =>
+                updateDraft((n) => {
+                  n.grammar.tenses = Array.from(e.target.selectedOptions).map((option) => option.value);
+                })
+              }
+              className="min-h-[140px] w-full rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white"
+            >
+              {GRAMMAR_SELECT_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-gray-300">vocabulary.topic</span>
+            <select
+              value={draft.vocabulary.topic}
+              onChange={(e) =>
+                updateDraft((n) => {
+                  n.vocabulary.topic = e.target.value;
+                })
+              }
+              className="w-full rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white"
+            >
+              <option value="">-</option>
+              {VOCABULARY_TOPIC_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1">
+            <span className="text-xs text-gray-300">vocabulary.key_words (csv)</span>
+            <input
+              value={draft.vocabulary.key_words.join(", ")}
+              onChange={(e) =>
+                updateDraft((n) => {
+                  n.vocabulary.key_words = splitCsv(e.target.value);
+                })
+              }
+              className="w-full rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white"
+            />
+          </label>
         </div>
 
         <div className="mt-4 space-y-2 rounded-xl border border-white/12 bg-[#070b18] p-3">

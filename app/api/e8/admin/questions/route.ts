@@ -168,6 +168,8 @@ function toExerciseCandidate(row: SupabaseExerciseRow): Record<string, unknown> 
   const explanation = parseJsonLike(row.explanation);
   const hint = parseJsonLike(row.hint);
   const analytics = parseJsonLike(row.analytics);
+  const grammar = parseJsonLike(row.grammar);
+  const vocabulary = parseJsonLike(row.vocabulary);
   const metaRecord = asRecord(row.meta);
 
   return {
@@ -186,6 +188,8 @@ function toExerciseCandidate(row: SupabaseExerciseRow): Record<string, unknown> 
     explanation,
     hint,
     analytics,
+    grammar,
+    vocabulary,
     meta: metaRecord ?? {
       created_at: asText(row.created_at),
       updated_at: asText(row.updated_at),
@@ -271,6 +275,8 @@ function toSupabaseRow(exercise: UniversalExerciseRecord) {
     explanation: exercise.explanation,
     hint: exercise.hint,
     analytics: exercise.analytics,
+    grammar: exercise.grammar,
+    vocabulary: exercise.vocabulary,
     meta: exercise.meta,
     created_at: exercise.meta.created_at,
     updated_at: exercise.meta.updated_at,
@@ -567,7 +573,12 @@ export async function PUT(request: Request) {
 
   if (rawMany && rawMany.length > 0) {
     const normalized = rawMany
-      .map((entry) => validateExerciseRecord(entry))
+      .map((entry) => {
+        const record = entry && typeof entry === "object" && !Array.isArray(entry)
+          ? (entry as Record<string, unknown>)
+          : null;
+        return validateExerciseRecord(record?.exercise ?? entry);
+      })
       .filter((entry) => entry.isValid && entry.exercise)
       .map((entry) => entry.exercise as UniversalExerciseRecord);
 

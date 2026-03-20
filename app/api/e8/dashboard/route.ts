@@ -17,8 +17,38 @@ type ModeAggregate = {
   sumScore: number;
 };
 
+type TagSource = "grammar" | "vocabulary" | "skill";
+
+type TagAggregate = {
+  source: TagSource;
+  raw: string;
+  label: string;
+  total: number;
+  correct: number;
+  accuracy: number;
+};
+
+type AnswerWindowAggregate = {
+  firstUnix: number;
+  lastUnix: number;
+  count: number;
+};
+
+type SessionAnswerMetric = {
+  sessionId: string;
+  questionId: string;
+  isCorrect: boolean;
+  answeredAtUnix: number | null;
+};
+
+type AnswerAnalytics = {
+  durationOverrides: Map<string, number | null>;
+  answers: SessionAnswerMetric[];
+};
+
 const USER_COLUMN_CANDIDATES = ["user_id", "profile_id", "owner_id", "student_id"] as const;
 const RECENT_ACTIVITY_LIMIT = 30;
+const MAX_REASONABLE_SESSION_DURATION_MINUTES = 90;
 const SELECT_VARIANTS = [
   "id, set_id, mode, status, total_questions, correct_answers, score_percent, completed_at, started_at, created_at",
   "id, set_id, mode, status, total_questions, correct_answers, score_percent, completed_at, created_at",
@@ -38,8 +68,64 @@ function asRecord(value: unknown): GenericRecord | null {
   return value as GenericRecord;
 }
 
+function parseJsonLike(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const trimmed = value.trim();
+
+  if (!trimmed || (!trimmed.startsWith("{") && !trimmed.startsWith("["))) {
+    return value;
+  }
+
+  try {
+    return JSON.parse(trimmed) as unknown;
+  } catch {
+    return value;
+  }
+}
+
 function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function asStringArray(value: unknown): string[] {
+  const parsed = parseJsonLike(value);
+
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
+
+  return parsed
+    .map((entry) => asText(entry))
+    .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
+}
+
+function titleCaseTag(value: string): string {
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ");
+
+  if (!normalized) {
+    return "";
+  }
+
+  return normalized
+    .split(" ")
+    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .join(" ");
+}
+
+function sameLabel(left: string | null, right: string | null): boolean {
+  if (!left || !right) {
+    return false;
+  }
+
+  const normalize = (value: string) => value.trim().toLowerCase().replace(/_/g, " ").replace(/\s+/g, " ");
+  return normalize(left) === normalize(right);
 }
 
 function asNullableNumber(value: unknown): number | null {
@@ -108,11 +194,13 @@ function buildSession(row: GenericRecord): DashboardSession | null {
 
   let durationMinutes: number | null = null;
 
-  if (startedAt && completedAt) {
-    const durationMs = Date.parse(completedAt) - Date.parse(startedAt);
+  const durationStart = startedAt;
+
+  if (durationStart && completedAt) {
+    const durationMs = Date.parse(completedAt) - Date.parse(durationStart);
 
     if (Number.isFinite(durationMs) && durationMs > 0) {
-      durationMinutes = Math.round((durationMs / (1000 * 60)) * 10) / 10;
+      durationMinutes = sanitizeDurationMinutes(durationMs / (1000 * 60));
     }
   }
 
@@ -129,6 +217,292 @@ function buildSession(row: GenericRecord): DashboardSession | null {
     createdAt,
     durationMinutes,
   };
+}
+
+async function fetchAnswerAnalytics(sessionIds: string[]): Promise<AnswerAnalytics> {
+  const normalizedIds = sessionIds.filter((id, index, list) => id.length > 0 && list.indexOf(id) === index);
+
+  if (normalizedIds.length === 0) {
+    return {
+      durationOverrides: new Map(),
+      answers: [],
+    };
+  }
+
+  let supabase: ReturnType<typeof getSupabaseServerClient>;
+
+  try {
+    supabase = getSupabaseServerClient();
+  } catch {
+    return {
+      durationOverrides: new Map(),
+      answers: [],
+    };
+  }
+
+  const result = await supabase
+    .from("quiz_session_answers")
+    .select("session_id, question_id, is_correct, answered_at, created_at")
+    .in("session_id", normalizedIds)
+    .limit(5000);
+
+  if (result.error || !Array.isArray(result.data) || result.data.length === 0) {
+    return {
+      durationOverrides: new Map(),
+      answers: [],
+    };
+  }
+
+  const aggregates = new Map<string, AnswerWindowAggregate>();
+  const answers: SessionAnswerMetric[] = [];
+
+  for (const rawEntry of result.data) {
+    const entry = asRecord(rawEntry);
+
+    if (!entry) {
+      continue;
+    }
+
+    const sessionId = asText(entry.session_id);
+
+    if (!sessionId) {
+      continue;
+    }
+
+    const questionId = asText(entry.question_id);
+    const isCorrect = entry.is_correct === true;
+    const answeredAtIso = asNullableIso(entry.answered_at) ?? asNullableIso(entry.created_at);
+    const answeredUnix = answeredAtIso ? Date.parse(answeredAtIso) : Number.NaN;
+    const answeredAtUnix = Number.isFinite(answeredUnix) ? answeredUnix : null;
+
+    if (questionId) {
+      answers.push({
+        sessionId,
+        questionId,
+        isCorrect,
+        answeredAtUnix,
+      });
+    }
+
+    if (answeredAtUnix === null) {
+      continue;
+    }
+
+    const current = aggregates.get(sessionId);
+
+    if (!current) {
+      aggregates.set(sessionId, {
+        firstUnix: answeredAtUnix,
+        lastUnix: answeredAtUnix,
+        count: 1,
+      });
+      continue;
+    }
+
+    current.firstUnix = Math.min(current.firstUnix, answeredAtUnix);
+    current.lastUnix = Math.max(current.lastUnix, answeredAtUnix);
+    current.count += 1;
+    aggregates.set(sessionId, current);
+  }
+
+  const overrides = new Map<string, number | null>();
+
+  for (const [sessionId, aggregate] of aggregates.entries()) {
+    if (aggregate.count < 2) {
+      overrides.set(sessionId, null);
+      continue;
+    }
+
+    const durationMs = aggregate.lastUnix - aggregate.firstUnix;
+
+    if (!Number.isFinite(durationMs) || durationMs <= 0) {
+      overrides.set(sessionId, null);
+      continue;
+    }
+
+    overrides.set(sessionId, sanitizeDurationMinutes(durationMs / (1000 * 60)));
+  }
+
+  return {
+    durationOverrides: overrides,
+    answers,
+  };
+}
+
+async function fetchTagPerformance(answerRows: SessionAnswerMetric[]): Promise<TagAggregate[]> {
+  const questionIds = answerRows
+    .map((entry) => entry.questionId)
+    .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
+
+  if (questionIds.length === 0) {
+    return [];
+  }
+
+  let supabase: ReturnType<typeof getSupabaseServerClient>;
+
+  try {
+    supabase = getSupabaseServerClient();
+  } catch {
+    return [];
+  }
+
+  const result = await supabase
+    .from("quiz_exercises")
+    .select("id, category, analytics, payload, grammar, vocabulary")
+    .in("id", questionIds)
+    .limit(5000);
+
+  if (result.error || !Array.isArray(result.data) || result.data.length === 0) {
+    return [];
+  }
+
+  const exerciseTags = new Map<
+    string,
+    {
+      category: string;
+      structures: string[];
+      topic: string | null;
+      skill: string | null;
+      focusLabel: string | null;
+    }
+  >();
+
+  for (const rawEntry of result.data) {
+    const row = asRecord(rawEntry);
+
+    if (!row) {
+      continue;
+    }
+
+    const id = asText(row.id);
+
+    if (!id) {
+      continue;
+    }
+
+    const payload = asRecord(parseJsonLike(row.payload));
+    const category = asText(payload?.category ?? row.category).toLowerCase();
+    const analytics = asRecord(parseJsonLike(payload?.analytics ?? row.analytics));
+    const grammar = asRecord(parseJsonLike(payload?.grammar ?? row.grammar));
+    const vocabulary = asRecord(parseJsonLike(payload?.vocabulary ?? row.vocabulary));
+
+    const structures = asStringArray(grammar?.structures);
+    const topic = asText(vocabulary?.topic) || null;
+    const skill = asText(analytics?.skill).toLowerCase() || null;
+    const focusLabel = asText(analytics?.focus_label) || null;
+
+    exerciseTags.set(id, {
+      category,
+      structures,
+      topic,
+      skill,
+      focusLabel,
+    });
+  }
+
+  const aggregates = new Map<string, TagAggregate>();
+
+  const bump = (params: { source: TagSource; raw: string; isCorrect: boolean; label?: string | null }) => {
+    const raw = params.raw.trim().toLowerCase();
+
+    if (!raw) {
+      return;
+    }
+
+    const key = `${params.source}:${raw}`;
+    const current =
+      aggregates.get(key) ??
+      ({
+        source: params.source,
+        raw,
+        label: params.label && params.label.trim().length > 0 ? params.label.trim() : titleCaseTag(raw),
+        total: 0,
+        correct: 0,
+        accuracy: 0,
+      } satisfies TagAggregate);
+
+    current.total += 1;
+    if (params.isCorrect) {
+      current.correct += 1;
+    }
+
+    current.accuracy = current.total > 0 ? current.correct / current.total : 0;
+    aggregates.set(key, current);
+  };
+
+  for (const answer of answerRows) {
+    const tags = exerciseTags.get(answer.questionId);
+
+    if (!tags) {
+      continue;
+    }
+
+    if (tags.category === "reactions") {
+      if (tags.skill) {
+        bump({
+          source: "skill",
+          raw: tags.skill,
+          label: tags.focusLabel,
+          isCorrect: answer.isCorrect,
+        });
+      }
+      continue;
+    }
+
+    if (tags.category === "vocabulary") {
+      if (tags.topic) {
+        bump({
+          source: "vocabulary",
+          raw: tags.topic,
+          isCorrect: answer.isCorrect,
+        });
+      }
+      continue;
+    }
+
+    if (tags.category === "grammar") {
+      for (const structure of tags.structures) {
+        bump({
+          source: "grammar",
+          raw: structure,
+          isCorrect: answer.isCorrect,
+        });
+      }
+      continue;
+    }
+
+    if (tags.category === "gap_fill_text") {
+      for (const structure of tags.structures) {
+        bump({
+          source: "grammar",
+          raw: structure,
+          isCorrect: answer.isCorrect,
+        });
+      }
+
+      if (tags.topic) {
+        bump({
+          source: "vocabulary",
+          raw: tags.topic,
+          isCorrect: answer.isCorrect,
+        });
+      }
+      continue;
+    }
+
+    if (tags.category === "reading_mc") {
+      if (tags.topic) {
+        bump({
+          source: "vocabulary",
+          raw: tags.topic,
+          isCorrect: answer.isCorrect,
+        });
+      }
+      continue;
+    }
+  }
+
+  return Array.from(aggregates.values());
 }
 
 function sessionTimestamp(session: DashboardSession): number {
@@ -148,6 +522,18 @@ function average(values: number[]): number | null {
   }
 
   return Math.round((values.reduce((sum, value) => sum + value, 0) / values.length) * 10) / 10;
+}
+
+function sanitizeDurationMinutes(value: number | null): number | null {
+  if (value === null || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  if (value > MAX_REASONABLE_SESSION_DURATION_MINUTES) {
+    return null;
+  }
+
+  return Math.round(value * 10) / 10;
 }
 
 function createEmptyPayload(tier: AccessTier, role: string | null): DashboardPayload {
@@ -219,14 +605,28 @@ function buildPayload(params: {
   tier: AccessTier;
   role: string | null;
   rows: GenericRecord[];
+  answerDurationOverrides?: Map<string, number | null>;
+  tagPerformance?: TagAggregate[];
 }): DashboardPayload {
   const { tier, role, rows } = params;
   const base = createEmptyPayload(tier, role);
 
-  const sessions = rows
+  const sessionsFromRows = rows
     .map((row) => buildSession(row))
     .filter((session): session is DashboardSession => session !== null)
     .sort((a, b) => sessionTimestamp(b) - sessionTimestamp(a));
+
+  const overrides = params.answerDurationOverrides ?? new Map<string, number | null>();
+  const sessions = sessionsFromRows.map((session) => {
+    if (!overrides.has(session.id)) {
+      return session;
+    }
+
+    return {
+      ...session,
+      durationMinutes: overrides.get(session.id) ?? null,
+    };
+  });
 
   if (sessions.length === 0) {
     return base;
@@ -275,6 +675,44 @@ function buildPayload(params: {
     }))
     .sort((a, b) => b.averageScore - a.averageScore);
 
+  const rankedTags = (params.tagPerformance ?? [])
+    .filter((item) => item.total > 0)
+    .sort((a, b) => {
+      if (b.accuracy !== a.accuracy) {
+        return b.accuracy - a.accuracy;
+      }
+
+      return b.total - a.total;
+    });
+
+  const strongestTag = rankedTags[0] ?? null;
+  const weakestTag = [...rankedTags].reverse().find((item) => !sameLabel(item.label, strongestTag?.label ?? null)) ?? null;
+
+  const fallbackStrongestMode = rankedModes[0]?.mode ?? null;
+  const fallbackWeakestMode = rankedModes[rankedModes.length - 1]?.mode ?? null;
+
+  const strongestMetric: string | null = strongestTag?.label ?? fallbackStrongestMode ?? null;
+  let weakestMetric: string | null = weakestTag?.label ?? fallbackWeakestMode ?? null;
+
+  if (sameLabel(strongestMetric, weakestMetric)) {
+    const alternateTag =
+      rankedTags.find((tag) => !sameLabel(tag.label, strongestMetric))?.label ?? null;
+    const alternateMode =
+      rankedModes
+        .map((entry) => entry.mode)
+        .find((mode) => !sameLabel(mode, strongestMetric)) ?? null;
+
+    if (alternateTag) {
+      weakestMetric = alternateTag;
+    } else if (alternateMode) {
+      weakestMetric = alternateMode;
+    }
+  }
+
+  if (!weakestMetric && strongestMetric) {
+    weakestMetric = strongestMetric;
+  }
+
   const recentSessions = sessions.slice(0, RECENT_ACTIVITY_LIMIT);
   const lastCompleted = completedSessions[0] ?? null;
 
@@ -287,8 +725,8 @@ function buildPayload(params: {
       solvedQuestions,
       averageScorePercent: average(scores),
       averageDurationMinutes: average(durations),
-      strongestMode: rankedModes[0]?.mode ?? null,
-      weakestMode: rankedModes[rankedModes.length - 1]?.mode ?? null,
+      strongestMode: strongestMetric ?? null,
+      weakestMode: weakestMetric ?? null,
       lastScorePercent: lastCompleted ? scoreFromSession(lastCompleted) : null,
     },
   };
@@ -296,7 +734,7 @@ function buildPayload(params: {
 
 export async function GET(request: Request) {
   const access = await resolveAccessTierFromRequest(request);
-    await loadSetCatalogFromDatabase();
+  await loadSetCatalogFromDatabase();
 
   if (!access.userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -304,10 +742,28 @@ export async function GET(request: Request) {
 
   try {
     const rows = await fetchRowsForUser(access.userId);
+    const sortedSessionIds = rows
+      .map((row) => buildSession(row))
+      .filter((session): session is DashboardSession => session !== null)
+      .sort((a, b) => sessionTimestamp(b) - sessionTimestamp(a))
+      .filter((session) => {
+        if (session.status === "completed") {
+          return true;
+        }
+
+        return session.completedAt !== null || scoreFromSession(session) !== null;
+      })
+      .map((session) => session.id)
+      .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index)
+      .slice(0, RECENT_ACTIVITY_LIMIT);
+    const answerAnalytics = await fetchAnswerAnalytics(sortedSessionIds);
+    const tagPerformance = await fetchTagPerformance(answerAnalytics.answers);
     const payload = buildPayload({
       tier: access.tier,
       role: access.role,
       rows,
+      answerDurationOverrides: answerAnalytics.durationOverrides,
+      tagPerformance,
     });
 
     return NextResponse.json(payload);

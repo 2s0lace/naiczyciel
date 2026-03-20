@@ -46,10 +46,14 @@
 html,
 body {
   min-height: 100%;
+  background-color: #050510;
 }
 
 body {
   margin: 0;
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
   background: radial-gradient(circle at 10% -20%, #182443 0%, #070b14 52%);
   color: var(--color-app);
 }
@@ -201,4 +205,17 @@ a {
   font-family: var(--font-figtree), "Inter", sans-serif;
   font-weight: 900;
   font-style: normal;
+}
+
+.e8-landing-headlines :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-figtree), "Inter", sans-serif;
+  font-weight: 900;
+}
+
+.viewport-shell {
+  min-height: 100vh;
+  min-height: 100svh;
+  min-height: 100dvh;
+  background-color: #050510;
+  padding-bottom: env(safe-area-inset-bottom);
 }

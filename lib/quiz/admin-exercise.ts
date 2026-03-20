@@ -42,6 +42,16 @@ export type ExerciseAnalytics = {
   skill: string;
 };
 
+export type ExerciseGrammar = {
+  structures: string[];
+  tenses: string[];
+};
+
+export type ExerciseVocabulary = {
+  topic: string;
+  key_words: string[];
+};
+
 export type ExerciseMeta = {
   created_at: string;
   updated_at: string;
@@ -119,6 +129,8 @@ export type UniversalExerciseBase = {
   explanation: ExerciseExplanation;
   hint: ExerciseHint;
   analytics: ExerciseAnalytics;
+  grammar: ExerciseGrammar;
+  vocabulary: ExerciseVocabulary;
   meta: ExerciseMeta;
 };
 
@@ -200,6 +212,73 @@ function asText(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function normalizeEnumKey(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_")
+    .replace(/[^\w]/g, "");
+}
+
+function normalizeExerciseCategory(value: string): ExerciseCategory | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = normalizeEnumKey(value);
+
+  const alias: Record<string, ExerciseCategory> = {
+    reactions: "reactions",
+    reaction: "reactions",
+    reakcje: "reactions",
+    vocabulary: "vocabulary",
+    vocab: "vocabulary",
+    slownictwo: "vocabulary",
+    grammar: "grammar",
+    gramatyka: "grammar",
+    gap_fill_text: "gap_fill_text",
+    gapfilltext: "gap_fill_text",
+    open_cloze: "gap_fill_text",
+    reading_mc: "reading_mc",
+    reading: "reading_mc",
+    czytanie: "reading_mc",
+    gap_fill_word_bank: "gap_fill_word_bank",
+    word_bank: "gap_fill_word_bank",
+    gapfillwordbank: "gap_fill_word_bank",
+  };
+
+  const mapped = alias[normalized];
+  return mapped ?? (isExerciseCategory(normalized) ? normalized : null);
+}
+
+function normalizeExerciseTaskType(value: string): ExerciseTaskType | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = normalizeEnumKey(value);
+
+  const alias: Record<string, ExerciseTaskType> = {
+    single_choice_short: "single_choice_short",
+    single_choice: "single_choice_short",
+    singlechoice: "single_choice_short",
+    multiple_choice: "single_choice_short",
+    mcq: "single_choice_short",
+    gap_fill_text: "gap_fill_text",
+    gapfilltext: "gap_fill_text",
+    cloze: "gap_fill_text",
+    reading_mc: "reading_mc",
+    reading: "reading_mc",
+    reading_multiple_choice: "reading_mc",
+    gap_fill_word_bank: "gap_fill_word_bank",
+    word_bank: "gap_fill_word_bank",
+    gapfillwordbank: "gap_fill_word_bank",
+  };
+
+  const mapped = alias[normalized];
+  return mapped ?? (isExerciseTaskType(normalized) ? normalized : null);
+}
+
 function asBoolean(value: unknown, fallback = false): boolean {
   return typeof value === "boolean" ? value : fallback;
 }
@@ -273,6 +352,14 @@ export function createEmptyExercise(category: ExerciseCategory = "reactions"): U
     analytics: {
       focus_label: "",
       skill: "",
+    },
+    grammar: {
+      structures: [],
+      tenses: [],
+    },
+    vocabulary: {
+      topic: "",
+      key_words: [],
     },
     meta: {
       created_at: timestamp,
@@ -364,12 +451,22 @@ export function validateExerciseRecord(raw: unknown): ExerciseValidationResult {
 
   const rawCategory = asText(record.category);
   const rawTaskType = asText(record.task_type);
+  let category = normalizeExerciseCategory(rawCategory);
+  let taskType = normalizeExerciseTaskType(rawTaskType);
 
-  if (!isExerciseCategory(rawCategory)) {
+  if (!category && taskType) {
+    category = TASK_TYPE_TO_DEFAULT_CATEGORY[taskType];
+  }
+
+  if (!taskType && category) {
+    taskType = CATEGORY_TO_TASK_TYPE[category];
+  }
+
+  if (!category) {
     errors.push("category must be one of supported values.");
   }
 
-  if (!isExerciseTaskType(rawTaskType)) {
+  if (!taskType) {
     errors.push("task_type must be one of supported values.");
   }
 
@@ -377,11 +474,8 @@ export function validateExerciseRecord(raw: unknown): ExerciseValidationResult {
     return { isValid: false, errors, exercise: null };
   }
 
-  const category = rawCategory as ExerciseCategory;
-  const taskType = rawTaskType as ExerciseTaskType;
-
-  if (!isValidCategoryTaskTypePair(category, taskType)) {
-    errors.push("Invalid category/task_type combination.");
+  if (category && taskType && !isValidCategoryTaskTypePair(category, taskType)) {
+    taskType = CATEGORY_TO_TASK_TYPE[category];
   }
 
   const statusRaw = asText(record.status) || "draft";
@@ -398,6 +492,8 @@ export function validateExerciseRecord(raw: unknown): ExerciseValidationResult {
   const explanationRecord = asRecord(record.explanation);
   const hintRecord = asRecord(record.hint);
   const analyticsRecord = asRecord(record.analytics);
+  const grammarRecord = asRecord(record.grammar);
+  const vocabularyRecord = asRecord(record.vocabulary);
   const metaRecord = asRecord(record.meta);
 
   const why = asText(explanationRecord?.why);
@@ -672,6 +768,14 @@ export function validateExerciseRecord(raw: unknown): ExerciseValidationResult {
     analytics: {
       focus_label: asText(analyticsRecord?.focus_label),
       skill: asText(analyticsRecord?.skill),
+    },
+    grammar: {
+      structures: asStringArray(grammarRecord?.structures),
+      tenses: asStringArray(grammarRecord?.tenses),
+    },
+    vocabulary: {
+      topic: asText(vocabularyRecord?.topic),
+      key_words: asStringArray(vocabularyRecord?.key_words),
     },
     meta: {
       created_at: createdAt,

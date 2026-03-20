@@ -57,7 +57,7 @@ function SocialIconButton({ label, href, icon }: { label: string; href: string; 
       target="_blank"
       rel="noreferrer"
       aria-label={label}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/12 bg-[#0b1226]/76 text-indigo-100/85 transition-[border-color,background-color,color,transform] duration-150 hover:border-indigo-200/45 hover:bg-[#121b39] hover:text-white active:scale-[0.98]"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/12 bg-[#0b1226]/76 text-indigo-100/85 transition-[transform,color] duration-200 ease-out hover:scale-110 hover:text-cyan-300 active:scale-95"
     >
       {icon}
     </a>
@@ -73,4 +73,3 @@ export function SocialLinks({ className }: SocialLinksProps) {
     </div>
   );
 }
-

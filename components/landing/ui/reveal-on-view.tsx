@@ -45,7 +45,7 @@ export function RevealOnView({
       },
       {
         threshold,
-        rootMargin: "0px 0px -10% 0px",
+        rootMargin: "0px",
       },
     );
 

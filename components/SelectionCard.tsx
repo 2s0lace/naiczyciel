@@ -1,5 +1,6 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
+import { GraduationCap, Presentation } from "lucide-react";
 
 type SelectionCardTone = "student" | "teacher";
 
@@ -29,14 +30,19 @@ export const SelectionCard = ({
   showArrow = true,
 }: SelectionCardProps) => {
   const isTeacher = tone === "teacher";
+  const isStudentE8Cta = !isTeacher && buttonText.trim() === "Przejdź do E8";
 
   const cardChromeClass = isTeacher
-    ? "border-white/13 shadow-[0_24px_52px_-38px_rgba(87,212,160,0.34)] hover:border-teacher/40 hover:shadow-[0_32px_62px_-42px_rgba(87,212,160,0.48)]"
-    : "border-white/13 shadow-[0_24px_52px_-38px_rgba(79,70,229,0.42)] hover:border-student/42 hover:shadow-[0_30px_60px_-40px_rgba(79,70,229,0.54)]";
+    ? "border-white/10 shadow-[0_0_22px_rgba(34,197,94,0.12),0_20px_44px_-34px_rgba(87,212,160,0.2)] hover:border-teacher/28 hover:shadow-[0_0_26px_rgba(34,197,94,0.16),0_24px_50px_-36px_rgba(87,212,160,0.3)]"
+    : "border-cyan-300/40 shadow-[0_0_20px_rgba(56,189,248,0.15),0_24px_52px_-38px_rgba(56,189,248,0.32)] hover:border-cyan-200/52 hover:shadow-[0_0_24px_rgba(56,189,248,0.22),0_30px_60px_-40px_rgba(56,189,248,0.42)]";
 
   const radialToneClass = isTeacher
-    ? "bg-[radial-gradient(circle_at_top_right,rgba(87,212,160,0.16),rgba(87,212,160,0)_58%)]"
-    : "bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.14),rgba(99,102,241,0)_58%)]";
+    ? "bg-[radial-gradient(circle_at_86%_12%,rgba(87,212,160,0.24),rgba(87,212,160,0)_58%)]"
+    : "bg-[radial-gradient(circle_at_84%_10%,rgba(99,102,241,0.22),rgba(99,102,241,0)_56%)]";
+
+  const ambientToneClass = isTeacher
+    ? "bg-[linear-gradient(140deg,rgba(41,112,85,0.26),rgba(8,24,20,0.08)_44%,rgba(87,212,160,0.18)_100%)]"
+    : "bg-[linear-gradient(138deg,rgba(99,102,241,0.24),rgba(37,99,235,0.08)_42%,rgba(168,85,247,0.2)_100%)]";
 
   const labelToneClass = isTeacher ? "text-emerald-100/78" : "text-indigo-100/72";
 
@@ -55,7 +61,9 @@ export const SelectionCard = ({
   return (
     <Link
       href={href}
-      className={`group relative block overflow-hidden rounded-3xl border bg-[linear-gradient(160deg,rgba(9,14,30,0.98),rgba(6,10,24,0.97))] p-6 transition-[border-color,box-shadow,transform] duration-[220ms] ease-[var(--ease-premium)] hover:-translate-y-[3px] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 ${cardChromeClass}`}
+      className={`group relative block h-full overflow-hidden rounded-3xl border bg-[linear-gradient(160deg,rgba(9,14,30,0.98),rgba(6,10,24,0.97))] px-5 py-4 transition-[border-color,box-shadow,transform,opacity] duration-[220ms] ease-[var(--ease-premium)] hover:-translate-y-[3px] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 ${cardChromeClass} ${
+        isTeacher ? "opacity-75" : ""
+      }`}
       aria-label={`${title} - ${buttonText}`}
     >
       <div className="pointer-events-none absolute inset-0">
@@ -66,6 +74,7 @@ export const SelectionCard = ({
           className="object-cover object-center opacity-[0.34] saturate-[0.82] brightness-[0.56] contrast-[1.03] transition-[transform,opacity,filter] duration-[240ms] ease-[var(--ease-premium)] group-hover:translate-y-[-1px] group-hover:scale-[1.015] group-hover:opacity-[0.38] group-hover:saturate-[0.87]"
           priority
         />
+        <div className={`absolute inset-0 ${ambientToneClass}`} />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,8,20,0.68)_0%,rgba(5,9,22,0.48)_38%,rgba(5,9,22,0.76)_100%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(155deg,rgba(5,9,22,0.5),rgba(7,12,27,0.38)_48%,rgba(7,12,27,0.56))]" />
         <div className={`absolute inset-0 ${radialToneClass}`} />
@@ -76,10 +85,13 @@ export const SelectionCard = ({
               : "bg-[radial-gradient(circle_at_84%_16%,rgba(99,102,241,0.12),rgba(99,102,241,0)_58%)]"
           }`}
         />
+        <div className={`absolute right-4 bottom-3 ${isTeacher ? "text-emerald-200" : "text-indigo-200"} opacity-[0.05]`}>
+          {isTeacher ? <Presentation size={80} strokeWidth={1.8} /> : <GraduationCap size={80} strokeWidth={1.8} />}
+        </div>
       </div>
 
-      <div className="relative z-10 flex min-h-[14.5rem] flex-col justify-between md:min-h-[16rem]">
-        <div className="space-y-3">
+      <div className="relative z-10 flex h-full min-h-[14.5rem] flex-col md:min-h-[16rem]">
+        <div className="space-y-2.5">
           <div className="flex items-center justify-between gap-2">
             <p className={`text-[11px] font-semibold tracking-[0.11em] uppercase ${labelToneClass}`}>{label}</p>
             {statusText ? (
@@ -99,7 +111,11 @@ export const SelectionCard = ({
         </div>
 
         <div
-          className={`inline-flex w-fit items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition-[border-color,filter,transform,box-shadow] duration-[220ms] ease-[var(--ease-premium)] group-hover:brightness-110 ${ctaToneClass} ${ctaGlowClass}`}
+          className={`mt-auto pt-3 inline-flex items-center gap-2 rounded-xl border text-sm font-semibold transition-[border-color,filter,transform,box-shadow] duration-150 ease-out group-hover:brightness-110 group-active:scale-[0.96] ${
+            isStudentE8Cta
+              ? "w-full justify-center px-3.5 py-2.5 md:w-fit md:justify-start md:px-4 md:py-2.5"
+              : "w-fit px-4 py-2.5"
+          } ${ctaToneClass} ${ctaGlowClass}`}
         >
           {buttonText}
           {showArrow ? (

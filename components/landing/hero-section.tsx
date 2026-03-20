@@ -14,7 +14,7 @@ export default function HeroSection({ activeTab }: HeroSectionProps) {
         className="motion-fade-up mb-4 text-[2.2rem] leading-[1.05] font-black tracking-tight sm:text-[2.5rem] md:mb-4 md:max-w-[16ch] md:text-[2.9rem] lg:mb-3 lg:max-w-[13.5ch] lg:text-[2.92rem] lg:leading-[1.01] xl:text-[3.05rem] min-[1440px]:max-w-[14.2ch] min-[1440px]:text-[3.3rem] 2xl:max-w-[14.5ch] 2xl:text-[3.65rem] min-[2200px]:max-w-[15.2ch] min-[2200px]:text-[4.4rem]"
         style={{ animationDuration: "500ms" }}
       >
-        Ćwicz do E8
+        <span className="bg-gradient-to-r from-white via-indigo-200 to-violet-300 bg-clip-text text-transparent">Ćwicz do E8</span>
         <br />
         <span className="bg-gradient-to-r from-indigo-300 via-violet-200 to-white bg-clip-text text-transparent">
           na zadaniach
@@ -46,4 +46,3 @@ export default function HeroSection({ activeTab }: HeroSectionProps) {
     </section>
   );
 }
-

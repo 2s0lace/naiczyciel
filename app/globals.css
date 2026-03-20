@@ -141,10 +141,10 @@ a {
 
 .motion-scroll-reveal {
   opacity: 0;
-  transform: translateY(18px);
+  transform: translateY(16px);
   transition:
-    opacity var(--motion-duration, 500ms) var(--ease-premium),
-    transform var(--motion-duration, 500ms) var(--ease-premium);
+    opacity var(--motion-duration, 600ms) ease-out,
+    transform var(--motion-duration, 600ms) ease-out;
 }
 
 .motion-scroll-reveal[data-inview="true"] {

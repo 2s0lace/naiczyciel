@@ -1920,9 +1920,9 @@ export default function E8AuthenticatedDashboard({
                         window.location.href = "/e8?plans=1#pricing";
                       }}
                       whileHover={modalMotion.buttonHover}
-                      whileTap={modalMotion.buttonTap}
+                      whileTap={{ scale: 0.96 }}
                       className={cn(
-                        "mt-4 w-full rounded-xl border py-2.5 text-sm font-semibold transition-[transform,filter,background-color,border-color] duration-200",
+                        "mt-4 w-full rounded-xl border py-2.5 text-sm font-semibold transition-[transform,filter,background-color,border-color] duration-150 ease-out active:scale-[0.96]",
                         plan.featured
                           ? "border-indigo-300/40 bg-indigo-500 text-white hover:bg-indigo-400"
                           : "border-white/18 bg-white/[0.08] text-white/95 hover:border-white/28 hover:bg-white/[0.12]"
@@ -2098,7 +2098,6 @@ export default function E8AuthenticatedDashboard({
     </main>
   );
 }
-
 
 
 

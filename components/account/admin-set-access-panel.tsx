@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import {
   ACCESS_TIERS,
-  E8_SET_SLOTS,
   type AccessTier,
   type E8SetDefinition,
   type SetAccessConfig,
@@ -29,7 +29,7 @@ const TIER_LABEL: Record<AccessTier, string> = {
   premium_plus: "Premium+ (uczen+)",
 };
 
-const BUILTIN_SET_IDS = new Set(E8_SET_SLOTS.map((setItem) => setItem.id));
+const HIDDEN_CORE_SET_IDS = new Set(["set_reactions_core", "set_vocabulary_core", "set_grammar_core"]);
 
 function createEmptyConfig(): SetAccessConfig {
   return {
@@ -123,7 +123,7 @@ export function AdminSetAccessPanel() {
   }, [loadConfig]);
 
   const createdSets = useMemo(
-    () => sets.filter((setItem) => !BUILTIN_SET_IDS.has(setItem.id)),
+    () => sets.filter((setItem) => !HIDDEN_CORE_SET_IDS.has(setItem.id)),
     [sets],
   );
 
@@ -257,7 +257,10 @@ export function AdminSetAccessPanel() {
     return (
       <section className="rounded-3xl border border-white/10 bg-white/[0.03] p-5 shadow-[0_24px_44px_-34px_rgba(0,0,0,0.95)] sm:p-6">
         <h2 className="text-lg font-bold text-white">Dostep do zestawow</h2>
-        <p className="mt-2 text-sm text-gray-300">Ladowanie konfiguracji...</p>
+        <div className="mt-2 flex items-center gap-2.5 text-sm text-gray-300">
+          <Spinner size="sm" />
+          <span>Ladowanie konfiguracji...</span>
+        </div>
       </section>
     );
   }

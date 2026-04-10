@@ -158,13 +158,10 @@ export default function AvatarSelectionPage() {
 
       <div className="relative mx-auto flex min-h-[calc(100dvh-6.5rem)] w-full max-w-5xl items-start justify-center pt-8 sm:pt-10 md:pt-12">
         <section className="w-full max-w-[43rem] rounded-[1.8rem] border border-indigo-200/20 bg-[linear-gradient(160deg,rgba(13,19,39,0.96),rgba(8,13,28,0.95))] p-7 shadow-[0_30px_70px_-46px_rgba(79,70,229,0.65)] lg:shadow-[0_20px_40px_-34px_rgba(19,28,58,0.42)] sm:p-9">
-          <div className="mx-auto max-w-[34rem] space-y-2.5 text-center">
+          <div className="mx-auto max-w-[34rem] text-center">
             <h1 className="text-3xl leading-tight text-white sm:text-[2.15rem]" style={{ fontFamily: "var(--font-figtree)", fontWeight: 900 }}>
               Wybierz avatar
             </h1>
-            <p className="text-sm leading-relaxed text-indigo-100/78 sm:text-[0.95rem]">
-              Wybierz 1 z 4 presetów. Później zmienisz go w ustawieniach konta.
-            </p>
           </div>
 
           <div className="mx-auto mt-6 w-full max-w-[31rem] space-y-1.5">

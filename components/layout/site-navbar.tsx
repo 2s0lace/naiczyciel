@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -10,7 +10,8 @@ import logoNaiczycielWhite from "@/img/logonaiczyciel_white.png";
 export function SiteNavbar() {
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname === "/e8" || pathname.startsWith("/e8/quiz")) {
+  const authPaths = ["/login", "/register", "/konto"];
+  if (pathname === "/" || pathname === "/e8" || pathname.startsWith("/e8/quiz") || authPaths.includes(pathname)) {
     return null;
   }
 

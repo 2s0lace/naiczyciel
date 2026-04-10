@@ -28,7 +28,7 @@ function resolveOptionState(params: {
   }
 
   if (option.id === correctOptionId) {
-    return "correct";
+    return option.id === selectedOptionId ? "correct" : "revealed_correct";
   }
 
   if (option.id === selectedOptionId && option.id !== correctOptionId) {

@@ -1,7 +1,7 @@
 ﻿import { Check, X } from "lucide-react";
 import type { QuizOption } from "@/lib/quiz/types";
 
-type AnswerVisualState = "default" | "selected" | "correct" | "wrong" | "disabled" | "eliminated";
+type AnswerVisualState = "default" | "selected" | "correct" | "revealed_correct" | "wrong" | "disabled" | "eliminated";
 
 type AnswerOptionProps = {
   option: QuizOption;
@@ -14,11 +14,13 @@ function getClasses(state: AnswerVisualState) {
     case "selected":
       return "bg-indigo-500/12 text-white ring-indigo-300/42";
     case "correct":
-      return "bg-emerald-500/14 text-white ring-emerald-300/40";
+      return "bg-emerald-500/[0.12] text-white ring-emerald-300/24";
+    case "revealed_correct":
+      return "bg-emerald-500/[0.06] text-white ring-emerald-300/18";
     case "wrong":
-      return "bg-rose-500/14 text-white ring-rose-300/35";
+      return "bg-rose-500/[0.08] text-white ring-rose-300/16";
     case "disabled":
-      return "bg-white/[0.018] text-gray-400 ring-white/8";
+      return "bg-transparent text-gray-400 ring-white/8 opacity-60";
     case "eliminated":
       return "bg-white/[0.012] text-gray-500 ring-white/8 opacity-45";
     default:
@@ -29,17 +31,19 @@ function getClasses(state: AnswerVisualState) {
 function getBadgeClasses(state: AnswerVisualState) {
   switch (state) {
     case "correct":
-      return "bg-emerald-500/22 text-emerald-100";
+      return "border border-emerald-300/28 bg-emerald-500/16 text-emerald-50";
+    case "revealed_correct":
+      return "border border-emerald-300/24 bg-transparent text-emerald-100";
     case "wrong":
-      return "bg-rose-500/22 text-rose-100";
+      return "border border-rose-300/28 bg-rose-500/16 text-rose-50";
     case "selected":
-      return "bg-indigo-500/24 text-indigo-100";
+      return "border border-indigo-300/35 bg-indigo-500/22 text-indigo-50";
     case "disabled":
-      return "bg-white/8 text-gray-300";
+      return "border border-white/10 bg-white/6 text-gray-300";
     case "eliminated":
-      return "bg-white/8 text-gray-400";
+      return "border border-white/10 bg-white/6 text-gray-400";
     default:
-      return "bg-white/10 text-gray-100";
+      return "border border-indigo-300/16 bg-indigo-500/[0.08] text-indigo-100";
   }
 }
 
@@ -56,15 +60,23 @@ export function AnswerOption({ option, state, onSelect }: AnswerOptionProps) {
     >
       <span className="flex min-w-0 items-center gap-2.5 xl:gap-3">
         <span
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold xl:h-9 xl:w-9 xl:text-sm ${getBadgeClasses(state)}`}
+          className={`inline-flex h-7 min-w-[1.9rem] shrink-0 items-center justify-center rounded-md px-2 text-[11px] font-semibold tracking-[0.04em] xl:h-8 xl:min-w-[2rem] xl:text-xs ${getBadgeClasses(state)}`}
         >
           {option.label}
         </span>
         <span className="text-[0.95rem] leading-6 xl:text-[1.02rem] xl:leading-7">{content}</span>
       </span>
 
-      {state === "correct" ? <Check className="h-4 w-4 text-emerald-200 xl:h-[18px] xl:w-[18px]" /> : null}
-      {state === "wrong" ? <X className="h-4 w-4 text-rose-200 xl:h-[18px] xl:w-[18px]" /> : null}
+      {state === "correct" ? (
+        <span className="inline-flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full border border-emerald-300/32 text-emerald-300">
+          <Check className="h-[14px] w-[14px]" />
+        </span>
+      ) : null}
+      {state === "wrong" ? (
+        <span className="inline-flex h-[16px] w-[16px] shrink-0 items-center justify-center rounded-full border border-rose-300/32 text-rose-300">
+          <X className="h-[14px] w-[14px]" />
+        </span>
+      ) : null}
     </button>
   );
 }

@@ -1,27 +1,32 @@
-﻿"use client";
+"use client";
 
 import type { User } from "@supabase/supabase-js";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LockKeyhole } from "lucide-react";
 import { clearRoleCookie, setRoleCookie } from "@/lib/auth/role";
 import { resolveRoleForSession } from "@/lib/auth/client-role";
 import { normalizeAvatarKey, resolveAvatarSrc } from "@/lib/avatar/presets";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import loginPaperCutElement from "@/img/paper-cut-design-element (2).png";
 
 type AuthHeaderActionsProps = {
   loginClassName: string;
   accountClassName: string;
   containerClassName?: string;
+  loginVariant?: "paper-cut" | "box";
 };
 
 export default function AuthHeaderActions({
   loginClassName,
   accountClassName,
   containerClassName,
+  loginVariant = "paper-cut",
 }: AuthHeaderActionsProps) {
+  const pathname = usePathname();
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -147,10 +152,62 @@ export default function AuthHeaderActions({
     return resolveAvatarSrc(avatarKey);
   }, [user]);
 
+  if (pathname === "/auth/callback") {
+    return null;
+  }
+
   if (!user) {
+    const hiddenLoginPaths = [
+      "/login",
+      "/polityka-prywatnosci",
+      "/polityka-cookies",
+      "/regulamin",
+      "/korepetycje",
+      "/co-nowego",
+      "/credits",
+    ];
+
+    if (hiddenLoginPaths.includes(pathname)) {
+      return null;
+    }
+
+    if (loginVariant === "box") {
+      return (
+        <Link
+          href="/login"
+          className={cn(
+            "inline-flex items-center justify-center rounded-xl border border-white/14 bg-white/6 px-4 text-sm font-semibold text-gray-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-colors duration-150 hover:border-white/22 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/45",
+            loginClassName,
+          )}
+        >
+          Zaloguj się
+        </Link>
+      );
+    }
+
     return (
-      <Link href="/login" className={loginClassName}>
-        Zaloguj się
+      <Link href="/login" className={cn("group relative inline-flex items-center justify-center overflow-hidden", loginClassName)}>
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-3 bottom-1 h-5 rounded-full bg-black/30 blur-md transition-opacity duration-150 group-hover:bg-black/36"
+        />
+        <Image
+          src={loginPaperCutElement}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full object-fill opacity-95"
+        />
+        <LockKeyhole
+          aria-hidden
+          className="pointer-events-none absolute right-5 top-1/2 z-10 h-[0.72rem] w-[0.72rem] -translate-y-1/2 text-[#1a1a1a]/16 md:h-[0.84rem] md:w-[0.84rem] md:text-[#1a1a1a]/24"
+          strokeWidth={1.65}
+        />
+        <span
+          className="relative z-10 px-6 text-[0.82rem] tracking-[-0.01em] text-[#1a1a1a]/72 transition-transform duration-150 group-hover:scale-[1.015] md:text-[1.02rem] md:text-[#1a1a1a]"
+          style={{ fontFamily: "var(--font-gloria-hallelujah)", fontWeight: 700, textShadow: "0 1px 0 rgba(3,10,20,0.22)" }}
+        >
+          ZALOGUJ
+        </span>
       </Link>
     );
   }
@@ -183,7 +240,7 @@ export default function AuthHeaderActions({
 
         <div
           className={cn(
-            "absolute top-[calc(100%+0.45rem)] right-0 z-[120] min-w-[8.5rem] overflow-hidden rounded-xl border border-white/16 bg-[#0b1226] p-1 shadow-[0_22px_36px_-22px_rgba(0,0,0,0.92)] transition-[opacity,transform] duration-150",
+            "absolute top-[calc(100%+0.45rem)] right-0 z-[120] min-w-[9.5rem] overflow-hidden rounded-2xl border border-white/20 bg-[#0f1733]/98 p-1.5 shadow-[0_24px_40px_-20px_rgba(0,0,0,0.92)] backdrop-blur-md transition-[opacity,transform] duration-150",
             isMenuOpen ? "pointer-events-auto translate-y-0 opacity-100" : "pointer-events-none -translate-y-1 opacity-0",
           )}
           role="menu"
@@ -192,7 +249,7 @@ export default function AuthHeaderActions({
           <Link
             href="/konto"
             onClick={() => setIsMenuOpen(false)}
-            className="block rounded-lg px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:bg-white/8 hover:text-white"
+            className="block rounded-xl px-3.5 py-2.5 text-sm font-semibold text-white/92 transition-colors hover:bg-white/8 hover:text-white"
             role="menuitem"
           >
             Konto
@@ -201,7 +258,7 @@ export default function AuthHeaderActions({
             type="button"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-gray-200 transition-colors hover:bg-red-500/12 hover:text-red-100 disabled:opacity-70"
+            className="block w-full rounded-xl px-3.5 py-2.5 text-left text-sm font-semibold text-white/88 transition-colors hover:bg-red-500/12 hover:text-red-100 disabled:opacity-70"
             role="menuitem"
           >
             {isLoggingOut ? "Wylogowywanie..." : "Wyloguj"}

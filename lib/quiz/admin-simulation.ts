@@ -1,7 +1,7 @@
 ﻿import type { ExerciseTaskType, UniversalExerciseRecord } from "@/lib/quiz/admin-exercise";
 import type { QuizQuestion } from "@/lib/quiz/types";
 
-const QUIZ_COMPATIBLE_TASK_TYPES: ExerciseTaskType[] = ["single_choice_short", "reading_mc"];
+const QUIZ_COMPATIBLE_TASK_TYPES: ExerciseTaskType[] = ["single_choice_short", "reading_mc", "gap_fill_text"];
 
 type SimulationSkipReason =
   | "unsupported_task_type"
@@ -39,37 +39,6 @@ function categoryToLabel(category: string): string {
   }
 }
 
-function pickPrompt(exercise: UniversalExerciseRecord): string {
-  if (exercise.task_type === "single_choice_short") {
-    return exercise.content.prompt.trim();
-  }
-
-  if (exercise.task_type === "reading_mc") {
-    const passage = exercise.content.passage.trim();
-    const question = exercise.content.question.trim();
-    const title = (exercise.content.title ?? "").trim();
-
-    return [title, passage, question ? `Pytanie: ${question}` : ""].filter((part) => part.length > 0).join("\n\n");
-  }
-
-  return "";
-}
-
-function buildOptions(exercise: UniversalExerciseRecord) {
-  if (exercise.task_type !== "single_choice_short" && exercise.task_type !== "reading_mc") {
-    return [];
-  }
-
-  const source = exercise.content.options.slice(0, 3);
-
-  return source.map((option, index) => ({
-    id: option.id,
-    label: ["A", "B", "C"][index] ?? option.id,
-    text: option.text,
-    isCorrect: option.id === exercise.correct_answer.option_id,
-  }));
-}
-
 export function buildQuizQuestionsFromExercises(exercises: UniversalExerciseRecord[]): SimulationBuildResult {
   const questions: QuizQuestion[] = [];
   const skipped: SimulationSkippedExercise[] = [];
@@ -84,46 +53,127 @@ export function buildQuizQuestionsFromExercises(exercises: UniversalExerciseReco
       continue;
     }
 
-    const prompt = pickPrompt(exercise);
-
-    if (!prompt) {
-      skipped.push({
-        id: exercise.id,
-        taskType: exercise.task_type,
-        reason: "missing_prompt",
-      });
-      continue;
-    }
-
-    const options = buildOptions(exercise).filter((option) => option.text.trim().length > 0);
-
-    if (options.length !== 3) {
-      skipped.push({
-        id: exercise.id,
-        taskType: exercise.task_type,
-        reason: "invalid_options",
-      });
-      continue;
-    }
-
-    if (!options.some((option) => option.isCorrect)) {
-      skipped.push({
-        id: exercise.id,
-        taskType: exercise.task_type,
-        reason: "invalid_correct_answer",
-      });
-      continue;
-    }
-
-    questions.push({
+    const baseQuestion = {
       id: exercise.id,
       mode: exercise.category,
       category: exercise.analytics.focus_label.trim() || categoryToLabel(exercise.category),
-      prompt,
       explanation: exercise.explanation.why.trim() || "Sprawdz poprawna reakcje i kontekst wypowiedzi.",
+      hintText: exercise.hint.short.trim(),
       patternTip: exercise.explanation.pattern.trim(),
       warningTip: exercise.explanation.watch_out.trim(),
-      options,
+    };
+
+    if (exercise.task_type === "single_choice_short") {
+      const prompt = exercise.content.prompt.trim();
+      const options = exercise.content.options.slice(0, 3).map((option, index) => ({
+        id: option.id,
+        label: ["A", "B", "C"][index] ?? option.id,
+        text: option.text,
+        isCorrect: option.id === exercise.correct_answer.option_id,
+      }));
+
+      if (!prompt) {
+        skipped.push({ id: exercise.id, taskType: exercise.task_type, reason: "missing_prompt" });
+        continue;
+      }
+
+      if (options.length !== 3) {
+        skipped.push({ id: exercise.id, taskType: exercise.task_type, reason: "invalid_options" });
+        continue;
+      }
+
+      if (!options.some((option) => option.isCorrect)) {
+        skipped.push({ id: exercise.id, taskType: exercise.task_type, reason: "invalid_correct_answer" });
+        continue;
+      }
+
+      questions.push({
+        ...baseQuestion,
+        type: "single_question",
+        prompt,
+        options,
+      });
+      continue;
+    }
+
+    if (exercise.task_type === "reading_mc") {
+      const groupedQuestions = (exercise.content.questions ?? []).map((question) => ({
+        id: `${exercise.id}::${question.id}`,
+        prompt: question.question,
+        options: question.options.slice(0, 3).map((option, index) => ({
+          id: option.id,
+          label: ["A", "B", "C"][index] ?? option.id,
+          text: option.text,
+          isCorrect: option.id === (exercise.correct_answer.questions?.find((answer) => answer.id === question.id)?.option_id ?? ""),
+        })),
+      }));
+
+      if (!exercise.content.passage.trim() || groupedQuestions.length === 0) {
+        skipped.push({ id: exercise.id, taskType: exercise.task_type, reason: "missing_prompt" });
+        continue;
+      }
+
+      if (groupedQuestions.some((question) => question.options.length !== 3)) {
+        skipped.push({ id: exercise.id, taskType: exercise.task_type, reason: "invalid_options" });
+        continue;
+      }
+
+      if (groupedQuestions.some((question) => !question.options.some((option) => option.isCorrect))) {
+        skipped.push({ id: exercise.id, taskType: exercise.task_type, reason: "invalid_correct_answer" });
+        continue;
+      }
+
+      questions.push({
+        ...baseQuestion,
+        type: "reading_mc",
+        title: exercise.content.title?.trim() || undefined,
+        passage: exercise.content.passage.trim(),
+        questions: groupedQuestions,
+      });
+      continue;
+    }
+
+    if (exercise.task_type === "gap_fill_text") {
+      const groupedQuestions = (exercise.content.questions ?? []).map((question) => ({
+        id: `${exercise.id}::${question.id}`,
+        prompt: question.question,
+        options: question.options.slice(0, 3).map((option, index) => ({
+          id: option.id,
+          label: ["A", "B", "C"][index] ?? option.id,
+          text: option.text,
+          isCorrect: option.id === (exercise.correct_answer.questions?.find((answer) => answer.id === question.id)?.option_id ?? ""),
+        })),
+      }));
+
+      if (!exercise.content.text.trim() || groupedQuestions.length === 0) {
+        skipped.push({ id: exercise.id, taskType: exercise.task_type, reason: "missing_prompt" });
+        continue;
+      }
+
+      if (groupedQuestions.some((question) => question.options.length !== 3)) {
+        skipped.push({ id: exercise.id, taskType: exercise.task_type, reason: "invalid_options" });
+        continue;
+      }
+
+      if (groupedQuestions.some((question) => !question.options.some((option) => option.isCorrect))) {
+        skipped.push({ id: exercise.id, taskType: exercise.task_type, reason: "invalid_correct_answer" });
+        continue;
+      }
+
+      questions.push({
+        ...baseQuestion,
+        type: "gap_fill_text",
+        title: exercise.content.title?.trim() || undefined,
+        passage: exercise.content.text.trim(),
+        questions: groupedQuestions,
+      });
+      continue;
+    }
+
+    skipped.push({
+      id: exercise.id,
+      taskType: exercise.task_type,
+      reason: "unsupported_task_type",
     });
   }
 

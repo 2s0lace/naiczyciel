@@ -14,7 +14,7 @@ type AvatarPickerProps = {
 
 export default function AvatarPicker({ selectedKey, onSelect, className, itemClassName, disabled = false }: AvatarPickerProps) {
   return (
-    <div className={cn("grid grid-cols-4 gap-3.5", className)}>
+    <div className={cn("grid grid-cols-4 gap-4", className)}>
       {AVATAR_PRESETS.map((avatar) => {
         const isSelected = avatar.key === selectedKey;
 
@@ -27,16 +27,23 @@ export default function AvatarPicker({ selectedKey, onSelect, className, itemCla
             aria-pressed={isSelected}
             aria-label={`Wybierz avatar ${avatar.key}`}
             className={cn(
-              "group relative flex aspect-square items-center justify-center overflow-hidden rounded-full border p-1.5 transition-[transform,border-color,background-color,box-shadow] duration-150 sm:p-2",
-              "border-white/16 bg-[#0a1227]/72 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] hover:border-indigo-200/45 hover:bg-[#101a39]/82",
+              "group relative flex aspect-square items-center justify-center overflow-hidden rounded-full border p-1.5 transition-[transform,border-color,background-color,box-shadow,filter,opacity] duration-150 sm:p-2",
+              "border-white/10 bg-[#0b1430]/64 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:border-indigo-200/30 hover:bg-[#101a39]/78",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/45",
               isSelected &&
-                "scale-[1.03] border-indigo-200/70 bg-[#14204a]/88 shadow-[0_0_0_1px_rgba(165,180,252,0.62),0_16px_30px_-20px_rgba(79,70,229,0.95),inset_0_1px_0_rgba(255,255,255,0.22)]",
+                "scale-[1.07] border-indigo-200/80 bg-[radial-gradient(circle_at_30%_18%,rgba(129,140,248,0.4),rgba(20,32,74,0.96)_60%)] shadow-[0_0_0_1px_rgba(165,180,252,0.78),0_0_0_7px_rgba(79,70,229,0.12),0_18px_34px_-18px_rgba(79,70,229,1),inset_0_1px_0_rgba(255,255,255,0.24)]",
+              !isSelected && "opacity-[0.92]",
               disabled && "cursor-not-allowed opacity-70",
               itemClassName,
             )}
           >
             <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_18%,rgba(255,255,255,0.08),rgba(255,255,255,0)_62%)]" />
+            {isSelected ? (
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-[2px] rounded-full border border-indigo-100/74 shadow-[0_0_22px_rgba(129,140,248,0.58)]"
+              />
+            ) : null}
             <Image
               src={avatar.src}
               alt={avatar.file}
@@ -48,7 +55,7 @@ export default function AvatarPicker({ selectedKey, onSelect, className, itemCla
             {isSelected ? (
               <span
                 aria-hidden
-                className="pointer-events-none absolute -bottom-0.5 left-1/2 h-1.5 w-7 -translate-x-1/2 rounded-full bg-indigo-200/82 shadow-[0_0_12px_rgba(165,180,252,0.85)]"
+                className="pointer-events-none absolute -bottom-0.5 left-1/2 h-1.5 w-8 -translate-x-1/2 rounded-full bg-indigo-100/96 shadow-[0_0_16px_rgba(165,180,252,1)]"
               />
             ) : null}
           </button>

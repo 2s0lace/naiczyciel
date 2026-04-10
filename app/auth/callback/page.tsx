@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { clearRoleCookie, setRoleCookie } from "@/lib/auth/role";
 import { hasConfiguredDisplayName } from "@/lib/auth/display-name";
 import { resolveRoleForSession } from "@/lib/auth/client-role";
@@ -118,6 +119,7 @@ export default function AuthCallbackPage() {
             </div>
           ) : (
             <div className="space-y-3">
+              <Spinner size="lg" className="mx-auto" />
               <h1 className="text-xl font-bold">Finalizowanie logowania...</h1>
               <p className="text-sm text-gray-300">Trwa łączenie konta Google.</p>
             </div>
@@ -127,4 +129,3 @@ export default function AuthCallbackPage() {
     </main>
   );
 }
-

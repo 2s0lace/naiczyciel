@@ -66,6 +66,17 @@ export type SingleChoiceShortAnswer = {
   option_id: string;
 };
 
+export type ExerciseChoiceQuestion = {
+  id: string;
+  question: string;
+  options: ExerciseOption[];
+};
+
+export type ExerciseChoiceAnswer = {
+  id: string;
+  option_id: string;
+};
+
 export type GapFillTextBlank = {
   id: string;
   placeholder: string;
@@ -75,10 +86,14 @@ export type GapFillTextBlank = {
 export type GapFillTextContent = {
   title?: string;
   text: string;
+  prompt_en?: string;
+  prompt_pl?: string;
+  questions?: ExerciseChoiceQuestion[];
   blanks: GapFillTextBlank[];
 };
 
 export type GapFillTextAnswer = {
+  questions?: ExerciseChoiceAnswer[];
   blanks: Array<{
     id: string;
     accepted_answers: string[];
@@ -88,12 +103,16 @@ export type GapFillTextAnswer = {
 export type ReadingMcContent = {
   title?: string;
   passage: string;
-  question: string;
-  options: ExerciseOption[];
+  prompt_en?: string;
+  prompt_pl?: string;
+  question?: string;
+  options?: ExerciseOption[];
+  questions?: ExerciseChoiceQuestion[];
 };
 
 export type ReadingMcAnswer = {
-  option_id: string;
+  option_id?: string;
+  questions?: ExerciseChoiceAnswer[];
 };
 
 export type GapFillWordBankBlank = {
@@ -322,6 +341,60 @@ function normalizeOptions(rawOptions: unknown, exactCount?: number): ExerciseOpt
   return normalized;
 }
 
+function normalizeChoiceQuestions(rawQuestions: unknown): ExerciseChoiceQuestion[] {
+  const source = Array.isArray(rawQuestions) ? rawQuestions : [];
+
+  return source
+    .map((entry, index) => {
+      const record = asRecord(entry);
+
+      if (!record) {
+        return null;
+      }
+
+      const id = asText(record.id) || `${index + 1}`;
+      const question = asText(record.question);
+      const options = normalizeOptions(record.options, 3);
+
+      if (!question || options.length !== 3) {
+        return null;
+      }
+
+      return {
+        id,
+        question,
+        options,
+      } satisfies ExerciseChoiceQuestion;
+    })
+    .filter((item): item is ExerciseChoiceQuestion => Boolean(item));
+}
+
+function normalizeChoiceAnswers(rawAnswers: unknown): ExerciseChoiceAnswer[] {
+  const source = Array.isArray(rawAnswers) ? rawAnswers : [];
+
+  return source
+    .map((entry, index) => {
+      const record = asRecord(entry);
+
+      if (!record) {
+        return null;
+      }
+
+      const id = asText(record.id) || `${index + 1}`;
+      const optionId = asText(record.option_id);
+
+      if (!optionId) {
+        return null;
+      }
+
+      return {
+        id,
+        option_id: optionId,
+      } satisfies ExerciseChoiceAnswer;
+    })
+    .filter((item): item is ExerciseChoiceAnswer => Boolean(item));
+}
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -392,10 +465,22 @@ export function createEmptyExercise(category: ExerciseCategory = "reactions"): U
       content: {
         title: "",
         text: "",
-        blanks: [{ id: "blank_1", placeholder: "___", accepted_answers: [] }],
+        questions: [
+          {
+            id: "1",
+            question: "Gap 1",
+            options: [
+              { id: "A", text: "" },
+              { id: "B", text: "" },
+              { id: "C", text: "" },
+            ],
+          },
+        ],
+        blanks: [],
       },
       correct_answer: {
-        blanks: [{ id: "blank_1", accepted_answers: [] }],
+        questions: [{ id: "1", option_id: "A" }],
+        blanks: [],
       },
     };
   }
@@ -407,15 +492,20 @@ export function createEmptyExercise(category: ExerciseCategory = "reactions"): U
       content: {
         title: "",
         passage: "",
-        question: "",
-        options: [
-          { id: "A", text: "" },
-          { id: "B", text: "" },
-          { id: "C", text: "" },
+        questions: [
+          {
+            id: "1",
+            question: "",
+            options: [
+              { id: "A", text: "" },
+              { id: "B", text: "" },
+              { id: "C", text: "" },
+            ],
+          },
         ],
       },
       correct_answer: {
-        option_id: "A",
+        questions: [{ id: "1", option_id: "A" }],
       },
     };
   }
@@ -556,43 +646,97 @@ export function validateExerciseRecord(raw: unknown): ExerciseValidationResult {
   } else if (taskType === "reading_mc") {
     const title = asText(contentRecord.title);
     const passage = asText(contentRecord.passage);
-    const question = asText(contentRecord.question);
-    const options = normalizeOptions(contentRecord.options, 3);
-    const optionId = asText(correctRecord.option_id);
+    const legacyQuestion = asText(contentRecord.question);
+    const legacyOptions = normalizeOptions(contentRecord.options, 3);
+    const legacyOptionId = asText(correctRecord.option_id);
+    const questions = normalizeChoiceQuestions(contentRecord.questions);
+    const questionAnswers = normalizeChoiceAnswers(correctRecord.questions);
+    const usesQuestionGroups = questions.length > 0 || questionAnswers.length > 0;
 
     if (!passage) {
       errors.push("content.passage is required.");
     }
 
-    if (!question) {
-      errors.push("content.question is required.");
-    }
+    if (usesQuestionGroups) {
+      if (questions.length < 1) {
+        errors.push("reading_mc must have at least 1 question.");
+      }
 
-    if (options.length !== 3) {
-      errors.push("reading_mc must have exactly 3 options.");
-    }
+      if (questionAnswers.length < 1) {
+        errors.push("correct_answer.questions is required for reading_mc.");
+      }
 
-    const optionIds = new Set(options.map((opt) => opt.id));
+      const questionMap = new Map(questions.map((item) => [item.id, item]));
 
-    if (!optionId) {
-      errors.push("correct_answer.option_id is required.");
-    } else if (!optionIds.has(optionId)) {
-      errors.push("correct_answer.option_id must match one option.");
+      for (const item of questions) {
+        if (item.options.length !== 3) {
+          errors.push(`reading_mc question ${item.id} must have exactly 3 options.`);
+        }
+      }
+
+      for (const answer of questionAnswers) {
+        const matchingQuestion = questionMap.get(answer.id);
+
+        if (!matchingQuestion) {
+          errors.push(`reading_mc answer ${answer.id} must match one question.`);
+          continue;
+        }
+
+        const optionIds = new Set(matchingQuestion.options.map((option) => option.id));
+
+        if (!optionIds.has(answer.option_id)) {
+          errors.push(`reading_mc answer ${answer.id} must match one option.`);
+        }
+      }
+    } else {
+      if (!legacyQuestion) {
+        errors.push("content.question is required.");
+      }
+
+      if (legacyOptions.length !== 3) {
+        errors.push("reading_mc must have exactly 3 options.");
+      }
+
+      const optionIds = new Set(legacyOptions.map((opt) => opt.id));
+
+      if (!legacyOptionId) {
+        errors.push("correct_answer.option_id is required.");
+      } else if (!optionIds.has(legacyOptionId)) {
+        errors.push("correct_answer.option_id must match one option.");
+      }
     }
 
     normalizedContent = {
       title,
       passage,
-      question,
-      options,
+      question: legacyQuestion,
+      options: legacyOptions,
+      questions: usesQuestionGroups
+        ? questions
+        : legacyQuestion && legacyOptions.length === 3
+          ? [
+              {
+                id: "1",
+                question: legacyQuestion,
+                options: legacyOptions,
+              },
+            ]
+          : [],
     } satisfies ReadingMcContent;
 
     normalizedAnswer = {
-      option_id: optionId || options[0]?.id || "A",
+      option_id: legacyOptionId || legacyOptions[0]?.id || "A",
+      questions: usesQuestionGroups
+        ? questionAnswers
+        : legacyQuestion && legacyOptions.length === 3
+          ? [{ id: "1", option_id: legacyOptionId || legacyOptions[0]?.id || "A" }]
+          : [],
     } satisfies ReadingMcAnswer;
   } else if (taskType === "gap_fill_text") {
     const title = asText(contentRecord.title);
     const text = asText(contentRecord.text);
+    const questions = normalizeChoiceQuestions(contentRecord.questions);
+    const questionAnswers = normalizeChoiceAnswers(correctRecord.questions);
     const rawBlanks = Array.isArray(contentRecord.blanks) ? contentRecord.blanks : [];
 
     const blanks = rawBlanks
@@ -619,14 +763,6 @@ export function validateExerciseRecord(raw: unknown): ExerciseValidationResult {
       errors.push("content.text is required.");
     }
 
-    if (blanks.length < 1) {
-      errors.push("gap_fill_text must have at least 1 blank.");
-    }
-
-    if (blanks.some((blank) => blank.accepted_answers.length === 0)) {
-      errors.push("Each gap_fill_text blank must have accepted_answers.");
-    }
-
     const rawAnswerBlanks = Array.isArray(correctRecord.blanks) ? correctRecord.blanks : [];
     const answerBlanks = rawAnswerBlanks
       .map((item, index) => {
@@ -646,21 +782,66 @@ export function validateExerciseRecord(raw: unknown): ExerciseValidationResult {
       })
       .filter((item): item is { id: string; accepted_answers: string[] } => Boolean(item));
 
-    if (answerBlanks.length < 1) {
-      errors.push("correct_answer.blanks is required for gap_fill_text.");
-    }
+    const usesQuestionGroups = questions.length > 0 || questionAnswers.length > 0;
 
-    if (answerBlanks.some((blank) => blank.accepted_answers.length === 0)) {
-      errors.push("Each correct_answer blank must include accepted_answers.");
+    if (usesQuestionGroups) {
+      if (questions.length < 1) {
+        errors.push("gap_fill_text must have at least 1 question.");
+      }
+
+      if (questionAnswers.length < 1) {
+        errors.push("correct_answer.questions is required for gap_fill_text.");
+      }
+
+      const questionMap = new Map(questions.map((item) => [item.id, item]));
+
+      for (const item of questions) {
+        if (item.options.length !== 3) {
+          errors.push(`gap_fill_text question ${item.id} must have exactly 3 options.`);
+        }
+      }
+
+      for (const answer of questionAnswers) {
+        const matchingQuestion = questionMap.get(answer.id);
+
+        if (!matchingQuestion) {
+          errors.push(`gap_fill_text answer ${answer.id} must match one question.`);
+          continue;
+        }
+
+        const optionIds = new Set(matchingQuestion.options.map((option) => option.id));
+
+        if (!optionIds.has(answer.option_id)) {
+          errors.push(`gap_fill_text answer ${answer.id} must match one option.`);
+        }
+      }
+    } else {
+      if (blanks.length < 1) {
+        errors.push("gap_fill_text must have at least 1 blank.");
+      }
+
+      if (blanks.some((blank) => blank.accepted_answers.length === 0)) {
+        errors.push("Each gap_fill_text blank must have accepted_answers.");
+      }
+
+      if (answerBlanks.length < 1) {
+        errors.push("correct_answer.blanks is required for gap_fill_text.");
+      }
+
+      if (answerBlanks.some((blank) => blank.accepted_answers.length === 0)) {
+        errors.push("Each correct_answer blank must include accepted_answers.");
+      }
     }
 
     normalizedContent = {
       title,
       text,
+      questions,
       blanks,
     } satisfies GapFillTextContent;
 
     normalizedAnswer = {
+      questions: questionAnswers,
       blanks: answerBlanks,
     } satisfies GapFillTextAnswer;
   } else {

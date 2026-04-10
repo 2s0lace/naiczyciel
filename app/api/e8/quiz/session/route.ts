@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
+import { createLocalSessionFromQuestions } from "@/lib/quiz/local-store";
+import { getMockQuestions } from "@/lib/quiz/mock-data";
 import { clampQuestionCount } from "@/lib/quiz/repository";
 import { getSetSlots, getSetsForTier, resolveQuizModeForStart } from "@/lib/quiz/set-catalog";
 import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
@@ -18,6 +20,10 @@ function normalizeSetId(value: unknown): string | null {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function isBuiltinMockSetId(value: string | undefined): boolean {
+  return value === "set_mock_reading_mc" || value === "set_mock_gap_fill_text";
 }
 
 export async function POST(request: Request) {
@@ -67,9 +73,24 @@ export async function POST(request: Request) {
         ? body.questionCount
         : null;
 
-    const requestedCount = effectiveSet?.questionCount ?? requestedCountRaw ?? 10;
+    const requestedCount = requestedCountRaw ?? 10;
     const questionCount = clampQuestionCount(requestedCount);
     const effectiveSetId = effectiveSet?.id;
+
+    if (isBuiltinMockSetId(effectiveSetId)) {
+      const localSession = createLocalSessionFromQuestions({
+        mode,
+        questions: getMockQuestions(mode, effectiveSet?.questionCount ?? 2),
+      });
+
+      return NextResponse.json({
+        sessionId: localSession.id,
+        mode,
+        setId: effectiveSetId,
+        questionCount: localSession.questionCount,
+        storage: "local",
+      });
+    }
 
     let supabase: ReturnType<typeof getSupabaseServerClient>;
 

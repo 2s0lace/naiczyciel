@@ -1,4 +1,4 @@
-﻿@import "tailwindcss";
+@import "tailwindcss";
 
 :root {
   --color-bg: #070b14;
@@ -125,6 +125,51 @@ a {
   animation: bounce-slow 2.8s ease-in-out infinite;
 }
 
+@keyframes role-card-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-role-card-float {
+  animation: role-card-float 5.2s ease-in-out infinite;
+}
+
+@keyframes floating-icon-card {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--floating-icon-rotate, 0deg));
+  }
+  50% {
+    transform: translateY(-8px) rotate(var(--floating-icon-rotate, 0deg));
+  }
+}
+
+.animate-floating-icon-card {
+  animation: floating-icon-card 6s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes login-sticker-rotate {
+  0%,
+  100% {
+    transform: rotate(-2.2deg);
+  }
+  50% {
+    transform: rotate(2.2deg);
+  }
+}
+
+.animate-login-sticker-rotate {
+  animation: login-sticker-rotate 4.4s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
 @keyframes motion-fade-up {
   to {
     opacity: 1;
@@ -163,6 +208,19 @@ a {
     opacity: 1 !important;
     transform: none !important;
     transition: none !important;
+  }
+
+  .animate-role-card-float {
+    animation: none !important;
+  }
+
+  .animate-floating-icon-card {
+    animation: none !important;
+  }
+
+  .animate-login-sticker-rotate {
+    animation: none !important;
+    transform: none !important;
   }
 }
 
@@ -207,6 +265,26 @@ a {
   font-style: normal;
 }
 
+.font-great-vibes {
+  font-family: var(--font-great-vibes), cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.font-gloria-hallelujah {
+  font-family: var(--font-gloria-hallelujah), cursive;
+  font-weight: 400;
+  font-style: normal;
+}
+
+p[class*="tracking-[0.14em]"][class*="text-cyan-300/90"][class*="uppercase"] {
+  font-family: var(--font-gloria-hallelujah), cursive !important;
+  font-size: 13px !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: none !important;
+}
+
 .e8-landing-headlines :is(h1, h2, h3, h4, h5, h6) {
   font-family: var(--font-figtree), "Inter", sans-serif;
   font-weight: 900;
@@ -218,4 +296,74 @@ a {
   min-height: 100dvh;
   background-color: #050510;
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ── Login page animated background ───────────────────────── */
+
+@keyframes orb-drift-1 {
+  0%   { transform: translate(0, 0) scale(1); }
+  33%  { transform: translate(60px, -80px) scale(1.12); }
+  66%  { transform: translate(-40px, 60px) scale(0.95); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes orb-drift-2 {
+  0%   { transform: translate(0, 0) scale(1); }
+  40%  { transform: translate(-80px, 50px) scale(1.08); }
+  70%  { transform: translate(50px, -60px) scale(1.05); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes orb-drift-3 {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(40px, 80px) scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes auth-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+
+.animate-auth-card-in {
+  animation: auth-card-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-gradient-x {
+  background-size: 200% 200%;
+  animation: gradient-x 4s ease infinite;
+}
+
+/* link underline animation */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: currentColor;
+  transition: width 0.2s ease;
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-auth-card-in { animation: none !important; opacity: 1 !important; transform: none !important; }
+  .animate-gradient-x   { animation: none !important; }
 }

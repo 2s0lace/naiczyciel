@@ -9,7 +9,29 @@
             The avatar style Micah is a remix of: Avatar Illustration System by Micah Lanier, licensed under CC BY 4.0.
           </p>
           <p>
-            "UI Completed Status Alert Notification SFX002.wav" by Headphaze, from Freesound, licensed under CC BY 4.0. Modified for app use.
+            &quot;UI Completed Status Alert Notification SFX002.wav&quot; by Headphaze, from Freesound, licensed under CC BY 4.0. Modified for app use.
+          </p>
+          <p>
+            Decorative paper assets designed by{" "}
+            <a
+              href="https://www.freepik.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-200 underline decoration-cyan-200/45 underline-offset-4 transition-colors hover:text-cyan-100"
+            >
+              Freepik
+            </a>
+          </p>
+          <p>
+            Critical thinking / AI usage research source:{" "}
+            <a
+              href="https://www.microsoft.com/en-us/research/wp-content/uploads/2025/01/lee_2025_ai_critical_thinking_survey.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-200 underline decoration-cyan-200/45 underline-offset-4 transition-colors hover:text-cyan-100"
+            >
+              Lee et al., Microsoft Research, 2025
+            </a>
           </p>
         </div>
       </div>

@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { Sparkles } from "lucide-react";
 import type { QuizSummary } from "@/lib/quiz/types";
 
@@ -173,7 +174,16 @@ function parseFeedback(rawFeedback: string): FeedbackBlocks {
 }
 
 function ReportLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-[10px] font-semibold tracking-[0.12em] text-indigo-100/68 uppercase">{children}</p>;
+  return <p className="text-[10px] font-medium tracking-[0.12em] text-white/30 uppercase">{children}</p>;
+}
+
+function buildMockDiagnosis(parsed: FeedbackBlocks) {
+  return [
+    parsed.overall,
+    `Najmocniej widać to tutaj: ${parsed.strengths.charAt(0).toLowerCase()}${parsed.strengths.slice(1)}`,
+    `Do poprawy na kolejnej sesji: ${parsed.improvements.charAt(0).toLowerCase()}${parsed.improvements.slice(1)}`,
+    `Na teraz najlepszy ruch to: ${parsed.plan7.charAt(0).toLowerCase()}${parsed.plan7.slice(1)}`,
+  ].join(" ");
 }
 
 export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAIFeedbackPanelProps) {
@@ -190,6 +200,7 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
   const requestInFlightRef = useRef(false);
 
   const parsed = useMemo(() => parseFeedback(feedback), [feedback]);
+  const diagnosisParagraph = useMemo(() => buildMockDiagnosis(parsed), [parsed]);
 
   const copyText = useMemo(() => {
     if (!feedback) {
@@ -330,17 +341,16 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
     }
   };
 
+  const showWaitingState = !feedback && !error;
+
   return (
-    <section className="rounded-2xl border border-white/10 bg-[#090f24] p-4 shadow-[0_14px_28px_-28px_rgba(79,70,229,0.42)] xl:p-5">
+    <section className="border-t border-white/[0.08] pt-6">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-indigo-300/30 bg-indigo-500/15 text-indigo-100">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.016] text-indigo-100/88 ring-1 ring-white/[0.022]">
             <Sparkles className="h-3.5 w-3.5" />
           </span>
-          <div>
-            <p className="text-[10px] font-semibold tracking-[0.14em] text-indigo-200/68 uppercase">Raport AI</p>
-            <h3 className="mt-0.5 text-sm font-semibold text-white">Diagnoza nauczyciela AI</h3>
-          </div>
+          <p className="text-[10px] font-medium tracking-[0.12em] text-white/30 uppercase">Podsumowanie AI</p>
         </div>
 
         {feedback ? (
@@ -354,58 +364,30 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
         ) : null}
       </div>
 
-      {isLoading ? (
-        <div className="mt-3.5 space-y-2.5">
-          <p className="text-[13px] text-indigo-100/70">Tworzę dla Ciebie szybką diagnozę...</p>
-          <div className="animate-pulse space-y-2">
-            <div className="h-12 rounded-xl bg-white/10" />
-            <div className="h-10 rounded-xl bg-white/10" />
-            <div className="h-10 rounded-xl bg-white/10" />
-            <div className="h-11 rounded-xl bg-white/10" />
-          </div>
+      {showWaitingState ? (
+        <div className="mt-4 flex items-center gap-3 text-white/68">
+              <Spinner size="md" />
+          <p className="text-[14px] leading-[1.65]">Tworzę podsumowanie po wyniku quizu...</p>
         </div>
       ) : feedback ? (
-        <article className="mt-3.5 overflow-hidden rounded-xl border border-white/8 bg-white/[0.02] xl:mt-4">
-          <div className="px-3.5 py-3 xl:px-4.5 xl:py-4">
+        <article className="mt-4">
+          <div className="border-l-2 border-l-[#6C63FF] pl-3">
             <ReportLabel>Ocena ogólna</ReportLabel>
-            <p className="mt-1.5 text-[13px] leading-5 xl:text-[14px] xl:leading-6 text-indigo-50/92">{parsed.overall}</p>
-          </div>
-
-          <div className="border-t border-white/8 px-3.5 py-3 xl:px-4.5 xl:py-4">
-            <div className="inline-flex items-center gap-1 rounded-full border border-emerald-300/20 bg-emerald-500/[0.07] px-2 py-0.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-300/90" />
-              <span className="text-[10px] font-semibold tracking-[0.1em] text-emerald-100/85 uppercase">Mocne strony</span>
-            </div>
-            <p className="mt-1.5 text-[13px] leading-5 xl:text-[14px] xl:leading-6 text-indigo-50/90">{parsed.strengths}</p>
-          </div>
-
-          <div className="border-t border-white/8 px-3.5 py-3 xl:px-4.5 xl:py-4">
-            <div className="inline-flex items-center gap-1 rounded-full border border-orange-300/22 bg-orange-500/[0.08] px-2 py-0.5">
-              <span className="h-1.5 w-1.5 rounded-full bg-orange-300/90" />
-              <span className="text-[10px] font-semibold tracking-[0.1em] text-orange-100/88 uppercase">Do poprawy</span>
-            </div>
-            <p className="mt-1.5 text-[13px] leading-5 xl:text-[14px] xl:leading-6 text-indigo-50/90">{parsed.improvements}</p>
-          </div>
-
-          <div className="border-t border-white/8 px-3.5 py-3 xl:px-4.5 xl:py-4">
-            <ReportLabel>Następny krok (7 dni)</ReportLabel>
-            <p className="mt-1.5 text-[13px] leading-5 xl:text-[14px] xl:leading-6 text-indigo-50/92">{parsed.plan7}</p>
+            <p className="mt-1.5 text-[14px] leading-[1.65] text-white/70">{diagnosisParagraph}</p>
           </div>
         </article>
-      ) : (
-        <p className="mt-3.5 text-[13px] leading-5 xl:text-[14px] xl:leading-6 text-indigo-100/72">Tworzę diagnozę po wyniku quizu.</p>
-      )}
+      ) : null}
 
       {error ? (
-        <div className="mt-3 rounded-xl border border-red-300/20 bg-red-500/10 px-3 py-2.5">
-          <p className="text-xs text-red-100/92">Nie udało się przygotować diagnozy. Spróbuj ponownie.</p>
+        <div className="mt-2.5 flex items-center gap-2 text-[13px] leading-[1.65] text-white/58">
+          <p className="shrink-0">Nie udało się przygotować diagnozy.</p>
           <button
             type="button"
             onClick={() => {
               void requestFeedback(true);
             }}
             disabled={isLoading}
-            className="mt-2 rounded-md border border-red-200/30 px-2.5 py-1 text-[11px] font-semibold text-red-100 disabled:opacity-60"
+            className="shrink-0 font-medium text-[13px] text-[#5B52E8] transition-colors hover:text-[#7B74FF] disabled:opacity-60"
           >
             Spróbuj ponownie
           </button>

@@ -77,13 +77,17 @@ export default function MobileHeader() {
             src={logoNaiczycielWhite}
             alt="nAIczyciel"
             priority
-            className="h-8 w-auto"
+            className={cn(
+              "relative h-8 w-auto translate-x-[5px] md:translate-x-0 md:translate-y-0",
+              isDetached ? "translate-y-[10px]" : "translate-y-[5px]",
+            )}
           />
         </Link>
 
         <AuthHeaderActions
-          containerClassName="flex items-center gap-2"
-          loginClassName="inline-flex h-9 items-center rounded-xl border border-white/15 bg-white/5 px-3.5 text-xs font-semibold text-gray-200 transition-[background-color,border-color,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-white/10 active:scale-[0.985] motion-reduce:transform-none md:px-4 md:text-sm"
+          containerClassName={cn("flex items-center gap-2 md:translate-y-0", isDetached ? "translate-y-[5px]" : "translate-y-0")}
+          loginClassName="h-9 min-w-[8.75rem] rounded-xl px-4 text-xs md:h-10 md:px-5 md:text-sm"
+          loginVariant="box"
           accountClassName="h-9 w-9 p-1 rounded-full"
         />
       </div>

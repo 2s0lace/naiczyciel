@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { validateExerciseRecord, type UniversalExerciseRecord } from "@/lib/quiz/admin-exercise";
-import type { QuizAnswerSnapshot, QuizQuestion } from "@/lib/quiz/types";
+import type { QuizAnswerSnapshot, QuizQuestion, QuizQuestionItem, QuizOption } from "@/lib/quiz/types";
 
 type QuestionRow = {
   id: string | number;
@@ -200,6 +200,57 @@ function constrainToThreeOptions(
   }));
 }
 
+function buildQuizOptions(params: {
+  options: Array<{ id: string; text: string }>;
+  correctOptionId: string;
+}): QuizOption[] {
+  return constrainToThreeOptions(
+    params.options.map((option, index) => ({
+      id: option.id,
+      label: LETTERS[index] ?? option.id,
+      text: option.text,
+      isCorrect: option.id === params.correctOptionId,
+    })),
+  );
+}
+
+function buildQuestionItems(params: {
+  exerciseId: string;
+  items: Array<{
+    id: string;
+    prompt: string;
+    options: Array<{ id: string; text: string }>;
+    correctOptionId: string;
+  }>;
+}): QuizQuestionItem[] {
+  return params.items
+    .map((item, index) => {
+      const options = buildQuizOptions({
+        options: item.options,
+        correctOptionId: item.correctOptionId,
+      });
+
+      if (!item.prompt || options.length !== 3) {
+        return null;
+      }
+
+      return {
+        id: `${params.exerciseId}::${item.id || index + 1}`,
+        prompt: item.prompt,
+        options,
+      } satisfies QuizQuestionItem;
+    })
+    .filter((item): item is QuizQuestionItem => Boolean(item));
+}
+
+function countAnswerableItems(question: QuizQuestion): number {
+  if (question.type === "single_question") {
+    return 1;
+  }
+
+  return question.questions.length;
+}
+
 function normalizeQuestion(row: QuestionRow, options: OptionRow[]): QuizQuestion | null {
   const prompt = asText(row.prompt, asText(row.question));
 
@@ -224,10 +275,12 @@ function normalizeQuestion(row: QuestionRow, options: OptionRow[]): QuizQuestion
 
   return {
     id: asId(row.id),
+    type: "single_question",
     mode: asText(row.mode, "reactions"),
     category: asText(row.category, "Reakcje"),
     prompt,
     explanation: asText(row.explanation, "Sprawdz wzorzec wypowiedzi i dobierz naturalna reakcje."),
+    hintText: "",
     patternTip: asText(row.pattern_tip),
     warningTip: asText(row.warning_tip),
     options: threeOptions,
@@ -235,82 +288,112 @@ function normalizeQuestion(row: QuestionRow, options: OptionRow[]): QuizQuestion
 }
 
 function normalizeQuestionFromExerciseRow(row: ExerciseRow): QuizQuestion | null {
-  const payload = asRecord(row.payload);
-  const hasPayloadFields = Boolean(payload && Object.keys(payload).length > 0);
-  const base: Record<string, unknown> = hasPayloadFields && payload ? payload : row;
+  const exercise = normalizeExerciseRowForValidation(row);
 
-  const taskType = asText(base.task_type, asText(row.task_type));
-
-  if (taskType !== "single_choice_short" && taskType !== "reading_mc") {
+  if (!exercise) {
     return null;
   }
 
-  const content = asRecord(base.content);
-  const correctAnswer = asRecord(base.correct_answer);
-  const explanation = asRecord(base.explanation);
-  const analytics = asRecord(base.analytics);
-
-  const correctOptionId = asText(correctAnswer?.option_id);
-
-  const optionEntriesRaw = parseJsonLike(content?.options);
-  const optionEntries = Array.isArray(optionEntriesRaw) ? optionEntriesRaw : [];
-  const mappedOptions = optionEntries
-    .map((entry, index) => {
-      const option = asRecord(entry);
-
-      if (!option) {
-        return null;
-      }
-
-      const id = asText(option.id, ["A", "B", "C"][index] ?? `${index + 1}`);
-      const text = asText(option.text);
-
-      if (!id || !text) {
-        return null;
-      }
-
-      return {
-        id,
-        label: ["A", "B", "C"][index] ?? id,
-        text,
-        isCorrect: id === correctOptionId,
-      };
-    })
-    .filter((item): item is { id: string; label: string; text: string; isCorrect: boolean } => Boolean(item));
-
-  const options = constrainToThreeOptions(mappedOptions);
-
-  if (options.length !== 3) {
-    return null;
-  }
-
-  const prompt =
-    taskType === "single_choice_short"
-      ? asText(content?.prompt, asText(base.prompt, asText(base.question)))
-      : [
-          asText(content?.title),
-          asText(content?.passage),
-          asText(content?.question) ? `Pytanie: ${asText(content?.question)}` : "",
-        ]
-          .filter((part) => part.length > 0)
-          .join("\n\n");
-
-  if (!prompt) {
-    return null;
-  }
-
-  const categoryValue = asText(base.category, asText(row.category, "reactions"));
-
-  return {
-    id: asText(base.id, asText(row.id)),
-    mode: categoryValue || "reactions",
-    category: asText(analytics?.focus_label, categoryValue || "Reakcje"),
-    prompt,
-    explanation: asText(explanation?.why, "Sprawdz wzorzec wypowiedzi i dobierz naturalna reakcje."),
-    patternTip: asText(explanation?.pattern),
-    warningTip: asText(explanation?.watch_out),
-    options,
+  const baseQuestion = {
+    id: exercise.id,
+    mode: exercise.category,
+    category: exercise.analytics.focus_label.trim() || exercise.category || "Reakcje",
+    explanation: exercise.explanation.why.trim() || "Sprawdz wzorzec wypowiedzi i dobierz naturalna reakcje.",
+    hintText: exercise.hint.short.trim(),
+    patternTip: exercise.explanation.pattern.trim(),
+    warningTip: exercise.explanation.watch_out.trim(),
   };
+
+  if (exercise.task_type === "single_choice_short") {
+    const options = buildQuizOptions({
+      options: exercise.content.options,
+      correctOptionId: exercise.correct_answer.option_id,
+    });
+
+    if (options.length !== 3 || !exercise.content.prompt.trim()) {
+      return null;
+    }
+
+    return {
+      ...baseQuestion,
+      type: "single_question",
+      prompt: exercise.content.prompt.trim(),
+      options,
+    };
+  }
+
+  if (exercise.task_type === "reading_mc") {
+    const promptEn = exercise.content.prompt_en?.trim() || "";
+    const promptPl = exercise.content.prompt_pl?.trim() || "";
+    const resolvedPassage = promptEn || exercise.content.passage.trim();
+    const modernQuestions =
+      Array.isArray(exercise.content.questions) && exercise.content.questions.length > 0
+        ? buildQuestionItems({
+            exerciseId: exercise.id,
+            items: exercise.content.questions.map((question) => ({
+              id: question.id,
+              prompt: question.question,
+              options: question.options,
+              correctOptionId:
+                exercise.correct_answer.questions?.find((answer) => answer.id === question.id)?.option_id ?? "",
+            })),
+          })
+        : buildQuestionItems({
+            exerciseId: exercise.id,
+            items: [
+              {
+                id: "1",
+                prompt: exercise.content.question ?? "",
+                options: exercise.content.options ?? [],
+                correctOptionId: exercise.correct_answer.option_id ?? "",
+              },
+            ],
+          });
+
+    if (!resolvedPassage || modernQuestions.length === 0) {
+      return null;
+    }
+
+    return {
+      ...baseQuestion,
+      type: "reading_mc",
+      title: exercise.content.title?.trim() || undefined,
+      passage: resolvedPassage,
+      passageTranslation: promptPl || undefined,
+      questions: modernQuestions,
+    };
+  }
+
+  if (exercise.task_type === "gap_fill_text") {
+    const promptEn = exercise.content.prompt_en?.trim() || "";
+    const promptPl = exercise.content.prompt_pl?.trim() || "";
+    const resolvedPassage = promptEn || exercise.content.text.trim();
+    const groupedQuestions = buildQuestionItems({
+      exerciseId: exercise.id,
+      items: (exercise.content.questions ?? []).map((question) => ({
+        id: question.id,
+        prompt: question.question,
+        options: question.options,
+        correctOptionId:
+          exercise.correct_answer.questions?.find((answer) => answer.id === question.id)?.option_id ?? "",
+      })),
+    });
+
+    if (!resolvedPassage || groupedQuestions.length === 0) {
+      return null;
+    }
+
+    return {
+      ...baseQuestion,
+      type: "gap_fill_text",
+      title: exercise.content.title?.trim() || undefined,
+      passage: resolvedPassage,
+      passageTranslation: promptPl || undefined,
+      questions: groupedQuestions,
+    };
+  }
+
+  return null;
 }
 
 async function fetchQuestionsFromExercises(params: {
@@ -353,11 +436,46 @@ function normalizeExerciseIds(rawIds: string[]): string[] {
     .filter((value, index, list) => value.length > 0 && list.indexOf(value) === index);
 }
 
+function hashSeed(seed: string): number {
+  let hash = 2166136261;
+
+  for (let index = 0; index < seed.length; index += 1) {
+    hash ^= seed.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
+function createSeededRandom(seed: string) {
+  let state = hashSeed(seed) || 1;
+
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+    return state / 4294967296;
+  };
+}
+
+function shuffleIds(ids: string[], seed?: string): string[] {
+  const next = [...ids];
+  const random = seed ? createSeededRandom(seed) : Math.random;
+
+  for (let index = next.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1));
+    const current = next[index];
+    next[index] = next[swapIndex] ?? current;
+    next[swapIndex] = current;
+  }
+
+  return next;
+}
+
 export async function fetchQuestionsForExerciseIds(params: {
   supabase: SupabaseClient;
   exerciseIds: string[];
   count?: number;
   includeDraft?: boolean;
+  shuffleSeed?: string;
 }): Promise<QuizQuestion[]> {
   const { supabase } = params;
   const includeDraft = params.includeDraft === true;
@@ -371,7 +489,8 @@ export async function fetchQuestionsForExerciseIds(params: {
     ? Math.max(1, Math.round(params.count ?? normalizedIds.length))
     : normalizedIds.length;
   const limit = Math.min(normalizedIds.length, requestedCount);
-  const selectedIds = normalizedIds.slice(0, limit);
+  const candidateIds = params.shuffleSeed ? shuffleIds(normalizedIds, params.shuffleSeed) : normalizedIds;
+  const selectedIds = candidateIds.slice(0, limit);
 
   const result = await (includeDraft
     ? supabase
@@ -516,7 +635,7 @@ export function buildSummary(params: {
   weakestArea?: string;
 } {
   const { questions, answers } = params;
-  const totalQuestions = questions.length;
+  const totalQuestions = questions.reduce((sum, question) => sum + countAnswerableItems(question), 0);
   const answerMap = new Map(answers.map((answer) => [answer.questionId, answer]));
 
   let correctAnswers = 0;
@@ -525,13 +644,17 @@ export function buildSummary(params: {
   for (const question of questions) {
     const area = question.category || "Reakcje";
     const current = areaStats[area] ?? { total: 0, correct: 0 };
-    current.total += 1;
+    const answerableIds =
+      question.type === "single_question" ? [question.id] : question.questions.map((item) => item.id);
+    current.total += answerableIds.length;
 
-    const answer = answerMap.get(question.id);
+    for (const answerId of answerableIds) {
+      const answer = answerMap.get(answerId);
 
-    if (answer?.isCorrect) {
-      correctAnswers += 1;
-      current.correct += 1;
+      if (answer?.isCorrect) {
+        correctAnswers += 1;
+        current.correct += 1;
+      }
     }
 
     areaStats[area] = current;

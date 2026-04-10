@@ -1,5 +1,5 @@
 ﻿import type { Metadata } from "next";
-import { Figtree, Inter, Prompt } from "next/font/google";
+import { Figtree, Gloria_Hallelujah, Great_Vibes, Inter, Prompt } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { SiteNavbar } from "@/components/layout/site-navbar";
@@ -24,6 +24,20 @@ const figtree = Figtree({
   variable: "--font-figtree",
 });
 
+const greatVibes = Great_Vibes({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400"],
+  variable: "--font-great-vibes",
+});
+
+const gloriaHallelujah = Gloria_Hallelujah({
+  subsets: ["latin"],
+  display: "swap",
+  weight: ["400"],
+  variable: "--font-gloria-hallelujah",
+});
+
 export const metadata: Metadata = {
   title: "nAIczyciel Platforma",
   description: "Twoja platforma edukacyjna",
@@ -41,7 +55,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl">
-      <body className={`${inter.className} ${prompt.variable} ${figtree.variable} bg-app text-app antialiased`}>
+      <body className={`${inter.className} ${prompt.variable} ${figtree.variable} ${greatVibes.variable} ${gloriaHallelujah.variable} bg-app text-app antialiased`}>
         <div className="min-h-screen">
           <SiteNavbar />
           <main>{children}</main>

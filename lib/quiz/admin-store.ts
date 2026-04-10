@@ -25,6 +25,10 @@ function buildSeedExercises(): UniversalExerciseRecord[] {
   return MOCK_REACTIONS_QUESTIONS.slice(0, 10).map<UniversalExerciseRecord>((question, index) => {
     const exercise = createEmptyExercise("reactions");
 
+    if (question.type !== "single_question") {
+      return exercise;
+    }
+
     return {
       ...exercise,
       id: `seed_reactions_${index + 1}`,

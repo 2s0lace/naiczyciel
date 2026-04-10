@@ -8,13 +8,12 @@ import {
   ChevronRight,
   Dumbbell,
   ListChecks,
-  Play,
   Sparkles,
-  Target,
   ThumbsUp,
   type LucideIcon,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import DashboardOnboarding, {
@@ -37,15 +36,6 @@ type AccentPreset = "hero" | "progress" | "premium";
 type CardAccentProps = {
   preset: AccentPreset;
   className?: string;
-};
-
-type NextStepAction = {
-  id: string;
-  title: string;
-  description: string;
-  href: string;
-  cta: string;
-  icon: LucideIcon;
 };
 
 type DashboardPlanOffer = {
@@ -127,7 +117,7 @@ const DASHBOARD_ONBOARDING_STEPS: DashboardOnboardingStep[] = [
   {
     id: "progress",
     target: "[data-tour=\"dashboard-progress\"]",
-    title: "Postep",
+    title: "Postęp",
     text: "Tutaj pojawia sie Twoje mocne strony i obszary do poprawy.",
   },
   {
@@ -158,7 +148,10 @@ function formatMode(mode: string): string {
     .replace(/_/g, " ")
     .split(" ")
     .filter((chunk) => chunk.length > 0)
-    .map((chunk) => chunk.charAt(0).toUpperCase() + chunk.slice(1))
+    .map((chunk, index) => {
+      const lower = chunk.toLocaleLowerCase("pl-PL");
+      return index === 0 ? lower.charAt(0).toLocaleUpperCase("pl-PL") + lower.slice(1) : lower;
+    })
     .join(" ");
 
   return pretty || "Reakcje";
@@ -183,12 +176,6 @@ function formatSessionDate(session: DashboardSession): string {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
-}
-
-function estimateDurationLabel(questionCount: number): string {
-  const min = Math.max(6, Math.round(questionCount * 0.55));
-  const max = Math.max(min + 2, Math.round(questionCount * 0.85));
-  return `${min}-${max} min`;
 }
 
 function formatDurationLabel(value: number | null): string | null {
@@ -445,10 +432,12 @@ function CardAccent({ preset, className }: CardAccentProps) {
 
   if (assetUrl && assetUrl.trim().length > 0) {
     return (
-      <img
+      <Image
         src={assetUrl}
         alt=""
+        fill
         aria-hidden
+        sizes="100vw"
         className={cn("pointer-events-none absolute inset-0 h-full w-full object-cover opacity-20", className)}
       />
     );
@@ -514,6 +503,7 @@ export default function E8AuthenticatedDashboard({
   const [startSetRotationIndex, setStartSetRotationIndex] = useState(0);
   const [isSessionHistoryOpen, setIsSessionHistoryOpen] = useState(false);
   const [progressViewTab, setProgressViewTab] = useState<"stats" | "chart">("stats");
+  const [isCompactViewport, setIsCompactViewport] = useState(false);
 
   const prefersReducedMotion = useReducedMotion();
 
@@ -845,6 +835,28 @@ export default function E8AuthenticatedDashboard({
     setAiSummaryExpandedMobile(false);
   }, [aiSummary]);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const syncViewport = () => {
+      const compact = mediaQuery.matches;
+      setIsCompactViewport(compact);
+      setProgressViewTab((current) => {
+        if (compact) {
+          return "chart";
+        }
+
+        return current === "chart" ? "stats" : current;
+      });
+    };
+
+    syncViewport();
+    mediaQuery.addEventListener("change", syncViewport);
+
+    return () => {
+      mediaQuery.removeEventListener("change", syncViewport);
+    };
+  }, []);
+
   const loadAiSummary = useCallback(async (forceRefresh = false) => {
     if (!hasAiSummaryAccess) {
       setAiSummary(null);
@@ -1114,65 +1126,13 @@ export default function E8AuthenticatedDashboard({
     void markOnboardingAsCompleted();
   };
 
-  const nextStepActions = useMemo(() => {
-    const actions: NextStepAction[] = [];
-
-    if (inProgressSession) {
-      actions.push({
-        id: `continue-${inProgressSession.id}`
-          .toString(),
-        title: "Dokoncz rozpoczeta sesje",
-        description: `${formatMode(inProgressSession.mode)} - wracasz dokladnie tam, gdzie przerwales`,
-        href: sessionHref(inProgressSession),
-        cta: "Kontynuuj",
-        icon: Play,
-      });
-    }
-
-    if (recommendedSet) {
-      actions.push({
-        id: `focus-${recommendedSet.id}`
-          .toString(),
-        title: "Zacznij od: Reakcje",
-        description: "10 pytan - 6-9 min",
-        href: `/e8/quiz?mode=${encodeURIComponent(recommendedSet.mode)}&set=${encodeURIComponent(recommendedSet.id)}`
-          .toString(),
-        cta: "Uruchom",
-        icon: Target,
-      });
-    }
-
-    if (latestCompletedSession) {
-      actions.push({
-        id: `review-${latestCompletedSession.id}`
-          .toString(),
-        title: "Przejrzyj ostatni wynik",
-        description: `${formatMode(latestCompletedSession.mode)} - ${formatSessionDate(latestCompletedSession)}`
-          .toString(),
-        href: sessionHref(latestCompletedSession),
-        cta: "Przejdz",
-        icon: ListChecks,
-      });
-    }
-
-    const uniqueByHref = new Set<string>();
-    return actions.filter((action) => {
-      if (uniqueByHref.has(action.href)) {
-        return false;
-      }
-
-      uniqueByHref.add(action.href);
-      return true;
-    });
-  }, [inProgressSession, recommendedSet, latestCompletedSession]);
-
   return (
-    <main className="viewport-shell bg-[#050510] [background-image:radial-gradient(circle,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:24px_24px] text-white selection:bg-indigo-500/30">
+    <main className="viewport-shell max-w-full touch-pan-y overflow-x-hidden bg-[#050510] [background-image:radial-gradient(circle,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:24px_24px] text-white selection:bg-indigo-500/30">
       <MobileHeader />
 
-      <div className="relative mx-auto w-full max-w-[88rem] px-5 pt-8 pb-12 md:px-6 md:pt-10 lg:px-9 lg:pb-14 xl:px-10 2xl:max-w-[104rem] 2xl:px-12 min-[2200px]:max-w-[124rem] min-[2200px]:px-16">
-        <section className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] xl:items-stretch 2xl:gap-8 min-[2200px]:gap-10">
-          <article data-tour="dashboard-welcome" className="dashboard-enter dashboard-card-hover relative overflow-hidden rounded-3xl border border-indigo-200/20 bg-[linear-gradient(145deg,rgba(16,21,42,0.98),rgba(10,14,30,0.95))] p-8 shadow-[0_36px_90px_-58px_rgba(79,70,229,0.8)] md:p-10 xl:min-h-[32rem]" style={{ animationDelay: "20ms" }}>
+      <div className="relative mx-auto w-full max-w-full overflow-x-clip px-4 pt-8 pb-12 md:max-w-[88rem] md:px-6 md:pt-10 lg:px-9 lg:pb-14 xl:px-10 2xl:max-w-[104rem] 2xl:px-12 min-[2200px]:max-w-[124rem] min-[2200px]:px-16">
+        <section className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)] xl:items-stretch 2xl:gap-8 min-[2200px]:gap-10">
+          <article data-tour="dashboard-welcome" className="dashboard-enter dashboard-card-hover relative min-w-0 overflow-hidden rounded-[1.7rem] border border-indigo-200/20 bg-[linear-gradient(145deg,rgba(16,21,42,0.98),rgba(10,14,30,0.95))] p-7 shadow-[4px_0_24px_rgba(0,0,0,0.4),0_36px_90px_-58px_rgba(79,70,229,0.8)] md:rounded-3xl md:p-10 xl:min-h-[32rem]" style={{ animationDelay: "20ms" }}>
             <CardAccent preset="hero" className="dashboard-drift" />
             {hasPremiumAccess ? (
               <div
@@ -1283,7 +1243,7 @@ export default function E8AuthenticatedDashboard({
                   </div>
                 </div>
 
-                <div className="relative z-10 border-t border-white/10 px-3 py-3">
+                <div className="relative z-10 mt-3 px-3 pb-3">
                   {showSkeleton ? (
                     <div className="flex justify-end">
                       <SkeletonWave className="h-5 w-24 rounded" />
@@ -1350,13 +1310,13 @@ export default function E8AuthenticatedDashboard({
                 </div>
               </div>
 
-              <section className={cn("mt-5 border-t border-white/10 pt-4", showSkeleton && "dashboard-loading-blur")}>
+              <section className={cn("mt-6 pt-1", showSkeleton && "dashboard-loading-blur")}>
                 <div className="flex items-start gap-3">
                   <div className="inline-flex items-center gap-2">
                     <SectionIcon icon={Sparkles} tone="violet" />
                     <div>
                       <div className="inline-flex items-center gap-1.5">
-                        <p className="text-[11px] font-semibold tracking-[0.1em] text-indigo-200/75 uppercase">AI podsumowanie</p>
+                        <p className="text-[11px] font-semibold tracking-[0.182em] text-indigo-100/60 uppercase">AI podsumowanie</p>
                         <span className="inline-flex items-center rounded-full border border-teal-200/40 bg-teal-300/16 px-2 py-[3px] text-[11px] font-semibold tracking-[0.08em] text-teal-100 shadow-[0_0_18px_-6px_rgba(45,212,191,0.85),0_0_26px_-14px_rgba(168,85,247,0.65)]">
                           AI
                         </span>
@@ -1366,8 +1326,28 @@ export default function E8AuthenticatedDashboard({
                   </div>
                 </div>
 
-                <div className="mt-3 rounded-2xl bg-[linear-gradient(135deg,rgba(45,212,191,0.34),rgba(56,189,248,0.22),rgba(168,85,247,0.34))] p-[1.5px]">
-                  <div className="rounded-[15px] bg-[linear-gradient(160deg,rgba(10,16,34,0.93),rgba(7,11,24,0.95))] p-5 shadow-[0_18px_30px_-24px_rgba(45,212,191,0.45)]">
+                <div className="relative mt-4 overflow-hidden rounded-[22px] bg-[linear-gradient(180deg,rgba(12,18,34,0.3)_0%,rgba(10,16,30,0.2)_44%,rgba(8,13,24,0.12)_100%)] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),inset_0_-1px_0_rgba(255,255,255,0.015)]">
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute left-1/2 top-0 h-px w-[84%] -translate-x-1/2 bg-[linear-gradient(90deg,transparent_0%,rgba(125,211,252,0.02)_12%,rgba(0,212,255,0.12)_28%,rgba(0,212,255,0.24)_50%,rgba(0,212,255,0.12)_72%,rgba(125,211,252,0.02)_88%,transparent_100%)]"
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute left-1/2 top-0 h-12 w-[72%] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(ellipse_at_top,rgba(0,212,255,0.06),rgba(0,212,255,0)_72%)] blur-2xl"
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute left-0 top-1 h-28 w-44 bg-[radial-gradient(circle_at_top_left,rgba(0,212,255,0.08),rgba(56,189,248,0.04)_34%,rgba(14,165,233,0.015)_54%,transparent_76%)] blur-3xl"
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute left-8 top-6 h-20 w-28 bg-[radial-gradient(circle,rgba(255,255,255,0.04),rgba(255,255,255,0)_70%)] blur-2xl"
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(circle_at_14%_4%,rgba(11,23,48,0.16),rgba(11,23,48,0.06)_24%,transparent_58%),linear-gradient(180deg,rgba(255,255,255,0.01)_0%,transparent_22%,rgba(255,255,255,0.012)_100%)]"
+                  />
+                  <div className="relative z-10 pt-0.5">
                     {showSkeleton ? (
                       <div className="space-y-2">
                         <SkeletonWave className="h-5 w-[86%] rounded" />
@@ -1379,7 +1359,7 @@ export default function E8AuthenticatedDashboard({
                         <button
                           type="button"
                           onClick={() => setPlansModalOpen(true)}
-                          className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-emerald-100/86 transition-colors duration-150 hover:text-emerald-50"
+                          className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-emerald-100/86 transition-colors duration-150 hover:text-emerald-50"
                         >
                           Odblokuj plan
                           <ChevronRight className="h-3 w-3" />
@@ -1412,9 +1392,10 @@ export default function E8AuthenticatedDashboard({
                           <button
                             type="button"
                             onClick={() => setAiSummaryExpandedMobile((current) => !current)}
-                            className="mt-2 inline-flex items-center text-xs font-semibold text-teal-200/90 transition-colors duration-150 hover:text-teal-100"
+                            className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-teal-200/90 transition-colors duration-150 hover:text-teal-100"
                           >
                             {aiSummaryExpandedMobile ? "Pokaz mniej" : "Czytaj wi\u0119cej"}
+                            <span aria-hidden>&rarr;</span>
                           </button>
                         ) : null}
                       </div>
@@ -1438,7 +1419,7 @@ export default function E8AuthenticatedDashboard({
             <article
               data-tour="dashboard-progress"
               className={cn(
-                "dashboard-enter dashboard-card-hover relative overflow-hidden rounded-3xl border border-white/12 bg-[linear-gradient(160deg,rgba(12,17,34,0.96),rgba(8,11,25,0.95))] p-7 md:p-8 xl:min-h-[21rem]",
+                "dashboard-enter dashboard-card-hover relative overflow-hidden rounded-3xl border border-white/8 bg-[linear-gradient(160deg,rgba(10,15,30,0.95),rgba(8,11,24,0.92))] p-7 shadow-[0_18px_46px_-36px_rgba(15,23,42,0.45)] md:p-8 xl:min-h-[21rem]",
                 showSkeleton && "dashboard-loading-blur",
               )}
               style={{ animationDelay: "150ms" }}
@@ -1446,12 +1427,12 @@ export default function E8AuthenticatedDashboard({
               <CardAccent preset="progress" className="dashboard-drift" />
               <div
                 aria-hidden
-                className="pointer-events-none absolute -top-8 -right-10 h-44 w-64 rounded-full bg-[radial-gradient(circle_at_top_right,rgba(226,232,240,0.16),rgba(226,232,240,0)_72%)]"
+                className="pointer-events-none absolute -top-8 -right-10 h-44 w-64 rounded-full bg-[radial-gradient(circle_at_top_right,rgba(226,232,240,0.09),rgba(226,232,240,0)_72%)]"
               />
 
               <div className="relative z-10">
                 <div className="flex items-center justify-end gap-3">
-                  <h2 className="text-base font-black tracking-[0.2em] text-indigo-100 uppercase md:text-lg">{"Postep"}</h2>
+                  <h2 className="text-base font-black tracking-[0.2em] text-indigo-100 uppercase md:text-lg">{"Postęp"}</h2>
                 </div>
 
                 <h2
@@ -1462,8 +1443,8 @@ export default function E8AuthenticatedDashboard({
                 </h2>
 
                 {showSkeleton ? (
-                  <div className="relative mt-4 overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.02)_0%,rgba(34,197,94,0.18)_100%)] p-4">
-                    <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#22c55e]/24 via-[#22c55e]/11 to-transparent" />
+                  <div className="relative mt-4 overflow-hidden rounded-2xl border border-white/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.018)_0%,rgba(34,197,94,0.10)_100%)] p-4 pb-14">
+                    <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#22c55e]/14 via-[#22c55e]/6 to-transparent" />
                     <div className="relative z-10 grid grid-cols-2 gap-x-6 gap-y-5">
                       {[0, 1, 2, 3].map((idx) => (
                         <div
@@ -1480,7 +1461,7 @@ export default function E8AuthenticatedDashboard({
                 ) : loadError ? (
                   <p className="mt-4 text-[clamp(13px,2vw,15px)] text-red-100/80">{"Nie moge teraz odczytac statystyk. Sprobuj ponownie po chwili."}</p>
                 ) : displayStatTiles.length === 0 && !chartGeometry ? (
-                  <div className="mt-3 rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.02)_0%,rgba(34,197,94,0.16)_100%)] px-4 py-3.5">
+                  <div className="mt-3 rounded-2xl border border-white/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.018)_0%,rgba(34,197,94,0.08)_100%)] px-4 py-3.5">
                     <p className="text-[clamp(13px,2vw,15px)] text-indigo-100/78">Po pierwszej sesji pojawia sie tu statystyki.</p>
                     <Link
                       href={primarySessionHref}
@@ -1491,8 +1472,8 @@ export default function E8AuthenticatedDashboard({
                     </Link>
                   </div>
                 ) : (
-                  <div className="relative mt-4 overflow-hidden rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.02)_0%,rgba(34,197,94,0.18)_100%)] p-4">
-                    <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#22c55e]/24 via-[#22c55e]/11 to-transparent" />
+                  <div className="relative mt-4 overflow-hidden rounded-2xl border border-white/7 bg-[linear-gradient(180deg,rgba(255,255,255,0.018)_0%,rgba(34,197,94,0.10)_100%)] p-4 pb-12 md:pb-14">
+                    <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#22c55e]/14 via-[#22c55e]/6 to-transparent" />
 
                     {chartGeometry ? (
                       <div
@@ -1540,9 +1521,10 @@ export default function E8AuthenticatedDashboard({
                       className={cn(
                         "relative z-10 transition-opacity duration-250",
                         progressViewTab === "stats" ? "opacity-100" : "pointer-events-none opacity-0",
+                        isCompactViewport && "pr-12 pb-1",
                       )}
                     >
-                      <div className="grid grid-cols-[0.78fr_0.92fr_0.72fr] items-stretch gap-3">
+                      <div className="grid grid-cols-2 items-stretch gap-x-5 gap-y-4 sm:grid-cols-[0.78fr_0.92fr_0.72fr] sm:gap-3">
                         <div className="flex h-full flex-col justify-center gap-0.5">
                           <div className="py-0.5">
                             <p className="inline-flex items-center text-[clamp(20px,4vw,28px)] font-bold leading-none text-white">
@@ -1564,7 +1546,7 @@ export default function E8AuthenticatedDashboard({
                           </div>
                         </div>
 
-                        <div className="flex h-full -ml-2 flex-col justify-center gap-4 pt-2">
+                        <div className="flex h-full flex-col justify-center gap-4 pt-1 sm:-ml-2 sm:pt-2">
                           <div className="min-h-[4.4rem]">
                             <p className="inline-flex items-center text-[clamp(20px,4vw,28px)] font-bold leading-none text-white">
                               {progressStatsLayout.score.value}
@@ -1585,7 +1567,7 @@ export default function E8AuthenticatedDashboard({
                           </div>
                         </div>
 
-                        <div aria-hidden className="relative min-h-[9.4rem] overflow-hidden">
+                        <div aria-hidden className="relative hidden min-h-[9.4rem] overflow-hidden sm:block">
                           {STATS_DECORATIVE_ARROWS.map((arrow, index) => (
                             <span
                               key={`stats-trend-arrow-${index}`}
@@ -1608,41 +1590,41 @@ export default function E8AuthenticatedDashboard({
                     {progressViewTab === "chart" && !chartGeometry ? (
                       <p className="relative z-10 text-[clamp(13px,2vw,15px)] text-indigo-100/78">Za malo zakonczonych sesji, aby pokazac wykres.</p>
                     ) : null}
+
+                    <div className="absolute right-2 bottom-2 z-20 md:right-4 md:bottom-4">
+                      <div className="inline-flex items-center gap-0.5 rounded-xl border border-white/6 bg-[rgba(9,16,31,0.52)] p-0.5 backdrop-blur-[6px]">
+                        <button
+                          type="button"
+                          onClick={() => setProgressViewTab("stats")}
+                          aria-label="Statystyki"
+                          className={cn(
+                            "inline-flex h-7 w-7 items-center justify-center rounded-[10px] transition-colors duration-150 md:h-8 md:w-8",
+                            progressViewTab === "stats"
+                              ? "bg-white/[0.055] text-[#b8f5ea] shadow-[inset_0_0_0_1px_rgba(184,245,234,0.16)]"
+                              : "text-slate-300/52 hover:text-slate-200/72",
+                          )}
+                        >
+                          <ListChecks className="h-3.5 w-3.5" />
+                          <span className="sr-only">Statystyki</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProgressViewTab("chart")}
+                          aria-label="Wykres"
+                          className={cn(
+                            "inline-flex h-7 w-7 items-center justify-center rounded-[10px] transition-colors duration-150 md:h-8 md:w-8",
+                            progressViewTab === "chart"
+                              ? "bg-white/[0.055] text-[#b8f5ea] shadow-[inset_0_0_0_1px_rgba(184,245,234,0.16)]"
+                              : "text-slate-300/52 hover:text-slate-200/72",
+                          )}
+                        >
+                          <ChartNoAxesColumn className="h-3.5 w-3.5" />
+                          <span className="sr-only">Wykres</span>
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
-
-                <div className="mt-3 flex justify-center">
-                  <div className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.02] p-1">
-                    <button
-                      type="button"
-                      onClick={() => setProgressViewTab("stats")}
-                      aria-label="Statystyki"
-                      className={cn(
-                        "inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-150",
-                        progressViewTab === "stats"
-                          ? "bg-[#2dd4bf]/16 text-[#9ff7e4] shadow-[inset_0_-1px_0_rgba(45,212,191,0.6)]"
-                          : "text-slate-300/65 hover:text-slate-200/85",
-                      )}
-                    >
-                      <ListChecks className="h-4 w-4" />
-                      <span className="sr-only">Statystyki</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setProgressViewTab("chart")}
-                      aria-label="Wykres"
-                      className={cn(
-                        "inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors duration-150",
-                        progressViewTab === "chart"
-                          ? "bg-[#2dd4bf]/16 text-[#9ff7e4] shadow-[inset_0_-1px_0_rgba(45,212,191,0.6)]"
-                          : "text-slate-300/65 hover:text-slate-200/85",
-                      )}
-                    >
-                      <ChartNoAxesColumn className="h-4 w-4" />
-                      <span className="sr-only">Wykres</span>
-                    </button>
-                  </div>
-                </div>
 
                 <div className="relative mt-6">
                   <span
@@ -1686,7 +1668,7 @@ export default function E8AuthenticatedDashboard({
                   </div>
                 </div>
 
-                <section className={cn("mt-5 border-t border-white/10 pt-4", showSkeleton && "dashboard-loading-blur")}>
+                <section className={cn("mt-6 pt-1", showSkeleton && "dashboard-loading-blur")}>
                   <div className="inline-flex items-center gap-2">
                     <SectionIcon icon={ListChecks} tone="emerald" />
                     <h3 className="text-sm font-semibold tracking-[0.08em] text-indigo-100 uppercase">{"Inteligentny zestaw"}</h3>
@@ -1719,12 +1701,15 @@ export default function E8AuthenticatedDashboard({
                   ) : (
                     <div className="mt-3">
                       <p className="text-[clamp(13px,2vw,15px)] text-indigo-100/86">
-                        {`Masz ${INTELLIGENT_SET_QUESTION_COUNT} pyta\u0144 celowanych w ${intelligentSetTargetLabel}. Gotowy?`}
+                        {`Masz ${INTELLIGENT_SET_QUESTION_COUNT} pyta\u0144 celowanych w:`}
+                      </p>
+                      <p className="mt-1 text-[clamp(14px,2.2vw,16px)] font-semibold text-white/92">
+                        {intelligentSetTargetLabel}
                       </p>
                       <Link
                         href={intelligentSetHref}
                         onClick={handleStartSessionClick}
-                        className="dashboard-btn-hover mt-3 inline-flex h-11 w-full items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 px-5 text-sm font-semibold text-white shadow-[0_14px_26px_-16px_rgba(16,185,129,0.9)] transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.99]"
+                        className="dashboard-btn-hover mt-6 inline-flex h-11 w-full items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 px-5 text-sm font-semibold text-white shadow-[0_14px_26px_-16px_rgba(16,185,129,0.9)] transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.99]"
                       >
                         {"Zacznij zestaw"}
                         <ChevronRight className="h-4 w-4" />
@@ -1736,69 +1721,53 @@ export default function E8AuthenticatedDashboard({
             </article>
           </div>
         </section>
-        <section className="mt-3">
-          <article
-            className={cn(
-              "dashboard-enter dashboard-card-hover relative overflow-hidden rounded-3xl border p-5 md:p-6",
-              isPremiumStatusLoading && "dashboard-loading-blur",
-              showAvailablePlanPromo
-                ? "border-emerald-300/36 bg-[linear-gradient(152deg,rgba(9,26,25,0.96),rgba(7,20,21,0.95))] shadow-[0_24px_44px_-28px_rgba(16,185,129,0.65)]"
-                : "border-slate-100/24 bg-[linear-gradient(152deg,rgba(18,22,36,0.97),rgba(10,14,26,0.95))] shadow-[0_18px_34px_-26px_rgba(226,232,240,0.5)]",
-            )}
-            style={{ animationDelay: "260ms" }}
-          >
-            <div
-              aria-hidden
+        {showAvailablePlanPromo ? (
+          <section className="mt-3">
+            <article
               className={cn(
-                "dashboard-breathe pointer-events-none absolute -top-8 -right-10 h-28 w-40 rounded-full",
-                showAvailablePlanPromo
-                  ? "bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.26),rgba(16,185,129,0)_72%)]"
-                  : "bg-[radial-gradient(circle_at_top_right,rgba(226,232,240,0.2),rgba(226,232,240,0)_72%)]",
+                "dashboard-enter dashboard-card-hover relative overflow-hidden rounded-3xl border p-5 md:p-6",
+                isPremiumStatusLoading && "dashboard-loading-blur",
+                "border-emerald-300/36 bg-[linear-gradient(152deg,rgba(9,26,25,0.96),rgba(7,20,21,0.95))] shadow-[0_24px_44px_-28px_rgba(16,185,129,0.65)]",
               )}
-            />
-            {showAvailablePlanPromo ? (
+              style={{ animationDelay: "260ms" }}
+            >
+              <div
+                aria-hidden
+                className="dashboard-breathe pointer-events-none absolute -top-8 -right-10 h-28 w-40 rounded-full bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.26),rgba(16,185,129,0)_72%)]"
+              />
               <div
                 aria-hidden
                 className="pointer-events-none absolute inset-x-10 -bottom-8 h-20 rounded-full bg-emerald-400/18 blur-2xl"
               />
-            ) : null}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute bottom-0 left-0 h-[78%] w-[50%] opacity-58 blur-[0.8px] [mask-image:linear-gradient(to_top,rgba(0,0,0,0.95)_0%,rgba(0,0,0,0.72)_64%,transparent_100%)]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(to right, rgba(4,7,16,0.86) 0%, rgba(10,14,26,0.62) 24%, transparent 74%), radial-gradient(circle, rgba(255,255,255,0.16) 1.1px, transparent 1.9px)",
-                backgroundSize: "100% 100%, 10px 10px",
-                backgroundPosition: "0 0, 0 100%",
-              }}
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute bottom-0 right-0 h-[78%] w-[50%] opacity-58 blur-[0.8px] [mask-image:linear-gradient(to_top,rgba(0,0,0,0.95)_0%,rgba(0,0,0,0.72)_64%,transparent_100%)]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(to left, rgba(4,7,16,0.86) 0%, rgba(10,14,26,0.62) 24%, transparent 74%), radial-gradient(circle, rgba(255,255,255,0.16) 1.1px, transparent 1.9px)",
-                backgroundSize: "100% 100%, 10px 10px",
-                backgroundPosition: "0 0, 0 100%",
-              }}
-            />
-            <div className="flex items-center justify-between gap-3">
-              <div className="inline-flex items-center gap-2">
-                <span
-                  className={cn(
-                    "inline-flex h-7 w-7 items-center justify-center rounded-lg shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]",
-                    showAvailablePlanPromo
-                      ? "border border-emerald-300/35 bg-emerald-400/16 text-emerald-100"
-                      : "border border-cyan-300/28 bg-cyan-400/10 text-cyan-100",
-                  )}
-                >
-                  <GraduationCap className="h-3.5 w-3.5" />
-                </span>
-                <h2 className={cn("text-xs font-semibold tracking-[0.08em] uppercase", showAvailablePlanPromo ? "text-emerald-50" : "text-slate-100")}>
-                  {showAvailablePlanPromo ? "UCZEN" : "Uczen+ wkrotce"}
-                </h2>
-              </div>
-              {showAvailablePlanPromo ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 left-0 h-[78%] w-[50%] opacity-58 blur-[0.8px] [mask-image:linear-gradient(to_top,rgba(0,0,0,0.95)_0%,rgba(0,0,0,0.72)_64%,transparent_100%)]"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to right, rgba(4,7,16,0.86) 0%, rgba(10,14,26,0.62) 24%, transparent 74%), radial-gradient(circle, rgba(255,255,255,0.16) 1.1px, transparent 1.9px)",
+                  backgroundSize: "100% 100%, 10px 10px",
+                  backgroundPosition: "0 0, 0 100%",
+                }}
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute bottom-0 right-0 h-[78%] w-[50%] opacity-58 blur-[0.8px] [mask-image:linear-gradient(to_top,rgba(0,0,0,0.95)_0%,rgba(0,0,0,0.72)_64%,transparent_100%)]"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(to left, rgba(4,7,16,0.86) 0%, rgba(10,14,26,0.62) 24%, transparent 74%), radial-gradient(circle, rgba(255,255,255,0.16) 1.1px, transparent 1.9px)",
+                  backgroundSize: "100% 100%, 10px 10px",
+                  backgroundPosition: "0 0, 0 100%",
+                }}
+              />
+              <div className="flex items-center justify-between gap-3">
+                <div className="inline-flex items-center gap-2">
+                  <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-emerald-300/35 bg-emerald-400/16 text-emerald-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                    <GraduationCap className="h-3.5 w-3.5" />
+                  </span>
+                  <h2 className="text-xs font-semibold tracking-[0.08em] uppercase text-emerald-50">
+                    UCZEN
+                  </h2>
+                </div>
                 <button
                   type="button"
                   onClick={() => setPlansModalOpen(true)}
@@ -1807,22 +1776,14 @@ export default function E8AuthenticatedDashboard({
                   Zobacz plany
                   <ChevronRight className="h-3 w-3" />
                 </button>
-              ) : (
-                <Link
-                  href="/konto"
-                  className="dashboard-btn-hover inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-slate-100/30 bg-[linear-gradient(180deg,rgba(226,232,240,0.14),rgba(203,213,225,0.08))] px-2.5 text-[11px] font-semibold text-slate-50 transition-[border-color,filter] duration-150 hover:border-slate-100/40 hover:brightness-110"
-                >
-                  Powiadom
-                  <ChevronRight className="h-3 w-3" />
-                </Link>
-              )}
-            </div>
+              </div>
 
-            <p className={cn("mt-1.5 text-xs leading-relaxed", showAvailablePlanPromo ? "text-emerald-100/90" : "text-slate-100/80")}>
-              {displayPromoText}
-            </p>
-          </article>
-        </section>
+              <p className="mt-1.5 text-xs leading-relaxed text-emerald-100/90">
+                {displayPromoText}
+              </p>
+            </article>
+          </section>
+        ) : null}
 <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent via-[#050510]/50 to-[#050510]"
@@ -1830,8 +1791,8 @@ export default function E8AuthenticatedDashboard({
       </div>
 
       <footer className="mx-auto w-full max-w-[88rem] px-5 pb-8 md:px-6 lg:px-9 xl:px-10 2xl:max-w-[104rem] 2xl:px-12 min-[2200px]:max-w-[124rem] min-[2200px]:px-16">
-        <div className="flex items-center justify-center border-t border-white/8 pt-4">
-          <SocialLinks />
+        <div className="flex items-center justify-center pt-4">
+          <SocialLinks variant="light" />
         </div>
       </footer>
 

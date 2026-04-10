@@ -30,7 +30,7 @@ export const SelectionCard = ({
   showArrow = true,
 }: SelectionCardProps) => {
   const isTeacher = tone === "teacher";
-  const isStudentE8Cta = !isTeacher && buttonText.trim() === "Przejdź do E8";
+  const isStudentE8Cta = tone === "student";
 
   const cardChromeClass = isTeacher
     ? "border-white/10 shadow-[0_0_22px_rgba(34,197,94,0.12),0_20px_44px_-34px_rgba(87,212,160,0.2)] hover:border-teacher/28 hover:shadow-[0_0_26px_rgba(34,197,94,0.16),0_24px_50px_-36px_rgba(87,212,160,0.3)]"
@@ -111,9 +111,9 @@ export const SelectionCard = ({
         </div>
 
         <div
-          className={`mt-auto pt-3 inline-flex items-center gap-2 rounded-xl border text-sm font-semibold transition-[border-color,filter,transform,box-shadow] duration-150 ease-out group-hover:brightness-110 group-active:scale-[0.96] ${
+          className={`mt-auto self-start pt-3 inline-flex items-center gap-2 rounded-xl border text-sm font-semibold transition-[border-color,filter,transform,box-shadow] duration-150 ease-out group-hover:brightness-110 group-active:scale-[0.96] ${
             isStudentE8Cta
-              ? "w-full justify-center px-3.5 py-2.5 md:w-fit md:justify-start md:px-4 md:py-2.5"
+              ? "w-[10.25rem] justify-center px-3.5 py-2.5 md:w-fit md:justify-start md:px-4 md:py-2.5"
               : "w-fit px-4 py-2.5"
           } ${ctaToneClass} ${ctaGlowClass}`}
         >

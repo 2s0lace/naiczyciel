@@ -20,59 +20,40 @@ type SetAccessResponse = {
 };
 
 function interpretationText(summary: QuizSummary): string {
-  if (summary.scorePercent >= 85) {
-    return "Bardzo dobry wynik. Utrzymaj tempo i domknij slabsze niuanse.";
+  if (summary.scorePercent >= 100) {
+    return "Perfekcyjny wynik. Czas na trudniejszy materiał.";
   }
 
-  if (summary.scorePercent >= 60) {
-    return "Solidna baza. Jeden konkretny obszar do dopracowania podbije wynik.";
+  if (summary.scorePercent >= 75) {
+    return "Solidna robota. Jeszcze jeden review i będzie perfekcja.";
   }
 
-  if (summary.scorePercent >= 40) {
-    return "Masz fundament. Skup sie na najczestszych bledach i zrob szybki review.";
+  if (summary.scorePercent >= 50) {
+    return "Dobry start. Wróć do błędów i powtórz słabe punkty.";
   }
 
-  return "To byl trudny zestaw. Przejrzyj pytania i popraw jeden obszar na raz.";
-}
-
-function InsightCard({
-  label,
-  value,
-  tone,
-  hint,
-}: {
-  label: string;
-  value: string;
-  tone: "good" | "focus";
-  hint: string;
-}) {
-  return (
-    <article className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 xl:p-4">
-      <p className="text-[10px] font-semibold tracking-[0.12em] text-gray-400 uppercase">{label}</p>
-      <p className={`mt-1.5 text-sm font-semibold xl:text-[15px] ${tone === "good" ? "text-emerald-200" : "text-orange-200"}`}>{value}</p>
-      <p className="mt-1 text-xs text-indigo-100/65 xl:text-[13px]">{hint}</p>
-    </article>
-  );
+  return "Trudny materiał. Skup się na lukach i spróbuj ponownie.";
 }
 
 function PrimaryAction({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="block w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-blue-500 py-3.5 text-center text-sm font-semibold text-white shadow-[0_14px_34px_-22px_rgba(59,130,246,0.8)] xl:py-[1.12rem]"
+      className="block h-[52px] w-full rounded-[14px] border border-[#7B74FF] bg-[#5B52E8] px-4 text-center text-[15px] font-semibold tracking-[0.02em] leading-[52px] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition-colors hover:bg-[#645cf0]"
     >
       {label}
     </Link>
   );
 }
 
-function SecondaryAction({ href, label }: { href: string; label: string }) {
+function TextAction({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
-      className="block w-full rounded-2xl border border-white/15 bg-transparent py-3.5 text-center text-sm font-semibold text-indigo-100/90 xl:py-[1.12rem]"
+      className="inline-flex items-center justify-center gap-1 text-[14px] font-medium text-white/50 transition-colors hover:text-white"
     >
       {label}
+      <span aria-hidden>›</span>
     </Link>
   );
 }
@@ -174,9 +155,9 @@ function QuizPremiumUpsell({ visible, summary }: { visible: boolean; summary: Qu
 export function QuizSummaryCard({ summary, sessionId, mode }: QuizSummaryCardProps) {
   const reviewHref = `/e8/quiz/${encodeURIComponent(sessionId)}?mode=${encodeURIComponent(mode)}&review=1`;
   const newSessionHref = `/e8/quiz?mode=${encodeURIComponent(mode)}`;
-  const prioritizeReview = summary.scorePercent < 65;
-  const scoreBarWidth = `${Math.max(0, Math.min(100, summary.scorePercent))}%`;
+  const panelHref = "/e8";
   const [showPremiumUpsell, setShowPremiumUpsell] = useState(false);
+  const progressSegments = Array.from({ length: summary.totalQuestions }, (_, index) => index < summary.correctAnswers);
 
   const resolveTierForUpsell = useCallback(async () => {
     try {
@@ -211,63 +192,76 @@ export function QuizSummaryCard({ summary, sessionId, mode }: QuizSummaryCardPro
   }, []);
 
   useEffect(() => {
-    void resolveTierForUpsell();
+    const timeoutId = window.setTimeout(() => {
+      void resolveTierForUpsell();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [resolveTierForUpsell]);
 
   return (
-    <section className="mt-5 pb-8 xl:mt-6 xl:pb-10">
-      <div className="space-y-4 xl:mx-auto xl:grid xl:max-w-[1120px] xl:grid-cols-[minmax(0,620px)_minmax(0,480px)] xl:items-start xl:gap-6 xl:space-y-0">
-        <div className="space-y-4 xl:space-y-3.5">
-          <section className="relative overflow-hidden rounded-[1.75rem] border border-white/12 bg-[linear-gradient(158deg,rgba(19,23,48,0.9)_0%,rgba(10,12,27,0.9)_52%,rgba(8,9,22,0.92)_100%)] p-5 shadow-[0_30px_52px_-36px_rgba(76,86,170,0.7)] backdrop-blur-[2px] xl:p-6">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_0%,rgba(129,140,248,0.23),transparent_48%),radial-gradient(circle_at_80%_110%,rgba(56,189,248,0.12),transparent_46%)]" />
-            <div className="pointer-events-none absolute inset-px rounded-[1.65rem] border border-white/[0.07]" />
-            <div className="pointer-events-none absolute inset-0 rounded-[1.75rem] shadow-[inset_0_1px_0_rgba(255,255,255,0.16),inset_0_-20px_32px_-22px_rgba(8,10,24,0.88)]" />
-
-            <div className="relative">
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-indigo-200/78 uppercase">Podsumowanie</p>
-              <p className="mt-2.5 text-[3.45rem] leading-[0.9] font-black tracking-[-0.02em] text-white xl:mt-3 xl:text-[3.9rem]">{summary.scorePercent}%</p>
-              <p className="mt-2 text-sm font-medium text-indigo-100/85 xl:mt-2.5 xl:text-[15px]">
-                {summary.correctAnswers}/{summary.totalQuestions} poprawnych odpowiedzi
-              </p>
-
-              <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white/10 xl:mt-3 xl:h-2">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-indigo-300/90 via-indigo-200/90 to-sky-200/90 transition-[width] duration-500"
-                  style={{ width: scoreBarWidth }}
-                />
+    <section className="mt-4 pb-8 xl:mt-6 xl:pb-8">
+      <div className="space-y-9 xl:mx-auto xl:grid xl:max-w-[1120px] xl:grid-cols-[minmax(0,620px)_minmax(0,480px)] xl:items-start xl:gap-8 xl:space-y-0">
+        <div className="space-y-7">
+          <section className="relative px-0 py-1">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -left-8 -top-5 h-36 w-52 bg-[radial-gradient(ellipse_50%_40%_at_20%_20%,#3d35a820_0%,transparent_70%)]"
+            />
+            <div className="relative flex items-end justify-between gap-4">
+              <p className="text-[80px] leading-none font-extrabold tracking-[-3px] text-white">{summary.scorePercent}%</p>
+              <div className="pb-1 text-right">
+                <p className="text-[40px] leading-none font-bold tracking-[-0.04em] text-white">
+                  {summary.correctAnswers}/{summary.totalQuestions}
+                </p>
+                <p className="mt-1 text-[12px] font-medium tracking-[0.02em] text-white/42">poprawnych odpowiedzi</p>
               </div>
-
-              <p className="mt-2.5 text-[13px] leading-5 text-indigo-100/75 xl:mt-3 xl:text-[14px] xl:leading-6">{interpretationText(summary)}</p>
             </div>
 
-            <div className="relative mt-4 grid grid-cols-2 gap-3 xl:mt-5 xl:gap-3.5">
-              <InsightCard
-                label="Mocna strona"
-                value={summary.strongestArea ?? "Brak danych"}
-                tone="good"
-                hint="Tu utrzymujesz najlepsza skutecznosc."
-              />
-              <InsightCard
-                label="Do poprawy"
-                value={summary.weakestArea ?? "Brak danych"}
-                tone="focus"
-                hint="To ten obszar najszybciej podniesie wynik."
-              />
+            <div className="mt-5 flex w-full gap-1.5">
+              {progressSegments.map((filled, index) => (
+                <span
+                  key={`summary-segment-${index}`}
+                  className={`h-1.5 flex-1 rounded-full ${filled ? "bg-[#6C63FF]" : "bg-white/14"}`}
+                />
+              ))}
+            </div>
+
+            <p className="mt-5 max-w-[34ch] text-[14px] leading-[1.6] text-white/55">{interpretationText(summary)}</p>
+          </section>
+
+          <section className="relative overflow-hidden rounded-[18px]">
+            <div className="group relative flex cursor-pointer items-center justify-between gap-4 px-4 py-[14px] transition-colors hover:bg-white/[0.05]">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300/90" />
+                <span className="text-[12px] font-medium tracking-[0.04em] text-white/42">Mocna strona</span>
+              </div>
+              <span className="inline-flex items-center gap-1 text-right text-[14px] font-medium text-white">
+                {summary.strongestArea ?? "Brak danych"}
+                <span className="text-[#6C63FF]">›</span>
+              </span>
+            </div>
+            <div className="relative h-px bg-white/[0.08]" />
+            <div className="group relative flex cursor-pointer items-center justify-between gap-4 px-4 py-[14px] transition-colors hover:bg-white/[0.05]">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300/90" />
+                <span className="text-[12px] font-medium tracking-[0.04em] text-white/42">Do poprawy</span>
+              </div>
+              <span className="inline-flex items-center gap-1 text-right text-[14px] font-medium text-white">
+                {summary.weakestArea ?? "Brak danych"}
+                <span className="text-[#6C63FF]">›</span>
+              </span>
             </div>
           </section>
 
-          <section className="space-y-2">
-            {prioritizeReview ? (
-              <>
-                <PrimaryAction href={reviewHref} label="Przejrzyj pytania" />
-                <SecondaryAction href={newSessionHref} label="Nowa sesja" />
-              </>
-            ) : (
-              <>
-                <PrimaryAction href={newSessionHref} label="Nowa sesja" />
-                <SecondaryAction href={reviewHref} label="Przejrzyj pytania" />
-              </>
-            )}
+          <section className="space-y-3.5 pt-2">
+            <PrimaryAction href={newSessionHref} label="Nowa sesja" />
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-0.5">
+              <TextAction href={reviewHref} label="Przejrzyj pytania" />
+              <TextAction href={panelHref} label="Wróć do panelu" />
+            </div>
           </section>
         </div>
 

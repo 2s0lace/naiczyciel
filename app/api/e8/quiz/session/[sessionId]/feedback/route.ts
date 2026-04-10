@@ -30,7 +30,13 @@ type SanitizedPayload = {
   weakestArea: string;
 };
 
-const ALLOWED_MODES = new Set(["reactions", "grammar", "vocabulary"]);
+const ALLOWED_MODES = new Set([
+  "reactions",
+  "grammar",
+  "vocabulary",
+  "reading_mc",
+  "gap_fill_text",
+]);
 
 const AREA_CANONICAL: Record<string, string> = {
   "codzienne reakcje": "Codzienne reakcje",
@@ -134,24 +140,57 @@ function buildPrompt(payload: SanitizedPayload) {
   ].join(" | ");
 
   return [
-    "Jestes nauczycielem angielskiego po wlasnie zakonczonej lekcji z uczniem.",
-    `Wyniki tej sesji: ${sessionDetails}`,
+    "Twórz krótką informację zwrotną dla ucznia po rozwiązaniu zestawu z angielskiego.",
     "",
-    "Napisz krotki raport w 4 sekcjach, kazda to 1-2 zdania:",
-    "- Ocena ogolna: co poszlo, bez owijania w bawelne",
-    "- Mocne strony: co konkretnie zrozumial dobrze",
-    "- Do poprawy: jeden konkretny blad, ktory sie powtarzal",
-    "- Nastepny krok: jedno cwiczenie na dzis, bardzo konkretne",
+    "Cel:",
+    "Feedback ma być pomocny, prosty, konkretny i wspierający. Ma brzmieć jak dobra wskazówka od nauczyciela, a nie jak automatyczny raport albo coachingowy slogan.",
     "",
-    "Oddaj wynik dokladnie w 4 liniach:",
-    "Ocena ogolna: ...",
-    "Mocne strony: ...",
-    "Do poprawy: ...",
-    "Nastepny krok: ...",
+    "Dane o tej sesji:",
+    sessionDetails,
     "",
-    "Cieply ton, po polsku, bez polskich znakow diakrytycznych.",
-    "Piszesz do 14-latka, ktory chce zdac egzamin - motywuj, nie strasz.",
-    "Bez markdown i bez dodatkowych linii.",
+    "Zasady:",
+    "- pisz po polsku",
+    "- ton: spokojny, życzliwy, konkretny",
+    "- nie zawstydzaj ucznia",
+    "- nie używaj słów typu: „niestety”, „tylko”, „słabo”, „porażka”",
+    "- nie oceniaj ucznia jako osoby",
+    "- oceniaj wyłącznie wynik i obszar do poprawy",
+    "- nie używaj pustych sformułowań typu „działające schematy”, „musisz się bardziej postarać”, „więcej zyskasz”",
+    "- nie pisz ogólników, jeśli nie ma konkretu",
+    "- pokaż 1 mocną stronę, nawet małą",
+    "- wskaż 1 główny problem",
+    "- zaproponuj 1 prosty następny krok",
+    "- maksymalnie 4 krótkie sekcje",
+    "- każda sekcja ma mieć 1–2 zdania",
+    "- język ma być zrozumiały dla ucznia szkoły podstawowej",
+    "",
+    "Struktura:",
+    "1. Ocena ogólna",
+    "2. Co już działa",
+    "3. Nad czym popracować",
+    "4. Co zrobić teraz",
+    "",
+    "Dodatkowe wytyczne:",
+    "- jeśli wynik jest niski, zachowaj wspierający ton i pokaż, że da się poprawić jeden konkretny obszar",
+    "- jeśli wynik jest średni, pokaż, co już działa i co da największy progres",
+    "- jeśli wynik jest wysoki, pochwal konkretnie i wskaż mały kolejny krok",
+    "- jeśli z danych wynika konkretny typ błędu, nazwij go prostym językiem",
+    "- jeśli brak szczegółowych danych o błędach, nie zmyślaj — napisz ostrożnie i ogólnie, ale nadal konkretnie",
+    "",
+    "Styl:",
+    "- krótkie zdania",
+    "- naturalny język",
+    "- zero mentorsko-korporacyjnego tonu",
+    "- feedback ma pomagać uczniowi zrozumieć: „co było nie tak?” i „co zrobić dalej?”",
+    "",
+    "Jeśli to możliwe, odwołaj się do konkretnego typu błędu, np.:",
+    "- pomylenie czasu",
+    "- niezrozumienie sensu pytania",
+    "- wybranie odpowiedzi po jednym słowie z tekstu",
+    "- pominięcie słowa przeczącego",
+    "- zbyt szybkie zgadywanie bez sprawdzenia kontekstu",
+    "",
+    "Na końcu wygeneruj tylko gotowy feedback dla ucznia, bez komentarzy technicznych i bez wyjaśniania zasad.",
   ].join("\n");
 }
 
@@ -175,27 +214,37 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json(
-        { error: "Brak konfiguracji OpenAI API.", details: "Skontaktuj sie z administratorem." },
-        { status: 503 },
-      );
+      return NextResponse.json({
+        error: "Brak konfiguracji OpenAI API.",
+        details: "Skontaktuj sie z administratorem.",
+      }, { status: 503 });
     }
 
-    const access = await resolveAccessTierFromRequest(request);
-    const rateLimit = await enforceAiRateLimit({
-      request,
-      action: AI_GENERATION_RATE_LIMIT_ACTION,
-      userId: access.userId,
-      role: access.role,
-    });
+    let access: Awaited<ReturnType<typeof resolveAccessTierFromRequest>> = {
+      tier: "unregistered",
+      userId: null,
+      role: null,
+    };
 
-    if (!rateLimit.allowed) {
-      return NextResponse.json(buildRateLimitErrorPayload(rateLimit), {
-        status: 429,
-        headers: {
-          "Retry-After": String(rateLimit.retryAfterSeconds),
-        },
+    try {
+      access = await resolveAccessTierFromRequest(request);
+      const rateLimit = await enforceAiRateLimit({
+        request,
+        action: AI_GENERATION_RATE_LIMIT_ACTION,
+        userId: access.userId,
+        role: access.role,
       });
+
+      if (!rateLimit.allowed) {
+        return NextResponse.json(buildRateLimitErrorPayload(rateLimit), {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimit.retryAfterSeconds),
+          },
+        });
+      }
+    } catch (rateLimitError) {
+      console.error("[quiz-feedback] rate limit check failed, continuing without limiter", rateLimitError);
     }
 
     const prompt = buildPrompt(validated.payload);

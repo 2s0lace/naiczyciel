@@ -41,9 +41,23 @@ type SessionAnswerMetric = {
   answeredAtUnix: number | null;
 };
 
+type SessionStatsRow = {
+  sessionId: string;
+  totalQuestions: number | null;
+  correctAnswers: number | null;
+  scorePercent: number | null;
+  syncedAt: string | null;
+};
+
 type AnswerAnalytics = {
   durationOverrides: Map<string, number | null>;
   answers: SessionAnswerMetric[];
+};
+
+type DerivedSessionStats = {
+  totalQuestions: number;
+  correctAnswers: number;
+  scorePercent: number;
 };
 
 const USER_COLUMN_CANDIDATES = ["user_id", "profile_id", "owner_id", "student_id"] as const;
@@ -601,6 +615,158 @@ async function fetchRowsForUser(userId: string): Promise<GenericRecord[]> {
   return [];
 }
 
+async function fetchSessionStats(sessionIds: string[]): Promise<Map<string, SessionStatsRow>> {
+  const normalizedIds = sessionIds.filter((id, index, list) => id.length > 0 && list.indexOf(id) === index);
+
+  if (normalizedIds.length === 0) {
+    return new Map();
+  }
+
+  let supabase: ReturnType<typeof getSupabaseServerClient>;
+
+  try {
+    supabase = getSupabaseServerClient();
+  } catch {
+    return new Map();
+  }
+
+  const result = await supabase
+    .from("quiz_result_stats")
+    .select("session_id, total_questions, correct_answers, score_percent, synced_at")
+    .in("session_id", normalizedIds)
+    .limit(5000);
+
+  if (result.error || !Array.isArray(result.data) || result.data.length === 0) {
+    return new Map();
+  }
+
+  const statsMap = new Map<string, SessionStatsRow>();
+
+  for (const rawEntry of result.data) {
+    const row = asRecord(rawEntry);
+
+    if (!row) {
+      continue;
+    }
+
+    const sessionId = asText(row.session_id);
+
+    if (!sessionId) {
+      continue;
+    }
+
+    statsMap.set(sessionId, {
+      sessionId,
+      totalQuestions: asNullableNumber(row.total_questions),
+      correctAnswers: asNullableNumber(row.correct_answers),
+      scorePercent: asNullableNumber(row.score_percent),
+      syncedAt: asNullableIso(row.synced_at),
+    });
+  }
+
+  return statsMap;
+}
+
+function mergeRowsWithSessionStats(rows: GenericRecord[], statsMap: Map<string, SessionStatsRow>): GenericRecord[] {
+  if (rows.length === 0 || statsMap.size === 0) {
+    return rows;
+  }
+
+  return rows.map((row) => {
+    const sessionId = asText(row.id);
+
+    if (!sessionId) {
+      return row;
+    }
+
+    const stats = statsMap.get(sessionId);
+
+    if (!stats) {
+      return row;
+    }
+
+    return {
+      ...row,
+      total_questions: row.total_questions ?? stats.totalQuestions,
+      correct_answers: row.correct_answers ?? stats.correctAnswers,
+      score_percent: row.score_percent ?? stats.scorePercent,
+      completed_at: row.completed_at ?? stats.syncedAt,
+    };
+  });
+}
+
+function deriveSessionStatsFromAnswers(answers: SessionAnswerMetric[]): Map<string, DerivedSessionStats> {
+  const aggregateMap = new Map<string, { totalQuestions: number; correctAnswers: number }>();
+
+  for (const answer of answers) {
+    const sessionId = answer.sessionId.trim();
+
+    if (!sessionId) {
+      continue;
+    }
+
+    const current = aggregateMap.get(sessionId) ?? { totalQuestions: 0, correctAnswers: 0 };
+    current.totalQuestions += 1;
+
+    if (answer.isCorrect) {
+      current.correctAnswers += 1;
+    }
+
+    aggregateMap.set(sessionId, current);
+  }
+
+  const derivedMap = new Map<string, DerivedSessionStats>();
+
+  for (const [sessionId, aggregate] of aggregateMap.entries()) {
+    if (aggregate.totalQuestions <= 0) {
+      continue;
+    }
+
+    derivedMap.set(sessionId, {
+      totalQuestions: aggregate.totalQuestions,
+      correctAnswers: aggregate.correctAnswers,
+      scorePercent: Math.round((aggregate.correctAnswers / aggregate.totalQuestions) * 100),
+    });
+  }
+
+  return derivedMap;
+}
+
+function mergeRowsWithDerivedAnswerStats(
+  rows: GenericRecord[],
+  derivedStats: Map<string, DerivedSessionStats>,
+): GenericRecord[] {
+  if (rows.length === 0 || derivedStats.size === 0) {
+    return rows;
+  }
+
+  return rows.map((row) => {
+    const sessionId = asText(row.id);
+
+    if (!sessionId) {
+      return row;
+    }
+
+    const stats = derivedStats.get(sessionId);
+
+    if (!stats) {
+      return row;
+    }
+
+    return {
+      ...row,
+      total_questions:
+        asNullableNumber(row.total_questions) ?? stats.totalQuestions,
+      correct_answers:
+        asNullableNumber(row.correct_answers) ?? stats.correctAnswers,
+      score_percent:
+        asNullableNumber(row.score_percent) ?? stats.scorePercent,
+      status:
+        asText(row.status).toLowerCase() === "completed" ? row.status : "completed",
+    };
+  });
+}
+
 function buildPayload(params: {
   tier: AccessTier;
   role: string | null;
@@ -742,7 +908,12 @@ export async function GET(request: Request) {
 
   try {
     const rows = await fetchRowsForUser(access.userId);
-    const sortedSessionIds = rows
+    const sessionIds = rows
+      .map((row) => asText(row.id))
+      .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
+    const sessionStats = await fetchSessionStats(sessionIds);
+    const hydratedRows = mergeRowsWithSessionStats(rows, sessionStats);
+    const sortedSessionIds = hydratedRows
       .map((row) => buildSession(row))
       .filter((session): session is DashboardSession => session !== null)
       .sort((a, b) => sessionTimestamp(b) - sessionTimestamp(a))
@@ -757,11 +928,13 @@ export async function GET(request: Request) {
       .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index)
       .slice(0, RECENT_ACTIVITY_LIMIT);
     const answerAnalytics = await fetchAnswerAnalytics(sortedSessionIds);
+    const answerDerivedStats = deriveSessionStatsFromAnswers(answerAnalytics.answers);
+    const fullyHydratedRows = mergeRowsWithDerivedAnswerStats(hydratedRows, answerDerivedStats);
     const tagPerformance = await fetchTagPerformance(answerAnalytics.answers);
     const payload = buildPayload({
       tier: access.tier,
       role: access.role,
-      rows,
+      rows: fullyHydratedRows,
       answerDurationOverrides: answerAnalytics.durationOverrides,
       tagPerformance,
     });

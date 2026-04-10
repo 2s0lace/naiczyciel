@@ -9,6 +9,7 @@ import {
 import { getSetSlots, getSetsForTier, type E8SetDefinition } from "@/lib/quiz/set-catalog";
 import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
 import type { QuizMode } from "@/lib/quiz/types";
+import { getLocalSessionPayload, isLocalSessionId } from "@/lib/quiz/local-store";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type RouteContext = {
@@ -104,7 +105,8 @@ async function buildSetParseFailureDetails(params: {
         typeof row.id === "string" &&
         row.status === "active" &&
         row.task_type !== "single_choice_short" &&
-        row.task_type !== "reading_mc",
+        row.task_type !== "reading_mc" &&
+        row.task_type !== "gap_fill_text",
     )
     .map((row) => `${String(row.id)}(${String(row.task_type)})`);
 
@@ -167,6 +169,22 @@ export async function GET(request: Request, context: RouteContext) {
 
     if (!sessionId) {
       return NextResponse.json({ error: "Brak sessionId." }, { status: 400 });
+    }
+
+    if (isLocalSessionId(sessionId)) {
+      const localPayload = getLocalSessionPayload(sessionId);
+
+      if (!localPayload) {
+        return NextResponse.json(
+          {
+            error: "Sesja lokalna nie istnieje.",
+            details: "Podgląd pytania wygasł albo nie został poprawnie utworzony.",
+          },
+          { status: 404 },
+        );
+      }
+
+      return NextResponse.json(localPayload);
     }
 
     const url = new URL(request.url);
@@ -242,7 +260,7 @@ export async function GET(request: Request, context: RouteContext) {
     const mode = (selectedSet?.mode ?? modeHint) as QuizMode;
     const sessionRequestedCount = asFiniteNumber(sessionLookup.row.requested_count);
     const requestedCountResolved = clampQuestionCount(
-      selectedSet?.questionCount ?? (Number.isFinite(requestedCount) ? requestedCount : sessionRequestedCount ?? 10),
+      Number.isFinite(requestedCount) ? requestedCount : sessionRequestedCount ?? 10,
     );
     const questionPoolSize =
       Array.isArray(selectedSet?.questionIds) && selectedSet.questionIds.length > 0
@@ -263,6 +281,7 @@ export async function GET(request: Request, context: RouteContext) {
             exerciseIds: selectedSet?.questionIds ?? [],
             count: effectiveCount,
             includeDraft: includeDraftQuestions,
+            shuffleSeed: (selectedSet?.questionIds?.length ?? 0) > effectiveCount ? sessionId : undefined,
           })
         : fetchQuestionsForMode({
             supabase,

@@ -5,9 +5,10 @@ import type { FeatureType } from "@/components/landing/types";
 
 type HeroSectionProps = {
   activeTab: FeatureType;
+  visitedTabs?: FeatureType[];
 };
 
-export default function HeroSection({ activeTab }: HeroSectionProps) {
+export default function HeroSection({ activeTab, visitedTabs }: HeroSectionProps) {
   return (
     <section className="flex flex-col items-center pt-2 pb-6 text-center md:pt-3 md:pb-6 lg:items-start lg:pt-2 lg:pb-0 lg:text-left xl:pt-3 min-[1440px]:pt-4 min-[1440px]:pb-3 min-[2200px]:pt-7 min-[2200px]:pb-5">
       <h1
@@ -42,7 +43,7 @@ export default function HeroSection({ activeTab }: HeroSectionProps) {
         />
       </Link>
 
-      <HeroSteps activeTab={activeTab} variant="desktop" />
+      <HeroSteps activeTab={activeTab} visitedTabs={visitedTabs} variant="desktop" />
     </section>
   );
 }

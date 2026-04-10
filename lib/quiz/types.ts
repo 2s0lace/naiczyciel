@@ -1,4 +1,6 @@
-﻿export type QuizMode = "reactions" | "grammar" | "vocabulary" | string;
+export type QuizMode = "reactions" | "grammar" | "vocabulary" | string;
+
+export type QuizQuestionType = "single_question" | "reading_mc" | "gap_fill_text";
 
 export type QuizOption = {
   id: string;
@@ -7,16 +9,45 @@ export type QuizOption = {
   isCorrect: boolean;
 };
 
-export type QuizQuestion = {
+export type QuizQuestionItem = {
+  id: string;
+  prompt: string;
+  options: QuizOption[];
+};
+
+export type QuizQuestionBase = {
   id: string;
   mode: QuizMode;
   category: string;
-  prompt: string;
   explanation: string;
+  hintText?: string;
   patternTip?: string;
   warningTip?: string;
+};
+
+export type QuizSingleQuestion = QuizQuestionBase & {
+  type: "single_question";
+  prompt: string;
   options: QuizOption[];
 };
+
+export type QuizReadingMcQuestion = QuizQuestionBase & {
+  type: "reading_mc";
+  title?: string;
+  passage: string;
+  passageTranslation?: string;
+  questions: QuizQuestionItem[];
+};
+
+export type QuizGapFillTextQuestion = QuizQuestionBase & {
+  type: "gap_fill_text";
+  title?: string;
+  passage: string;
+  passageTranslation?: string;
+  questions: QuizQuestionItem[];
+};
+
+export type QuizQuestion = QuizSingleQuestion | QuizReadingMcQuestion | QuizGapFillTextQuestion;
 
 export type QuizAnswerSnapshot = {
   questionId: string;

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { AdminQuestionPanel } from "@/components/account/admin-question-panel";
 import { AdminSetAccessPanel } from "@/components/account/admin-set-access-panel";
+import { Spinner } from "@/components/ui/spinner";
 import { clearRoleCookie, isAdminEmail, setRoleCookie } from "@/lib/auth/role";
 import { resolveRoleForSession } from "@/lib/auth/client-role";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
@@ -108,7 +109,12 @@ export default function AccountQuestionsPage() {
         </div>
 
         {isLoading ? (
-          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-gray-300">Sprawdzam sesję...</div>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-gray-300">
+            <div className="flex items-center gap-2.5">
+              <Spinner size="sm" />
+              <span>Sprawdzam sesję...</span>
+            </div>
+          </div>
         ) : !user ? (
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-gray-300">
             Musisz się zalogować. <Link href="/login" className="font-semibold text-indigo-200">Przejdź do logowania</Link>

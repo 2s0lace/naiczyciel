@@ -1,6 +1,8 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { useEffect, useRef } from "react";
+import { cn } from "@/lib/utils";
 
 const GRID_SIZE = 32;
 const PARALLAX_SPEED = 0.2;
@@ -13,7 +15,17 @@ const GRID_STYLE = {
   backgroundPosition: "0 0, 0 0, 0 0",
 } as const;
 
-export function ParallaxGridLayer() {
+type ParallaxGridLayerProps = {
+  className?: string;
+  fixed?: boolean;
+  style?: CSSProperties;
+};
+
+export function ParallaxGridLayer({
+  className,
+  fixed = true,
+  style,
+}: ParallaxGridLayerProps) {
   const layerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -51,5 +63,12 @@ export function ParallaxGridLayer() {
     };
   }, []);
 
-  return <div aria-hidden ref={layerRef} className="pointer-events-none fixed inset-0 z-0" style={GRID_STYLE} />;
+  return (
+    <div
+      aria-hidden
+      ref={layerRef}
+      className={cn("pointer-events-none inset-0 z-0", fixed ? "fixed" : "absolute", className)}
+      style={{ ...GRID_STYLE, ...style }}
+    />
+  );
 }

@@ -15,6 +15,8 @@ import {
   type UniversalExerciseRecord,
   validateExerciseRecord,
 } from "@/lib/quiz/admin-exercise";
+import { getSetSlots } from "@/lib/quiz/set-catalog";
+import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 type AdminSource = "supabase" | "local" | "mixed";
@@ -72,6 +74,16 @@ function asStringArray(value: unknown): string[] {
   return [];
 }
 
+function parseSearchStringArray(searchParams: URLSearchParams, key: string): string[] {
+  const values = searchParams
+    .getAll(key)
+    .flatMap((entry) => entry.split(","))
+    .map((entry) => entry.trim())
+    .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
+
+  return values;
+}
+
 function asCategory(value: string | null): ExerciseCategory | "all" {
   if (!value || value === "all") {
     return "all";
@@ -104,13 +116,18 @@ function asDifficulty(value: string | null): ExerciseDifficulty | "all" {
   return (EXERCISE_DIFFICULTIES as readonly string[]).includes(value) ? (value as ExerciseDifficulty) : "all";
 }
 
-function parseFilters(url: URL): ExerciseListFilters {
+type AdminQuestionFilters = ExerciseListFilters & {
+  exclude_set_ids?: string[];
+};
+
+function parseFilters(url: URL): AdminQuestionFilters {
   const category = asCategory(url.searchParams.get("category"));
   const taskType = asTaskType(url.searchParams.get("task_type"));
   const status = asStatus(url.searchParams.get("status"));
   const difficulty = asDifficulty(url.searchParams.get("difficulty"));
   const rawLimit = Number(url.searchParams.get("limit") ?? "120");
-  const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(500, rawLimit)) : 120;
+  const limit = Number.isFinite(rawLimit) ? Math.max(1, Math.min(2000, rawLimit)) : 120;
+  const excludeSetIds = parseSearchStringArray(url.searchParams, "exclude_set_ids");
 
   return {
     category,
@@ -118,6 +135,7 @@ function parseFilters(url: URL): ExerciseListFilters {
     status,
     difficulty,
     limit,
+    exclude_set_ids: excludeSetIds,
   };
 }
 
@@ -128,6 +146,25 @@ function isUnfiltered(filters: ExerciseListFilters): boolean {
     (!filters.status || filters.status === "all") &&
     (!filters.difficulty || filters.difficulty === "all")
   );
+}
+
+function excludeExercisesFromSets(exercises: UniversalExerciseRecord[], excludeSetIds: string[]): UniversalExerciseRecord[] {
+  if (excludeSetIds.length === 0) {
+    return exercises;
+  }
+
+  const questionIdsToHide = new Set(
+    getSetSlots()
+      .filter((setItem) => excludeSetIds.includes(setItem.id))
+      .flatMap((setItem) => (Array.isArray(setItem.questionIds) ? setItem.questionIds : []))
+      .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index),
+  );
+
+  if (questionIdsToHide.size === 0) {
+    return exercises;
+  }
+
+  return exercises.filter((exercise) => !questionIdsToHide.has(exercise.id));
 }
 
 function shouldUseServiceRoleForAdmin() {
@@ -199,16 +236,21 @@ function toExerciseCandidate(row: SupabaseExerciseRow): Record<string, unknown> 
 
 function normalizeSupabaseRow(row: SupabaseExerciseRow): UniversalExerciseRecord | null {
   const payload = asRecord(row.payload);
+  const candidate = toExerciseCandidate(row);
 
   if (payload) {
-    const payloadValidation = validateExerciseRecord(payload);
+    const mergedCandidate = {
+      ...payload,
+      ...candidate,
+      meta: asRecord(candidate.meta) ?? asRecord(payload.meta) ?? undefined,
+    };
+    const payloadValidation = validateExerciseRecord(mergedCandidate);
 
     if (payloadValidation.isValid && payloadValidation.exercise) {
       return payloadValidation.exercise;
     }
   }
 
-  const candidate = toExerciseCandidate(row);
   const fallbackValidation = validateExerciseRecord(candidate);
 
   if (fallbackValidation.isValid && fallbackValidation.exercise) {
@@ -386,6 +428,36 @@ async function updateInSupabase(
   return parsed;
 }
 
+async function updateStatusesInSupabase(
+  supabase: ReturnType<typeof getSupabaseServerClient>,
+  ids: string[],
+  status: ExerciseStatus,
+): Promise<UniversalExerciseRecord[]> {
+  const uniqueIds = ids.filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
+
+  if (uniqueIds.length === 0) {
+    return [];
+  }
+
+  const now = new Date().toISOString();
+  const result = await supabase
+    .from("quiz_exercises")
+    .update({
+      status,
+      updated_at: now,
+    })
+    .in("id", uniqueIds)
+    .select("*");
+
+  if (result.error || !result.data) {
+    throw new Error(result.error?.message ?? "Supabase bulk status update failed");
+  }
+
+  return (result.data as SupabaseExerciseRow[])
+    .map((row) => normalizeSupabaseRow(row))
+    .filter((item): item is UniversalExerciseRecord => Boolean(item));
+}
+
 async function deactivateInSupabase(
   supabase: ReturnType<typeof getSupabaseServerClient>,
   id: string,
@@ -466,7 +538,9 @@ export async function GET(request: Request) {
   }
 
   try {
+    await loadSetCatalogFromDatabase(authGuard.accessToken);
     let exercises = await listFromSupabase(supabase, filters);
+    exercises = excludeExercisesFromSets(exercises, filters.exclude_set_ids ?? []);
 
     if (exercises.length === 0 && isUnfiltered(filters)) {
       try {
@@ -476,7 +550,7 @@ export async function GET(request: Request) {
         const alternateExercises = await listFromSupabase(alternateClient, filters);
 
         if (alternateExercises.length > 0) {
-          exercises = alternateExercises;
+          exercises = excludeExercisesFromSets(alternateExercises, filters.exclude_set_ids ?? []);
         }
       } catch {
         // Keep primary result if fallback mode fails.
@@ -488,7 +562,8 @@ export async function GET(request: Request) {
       exercises,
     });
   } catch (error) {
-    const fallbackExercises = listAdminExercises(filters);
+    await loadSetCatalogFromDatabase(authGuard.accessToken);
+    const fallbackExercises = excludeExercisesFromSets(listAdminExercises(filters), filters.exclude_set_ids ?? []);
     const message = error instanceof Error ? error.message : "Nie udalo sie pobrac cwiczen z bazy.";
 
     return NextResponse.json(
@@ -600,6 +675,36 @@ export async function PUT(request: Request) {
       return NextResponse.json(
         {
           error: "Nie udalo sie zaimportowac rekordow do Supabase.",
+          details: [message],
+        },
+        { status: 500 },
+      );
+    }
+  }
+
+  const bulkStatusIds = asStringArray(body.ids);
+  const bulkStatus = asStatus(asText(body.status) || null);
+  const requestedMode = asText(body.mode).toLowerCase();
+
+  if ((requestedMode === "bulk_status" || bulkStatusIds.length > 0) && bulkStatus !== "all") {
+    if (bulkStatusIds.length === 0) {
+      return NextResponse.json({ error: "ids sa wymagane dla masowej zmiany statusu." }, { status: 400 });
+    }
+
+    try {
+      const exercises = await updateStatusesInSupabase(supabase, bulkStatusIds, bulkStatus);
+
+      return NextResponse.json({
+        source: "supabase" satisfies AdminSource,
+        exercises,
+        updatedCount: exercises.length,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Supabase bulk status update failed";
+
+      return NextResponse.json(
+        {
+          error: "Nie udalo sie masowo zmienic statusu cwiczen w Supabase.",
           details: [message],
         },
         { status: 500 },

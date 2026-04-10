@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { ReactNode } from "react";
 import { Instagram } from "lucide-react";
@@ -12,6 +12,8 @@ const SOCIAL_URLS = {
 
 type SocialLinksProps = {
   className?: string;
+  disableHover?: boolean;
+  variant?: "dark" | "light";
 };
 
 function TikTokIcon({ className }: { className?: string }) {
@@ -36,16 +38,28 @@ function DiscordIcon({ className }: { className?: string }) {
   );
 }
 
-function SocialIconButton({ label, href, icon }: { label: string; href: string; icon: ReactNode }) {
+function SocialIconButton({
+  label,
+  href,
+  icon,
+  disableHover = false,
+  variant = "dark",
+}: {
+  label: string;
+  href: string;
+  icon: ReactNode;
+  disableHover?: boolean;
+  variant?: "dark" | "light";
+}) {
   const isConfigured = href.trim().length > 0;
+  const baseClassName =
+    variant === "light"
+      ? "inline-flex h-10 w-10 items-center justify-center rounded-full text-white drop-shadow-[0_4px_12px_rgba(255,255,255,0.18)] min-[769px]:h-11 min-[769px]:w-11"
+      : "inline-flex h-9 w-9 items-center justify-center text-black";
 
   if (!isConfigured) {
     return (
-      <span
-        title={`${label} (wkleję link gdy go podasz)`}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/12 bg-[#0b1226]/70 text-indigo-100/75"
-        aria-label={label}
-      >
+      <span title={`${label} (wkleję link gdy go podasz)`} className={baseClassName} aria-label={label}>
         {icon}
       </span>
     );
@@ -57,19 +71,45 @@ function SocialIconButton({ label, href, icon }: { label: string; href: string; 
       target="_blank"
       rel="noreferrer"
       aria-label={label}
-      className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/12 bg-[#0b1226]/76 text-indigo-100/85 transition-[transform,color] duration-200 ease-out hover:scale-110 hover:text-cyan-300 active:scale-95"
+      className={cn(
+        baseClassName,
+        disableHover ? "" : "transition-[transform,opacity,filter] duration-200 ease-out hover:scale-110 hover:opacity-90 active:scale-95",
+      )}
     >
       {icon}
     </a>
   );
 }
 
-export function SocialLinks({ className }: SocialLinksProps) {
+export function SocialLinks({ className, disableHover = false, variant = "dark" }: SocialLinksProps) {
+  const iconClassName =
+    variant === "light"
+      ? "h-[18px] w-[18px] text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.34)] min-[769px]:h-[20px] min-[769px]:w-[20px]"
+      : "h-[15px] w-[15px] text-black min-[769px]:h-[17px] min-[769px]:w-[17px]";
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      <SocialIconButton label="Instagram" href={SOCIAL_URLS.instagram} icon={<Instagram className="h-[17px] w-[17px]" strokeWidth={2.1} />} />
-      <SocialIconButton label="TikTok" href={SOCIAL_URLS.tiktok} icon={<TikTokIcon className="h-[17px] w-[17px]" />} />
-      <SocialIconButton label="Discord" href={SOCIAL_URLS.discord} icon={<DiscordIcon className="h-[17px] w-[17px]" />} />
+      <SocialIconButton
+        label="Instagram"
+        href={SOCIAL_URLS.instagram}
+        disableHover={disableHover}
+        variant={variant}
+        icon={<Instagram className={iconClassName} strokeWidth={2.1} />}
+      />
+      <SocialIconButton
+        label="TikTok"
+        href={SOCIAL_URLS.tiktok}
+        disableHover={disableHover}
+        variant={variant}
+        icon={<TikTokIcon className={iconClassName} />}
+      />
+      <SocialIconButton
+        label="Discord"
+        href={SOCIAL_URLS.discord}
+        disableHover={disableHover}
+        variant={variant}
+        icon={<DiscordIcon className={iconClassName} />}
+      />
     </div>
   );
 }

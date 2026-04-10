@@ -1,10 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { buildAdminBulkJsonTemplate } from "@/lib/quiz/admin-json-template";
+import {
+  buildAdminBulkJsonTemplate,
+  buildGapFillTextJsonTemplate,
+  buildReadingMcJsonTemplate,
+} from "@/lib/quiz/admin-json-template";
 import { ADMIN_SET_CATALOG_CHANGED_EVENT } from "@/lib/quiz/admin-events";
+import type { E8SetDefinition } from "@/lib/quiz/set-catalog";
 import {
   CATEGORY_TO_TASK_TYPE,
   EXERCISE_CATEGORIES,
@@ -32,6 +38,7 @@ type AdminApiResponse = {
   error?: string;
   details?: string[];
   deletedCount?: number;
+  updatedCount?: number;
 };
 
 
@@ -55,12 +62,20 @@ type AdminSetCreateResponse = {
   error?: string;
 };
 
+type AdminSetAccessResponse = {
+  sets?: E8SetDefinition[];
+  error?: string;
+  details?: string;
+};
+
 type AdminFilters = {
   category: ExerciseCategory | "all";
   task_type: ExerciseTaskType | "all";
   status: ExerciseStatus | "all";
   difficulty: ExerciseDifficulty | "all";
 };
+
+type ExerciseSortMode = "recently_updated" | "recently_added" | "category_asc" | "category_desc";
 
 const DEFAULT_FILTERS: AdminFilters = {
   category: "all",
@@ -125,6 +140,29 @@ function formatDate(iso: string): string {
   }
 }
 
+function formatCategoryLabel(category: ExerciseCategory): string {
+  const labels: Record<ExerciseCategory, string> = {
+    reactions: "reakcje",
+    vocabulary: "slownictwo",
+    grammar: "gramatyka",
+    gap_fill_text: "gap fill text",
+    reading_mc: "reading",
+    gap_fill_word_bank: "word bank",
+  };
+
+  return labels[category] ?? category;
+}
+
+function truncateText(value: string, maxLength = 140): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, Math.max(0, maxLength - 1)).trimEnd()}...`;
+}
+
 function statusClass(status: ExerciseStatus): string {
   if (status === "active") {
     return "border-emerald-300/35 bg-emerald-500/12 text-emerald-100";
@@ -138,7 +176,7 @@ function statusClass(status: ExerciseStatus): string {
 }
 
 function isSupportedSetTaskType(taskType: ExerciseTaskType): boolean {
-  return taskType === "single_choice_short" || taskType === "reading_mc";
+  return taskType === "single_choice_short" || taskType === "reading_mc" || taskType === "gap_fill_text";
 }
 
 function rebuildForCategory(current: UniversalExerciseRecord, nextCategory: ExerciseCategory): UniversalExerciseRecord {
@@ -184,7 +222,12 @@ export function AdminQuestionPanel() {
   const [isLaunchingQuiz, setIsLaunchingQuiz] = useState(false);
   const [isCreatingSetFromSelection, setIsCreatingSetFromSelection] = useState(false);
   const [isDeletingQuestions, setIsDeletingQuestions] = useState(false);
+  const [isUpdatingVisibleStatus, setIsUpdatingVisibleStatus] = useState(false);
   const [selectedExerciseIds, setSelectedExerciseIds] = useState<Record<string, boolean>>({});
+  const [availableSets, setAvailableSets] = useState<E8SetDefinition[]>([]);
+  const [excludedSetIds, setExcludedSetIds] = useState<string[]>([]);
+  const [sortMode, setSortMode] = useState<ExerciseSortMode>("recently_updated");
+  const [selectionTaskType, setSelectionTaskType] = useState<ExerciseTaskType | "all">("all");
 
   const getAuthHeaders = useCallback(async () => {
     const supabase = getSupabaseBrowserClient();
@@ -204,11 +247,14 @@ export function AdminQuestionPanel() {
 
     try {
       const effectiveFilters = overrideFilters ?? filters;
-      const params = new URLSearchParams({ limit: "200" });
+      const params = new URLSearchParams({ limit: "2000" });
       if (effectiveFilters.category !== "all") params.set("category", effectiveFilters.category);
       if (effectiveFilters.task_type !== "all") params.set("task_type", effectiveFilters.task_type);
       if (effectiveFilters.status !== "all") params.set("status", effectiveFilters.status);
       if (effectiveFilters.difficulty !== "all") params.set("difficulty", effectiveFilters.difficulty);
+      for (const setId of excludedSetIds) {
+        params.append("exclude_set_ids", setId);
+      }
 
       const authHeaders = await getAuthHeaders();
       const response = await fetch(`/api/e8/admin/questions?${params.toString()}`, {
@@ -230,11 +276,57 @@ export function AdminQuestionPanel() {
     } finally {
       setIsLoading(false);
     }
-  }, [filters, getAuthHeaders]);
+  }, [excludedSetIds, filters, getAuthHeaders]);
+
+  const loadSetOptions = useCallback(async () => {
+    try {
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch("/api/e8/admin/set-access", {
+        cache: "no-store",
+        headers: authHeaders,
+      });
+
+      const data = (await response.json().catch(() => ({}))) as AdminSetAccessResponse;
+
+      if (!response.ok) {
+        throw new Error(`${data.error ?? "Nie udalo sie pobrac setow."}${data.details ? ` ${data.details}` : ""}`);
+      }
+
+      const nextSets = Array.isArray(data.sets)
+        ? data.sets.filter((setItem) => {
+            const hasQuestionIds = (setItem.questionIds?.length ?? 0) > 0;
+            const isBuiltinMock = setItem.id === "set_mock_reading_mc" || setItem.id === "set_mock_gap_fill_text";
+            return hasQuestionIds || isBuiltinMock;
+          })
+        : [];
+      setAvailableSets(nextSets);
+      setExcludedSetIds((prev) => prev.filter((setId) => nextSets.some((setItem) => setItem.id === setId)));
+    } catch {
+      setAvailableSets([]);
+      setExcludedSetIds([]);
+    }
+  }, [getAuthHeaders]);
 
   useEffect(() => {
     void loadExercises();
   }, [loadExercises]);
+
+  useEffect(() => {
+    void loadSetOptions();
+  }, [loadSetOptions]);
+
+  useEffect(() => {
+    const onSetCatalogChanged = () => {
+      void loadSetOptions();
+      void loadExercises();
+    };
+
+    window.addEventListener(ADMIN_SET_CATALOG_CHANGED_EVENT, onSetCatalogChanged);
+
+    return () => {
+      window.removeEventListener(ADMIN_SET_CATALOG_CHANGED_EVENT, onSetCatalogChanged);
+    };
+  }, [loadExercises, loadSetOptions]);
 
   useEffect(() => {
     setSelectedExerciseIds((prev) => {
@@ -497,6 +589,20 @@ export function AdminQuestionPanel() {
     setValidationErrors([]);
   };
 
+  const handleInsertReadingMcTemplate = () => {
+    setJsonInput(buildReadingMcJsonTemplate());
+    setSuccess("Wstawiono template AI dla reading_mc w nowym layoucie shared passage.");
+    setError(null);
+    setValidationErrors([]);
+  };
+
+  const handleInsertGapFillTextTemplate = () => {
+    setJsonInput(buildGapFillTextJsonTemplate());
+    setSuccess("Wstawiono template AI dla gap_fill_text w nowym layoucie shared text.");
+    setError(null);
+    setValidationErrors([]);
+  };
+
   const handleFillJsonWithDraft = () => {
     const payload = cloneExercise(draft);
     payload.tags = splitCsv(tagInput);
@@ -600,8 +706,26 @@ export function AdminQuestionPanel() {
     setSelectedExerciseIds((prev) => {
       const next = { ...prev };
 
-      for (const exercise of exercises) {
-        next[exercise.id] = true;
+      for (const exercise of visibleExercises) {
+        if (exercise.status === "draft") {
+          next[exercise.id] = true;
+        }
+      }
+
+      return next;
+    });
+  };
+
+  const selectVisibleExercisesByTaskType = () => {
+    setSelectedExerciseIds((prev) => {
+      const next = { ...prev };
+
+      for (const exercise of visibleExercises) {
+        const matchesTaskType = selectionTaskType === "all" || exercise.task_type === selectionTaskType;
+
+        if (exercise.status === "draft" && matchesTaskType) {
+          next[exercise.id] = true;
+        }
       }
 
       return next;
@@ -612,7 +736,7 @@ export function AdminQuestionPanel() {
     setSelectedExerciseIds((prev) => {
       const next = { ...prev };
 
-      for (const exercise of exercises) {
+      for (const exercise of visibleExercises) {
         delete next[exercise.id];
       }
 
@@ -620,12 +744,91 @@ export function AdminQuestionPanel() {
     });
   };
 
+  const visibleExercises = useMemo(() => {
+    const baseExercises =
+      excludedSetIds.length > 0
+        ? exercises.filter((exercise) => exercise.status === "draft")
+        : exercises;
+
+    const sorted = [...baseExercises];
+
+    sorted.sort((left, right) => {
+      if (sortMode === "recently_added") {
+        return right.meta.created_at.localeCompare(left.meta.created_at);
+      }
+
+      if (sortMode === "category_asc" || sortMode === "category_desc") {
+        const categoryCompare = formatCategoryLabel(left.category).localeCompare(formatCategoryLabel(right.category), "pl");
+
+        if (categoryCompare !== 0) {
+          return sortMode === "category_asc" ? categoryCompare : -categoryCompare;
+        }
+
+        return right.meta.created_at.localeCompare(left.meta.created_at);
+      }
+
+      return right.meta.updated_at.localeCompare(left.meta.updated_at);
+    });
+
+    return sorted;
+  }, [excludedSetIds.length, exercises, sortMode]);
+
   const selectedVisibleIds = useMemo(
-    () => exercises.filter((exercise) => selectedExerciseIds[exercise.id]).map((exercise) => exercise.id),
-    [exercises, selectedExerciseIds],
+    () => visibleExercises.filter((exercise) => selectedExerciseIds[exercise.id]).map((exercise) => exercise.id),
+    [selectedExerciseIds, visibleExercises],
   );
 
   const selectedVisibleCount = selectedVisibleIds.length;
+
+  const toggleExcludedSetId = (setId: string) => {
+    setExcludedSetIds((prev) =>
+      prev.includes(setId) ? prev.filter((entry) => entry !== setId) : [...prev, setId],
+    );
+  };
+
+  const handleBulkUpdateVisibleStatus = async (nextStatus: ExerciseStatus) => {
+    setError(null);
+    setSuccess(null);
+
+    if (visibleExercises.length === 0) {
+      setError("Brak widocznych pytan do aktualizacji.");
+      return;
+    }
+
+    setIsUpdatingVisibleStatus(true);
+
+    try {
+      const authHeaders = await getAuthHeaders();
+      const response = await fetch("/api/e8/admin/questions", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeaders,
+        },
+        body: JSON.stringify({
+          mode: "bulk_status",
+          status: nextStatus,
+          ids: visibleExercises.map((exercise) => exercise.id),
+        }),
+      });
+
+      const data = (await response.json().catch(() => ({}))) as AdminApiResponse;
+
+      if (!response.ok) {
+        const details = Array.isArray(data.details) ? ` ${data.details.join(" | ")}` : "";
+        throw new Error((data.error ?? "Nie udalo sie zmienic statusu widocznych pytan.") + details);
+      }
+
+      const updatedCount = typeof data.updatedCount === "number" ? data.updatedCount : visibleExercises.length;
+      setSource(data.source ?? source);
+      setSuccess(`Ustawiono status ${nextStatus} dla ${updatedCount} widocznych pytan.`);
+      await loadExercises();
+    } catch (statusError) {
+      setError(statusError instanceof Error ? statusError.message : "Wystapil blad aktualizacji statusu.");
+    } finally {
+      setIsUpdatingVisibleStatus(false);
+    }
+  };
 
   const handleDeleteSelectedPermanently = async () => {
     setError(null);
@@ -742,11 +945,6 @@ export function AdminQuestionPanel() {
 
     if (selectedVisibleCount === 0) {
       setError("Zaznacz pytania, z ktorych chcesz zbudowac set.");
-      return;
-    }
-
-    if (selectedVisibleCount < 5 || selectedVisibleCount > 10) {
-      setError("Set musi miec od 5 do 10 pytan (zaznacz od 5 do 10 rekordow).");
       return;
     }
 
@@ -906,8 +1104,44 @@ export function AdminQuestionPanel() {
 
       <div className="mt-2 flex gap-2">
         <button type="button" onClick={() => { void loadExercises(); }} className="rounded-lg border border-white/15 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-white">Odswiez</button>
-        <button type="button" onClick={() => setFilters(DEFAULT_FILTERS)} className="rounded-lg border border-white/15 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-white">Wyczysc filtry</button>
+        <button type="button" onClick={() => { setFilters(DEFAULT_FILTERS); setExcludedSetIds([]); }} className="rounded-lg border border-white/15 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-white">Wyczysc filtry</button>
       </div>
+
+      {availableSets.length > 0 ? (
+        <div className="mt-3 rounded-2xl border border-white/10 bg-[#090d1f] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Ukryj pytania z setow</h3>
+              <p className="text-xs text-gray-400">Jesli wybierzesz set, pytania juz w nim przypisane nie beda tu pokazane.</p>
+            </div>
+            {excludedSetIds.length > 0 ? (
+              <button type="button" onClick={() => setExcludedSetIds([])} className="rounded-lg border border-white/15 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-white">
+                Pokaz wszystkie
+              </button>
+            ) : null}
+          </div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {availableSets.map((setItem) => {
+              const isActive = excludedSetIds.includes(setItem.id);
+
+              return (
+                <button
+                  key={setItem.id}
+                  type="button"
+                  onClick={() => toggleExcludedSetId(setItem.id)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                    isActive
+                      ? "border-amber-300/40 bg-amber-500/15 text-amber-100"
+                      : "border-white/12 bg-white/[0.03] text-gray-200"
+                  }`}
+                >
+                  {setItem.title} ({setItem.questionIds?.length ?? setItem.questionCount})
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
 
       <div className="mt-5 rounded-2xl border border-indigo-300/14 bg-[#0a0f26] p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1010,7 +1244,7 @@ export function AdminQuestionPanel() {
           {draft.task_type === "single_choice_short" && (
             <>
               <textarea value={draft.content.prompt} onChange={(e) => updateDraft((n) => { if (n.task_type === "single_choice_short") n.content.prompt = e.target.value; })} className="min-h-[80px] w-full rounded-xl border border-white/15 bg-[#060914] px-3 py-2.5 text-sm text-white" placeholder="prompt" />
-              {draft.content.options.map((option, index) => (
+              {(draft.content.options ?? []).map((option, index) => (
                 <label key={option.id} className="flex items-center gap-2 rounded-lg border border-white/12 bg-[#050814] px-3 py-2">
                   <input type="radio" checked={draft.correct_answer.option_id === option.id} onChange={() => updateDraft((n) => { if (n.task_type === "single_choice_short") n.correct_answer.option_id = option.id; })} className="h-4 w-4 accent-indigo-500" />
                   <span className="w-5 text-xs text-indigo-200">{["A", "B", "C"][index]}</span>
@@ -1024,11 +1258,11 @@ export function AdminQuestionPanel() {
               <input value={draft.content.title ?? ""} onChange={(e) => updateDraft((n) => { if (n.task_type === "reading_mc") n.content.title = e.target.value; })} className="w-full rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white" placeholder="title" />
               <textarea value={draft.content.passage} onChange={(e) => updateDraft((n) => { if (n.task_type === "reading_mc") n.content.passage = e.target.value; })} className="min-h-[80px] w-full rounded-xl border border-white/15 bg-[#060914] px-3 py-2.5 text-sm text-white" placeholder="passage" />
               <textarea value={draft.content.question} onChange={(e) => updateDraft((n) => { if (n.task_type === "reading_mc") n.content.question = e.target.value; })} className="min-h-[72px] w-full rounded-xl border border-white/15 bg-[#060914] px-3 py-2.5 text-sm text-white" placeholder="question" />
-              {draft.content.options.map((option, index) => (
+              {(draft.content.options ?? []).map((option, index) => (
                 <label key={option.id} className="flex items-center gap-2 rounded-lg border border-white/12 bg-[#050814] px-3 py-2">
                   <input type="radio" checked={draft.correct_answer.option_id === option.id} onChange={() => updateDraft((n) => { if (n.task_type === "reading_mc") n.correct_answer.option_id = option.id; })} className="h-4 w-4 accent-indigo-500" />
                   <span className="w-5 text-xs text-indigo-200">{["A", "B", "C"][index]}</span>
-                  <input value={option.text} onChange={(e) => updateDraft((n) => { if (n.task_type === "reading_mc") n.content.options[index].text = e.target.value; })} className="w-full bg-transparent text-sm text-white outline-none" />
+                  <input value={option.text} onChange={(e) => updateDraft((n) => { if (n.task_type === "reading_mc" && n.content.options?.[index]) n.content.options[index].text = e.target.value; })} className="w-full bg-transparent text-sm text-white outline-none" />
                 </label>
               ))}
             </>
@@ -1071,7 +1305,7 @@ export function AdminQuestionPanel() {
           <input value={draft.explanation.why} onChange={(e) => updateDraft((n) => { n.explanation.why = e.target.value; })} className="rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white" placeholder="explanation.why" />
           <input value={draft.explanation.pattern} onChange={(e) => updateDraft((n) => { n.explanation.pattern = e.target.value; })} className="rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white" placeholder="explanation.pattern" />
           <input value={draft.explanation.watch_out} onChange={(e) => updateDraft((n) => { n.explanation.watch_out = e.target.value; })} className="rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white" placeholder="explanation.watch_out" />
-          <input value={draft.hint.short} onChange={(e) => updateDraft((n) => { n.hint.short = e.target.value; })} className="rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white" placeholder="hint.short" />
+          <input value={draft.hint.short} onChange={(e) => updateDraft((n) => { n.hint.short = e.target.value; })} className="rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white" placeholder="hint.short (subtelnie: ton, kontekst, eliminacja)" />
           <div className="grid gap-2 sm:grid-cols-2">
             <input value={draft.analytics.focus_label} onChange={(e) => updateDraft((n) => { n.analytics.focus_label = e.target.value; })} className="rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white" placeholder="analytics.focus_label" />
             <input value={draft.analytics.skill} onChange={(e) => updateDraft((n) => { n.analytics.skill = e.target.value; })} className="rounded-xl border border-white/15 bg-[#060914] px-3 py-2 text-sm text-white" placeholder="analytics.skill" />
@@ -1119,6 +1353,12 @@ export function AdminQuestionPanel() {
             <button type="button" onClick={handleInsertFullJsonTemplate} className="rounded-lg border border-indigo-300/30 bg-indigo-500/15 px-3 py-1.5 text-xs font-semibold text-indigo-100">
               Wstaw pelny template AI
             </button>
+            <button type="button" onClick={handleInsertReadingMcTemplate} className="rounded-lg border border-cyan-300/30 bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-100">
+              Template reading_mc
+            </button>
+            <button type="button" onClick={handleInsertGapFillTextTemplate} className="rounded-lg border border-cyan-300/30 bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-100">
+              Template gap_fill_text
+            </button>
           </div>
         </div>
 
@@ -1133,11 +1373,55 @@ export function AdminQuestionPanel() {
       {error ? <p className="mt-4 text-sm text-rose-200">{error}</p> : null}
       {success ? <p className="mt-4 text-sm text-emerald-200">{success}</p> : null}
 
-      <div className="mt-6 space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold tracking-wide text-indigo-100 uppercase">Lista cwiczen ({exercises.length})</h3>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={selectAllVisibleExercises} className="rounded-lg border border-white/15 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-white">Zaznacz wszystko</button>
+      <div className="mt-6 rounded-2xl border border-white/10 bg-[#090d1f] p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-semibold tracking-wide text-indigo-100 uppercase">Pytania #lista ({visibleExercises.length})</h3>
+            <p className="mt-1 text-xs text-gray-400">Pelna lista pytan do przegladania i sortowania, bez przyciecia do 200 rekordow.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 rounded-lg border border-white/12 bg-white/[0.03] px-3 py-1.5 text-xs text-gray-300">
+              <span>Sortowanie</span>
+              <select
+                value={sortMode}
+                onChange={(event) => setSortMode(event.target.value as ExerciseSortMode)}
+                className="bg-transparent text-xs font-semibold text-white outline-none"
+              >
+                <option value="recently_updated" className="bg-[#090d1f] text-white">Ostatnio edytowane</option>
+                <option value="recently_added" className="bg-[#090d1f] text-white">Recently added</option>
+                <option value="category_asc" className="bg-[#090d1f] text-white">Kategoria A-Z</option>
+                <option value="category_desc" className="bg-[#090d1f] text-white">Kategoria Z-A</option>
+              </select>
+            </label>
+            <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => { void handleBulkUpdateVisibleStatus("active"); }} disabled={isUpdatingVisibleStatus || visibleExercises.length === 0} className="rounded-lg border border-emerald-300/35 bg-emerald-500/12 px-3 py-1.5 text-xs font-semibold text-emerald-100 disabled:opacity-55">
+              {isUpdatingVisibleStatus ? "Aktualizacja..." : "Widoczne -> active"}
+            </button>
+            <button type="button" onClick={() => { void handleBulkUpdateVisibleStatus("draft"); }} disabled={isUpdatingVisibleStatus || visibleExercises.length === 0} className="rounded-lg border border-indigo-300/35 bg-indigo-500/12 px-3 py-1.5 text-xs font-semibold text-indigo-100 disabled:opacity-55">
+              {isUpdatingVisibleStatus ? "Aktualizacja..." : "Widoczne -> draft"}
+            </button>
+            <button type="button" onClick={() => { void handleBulkUpdateVisibleStatus("archived"); }} disabled={isUpdatingVisibleStatus || visibleExercises.length === 0} className="rounded-lg border border-rose-300/35 bg-rose-500/12 px-3 py-1.5 text-xs font-semibold text-rose-100 disabled:opacity-55">
+              {isUpdatingVisibleStatus ? "Aktualizacja..." : "Widoczne -> archived"}
+            </button>
+            <button type="button" onClick={selectAllVisibleExercises} className="rounded-lg border border-white/15 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-white">Zaznacz wszystko (draft)</button>
+            <label className="flex items-center gap-2 rounded-lg border border-white/12 bg-white/[0.03] px-3 py-1.5 text-xs text-gray-300">
+              <span>Typ</span>
+              <select
+                value={selectionTaskType}
+                onChange={(event) => setSelectionTaskType(event.target.value as ExerciseTaskType | "all")}
+                className="bg-transparent text-xs font-semibold text-white outline-none"
+              >
+                <option value="all" className="bg-[#090d1f] text-white">Wszystkie</option>
+                {EXERCISE_TASK_TYPES.map((taskType) => (
+                  <option key={taskType} value={taskType} className="bg-[#090d1f] text-white">
+                    {taskType}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="button" onClick={selectVisibleExercisesByTaskType} className="rounded-lg border border-indigo-300/30 bg-indigo-500/12 px-3 py-1.5 text-xs font-semibold text-indigo-100">
+              {selectionTaskType === "all" ? "Zaznacz po typie" : `Zaznacz ${selectionTaskType}`}
+            </button>
             <button type="button" onClick={clearVisibleSelections} className="rounded-lg border border-white/15 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-white">Wyczysc zaznaczenie</button>
             <button type="button" onClick={() => { void handleDeleteSelectedPermanently(); }} disabled={isDeletingQuestions || selectedVisibleCount === 0} className="rounded-lg border border-rose-300/35 bg-rose-500/12 px-3 py-1.5 text-xs font-semibold text-rose-100 disabled:opacity-55">
               {isDeletingQuestions ? "Usuwanie..." : `Usun zaznaczone (${selectedVisibleCount})`}
@@ -1148,31 +1432,49 @@ export function AdminQuestionPanel() {
             <button type="button" onClick={() => { void handleCreateSetFromSelected(); }} disabled={isCreatingSetFromSelection || selectedVisibleCount === 0} className="rounded-lg border border-emerald-300/35 bg-emerald-500/12 px-3 py-1.5 text-xs font-semibold text-emerald-100 disabled:opacity-55">
               {isCreatingSetFromSelection ? "Tworzenie setu..." : `Utworz set (${selectedVisibleCount})`}
             </button>
+            </div>
           </div>
         </div>
-        <p className="text-xs text-gray-400">Symulacja i sety z zaznaczonych wspieraja aktualnie single_choice_short i reading_mc (set: 5-10 pytan).</p>
-        {isLoading ? <p className="text-sm text-gray-300">Ladowanie...</p> : null}
-        {!isLoading && exercises.length === 0 ? <p className="text-sm text-gray-300">Brak cwiczen.</p> : null}
-        <div className="space-y-2">
-          {exercises.map((exercise) => {
+        <p className="mt-3 text-xs text-gray-400">Symulacja i sety z zaznaczonych wspieraja aktualnie single_choice_short i reading_mc. Set moze byc duzy, a quiz losuje z niego pytania przy starcie.</p>
+        {isLoading ? (
+          <div className="mt-3 flex items-center gap-2.5 text-sm text-gray-300">
+            <Spinner size="sm" />
+            <span>Ladowanie...</span>
+          </div>
+        ) : null}
+        {!isLoading && visibleExercises.length === 0 ? <p className="mt-3 text-sm text-gray-300">Brak cwiczen.</p> : null}
+        <div className="mt-3 space-y-2">
+          {visibleExercises.map((exercise) => {
             const preview = exercise.title.trim().length > 0 ? exercise.title : getExercisePromptPreview(exercise);
+            const promptPreview = truncateText(getExercisePromptPreview(exercise), 180);
             const isSelected = Boolean(selectedExerciseIds[exercise.id]);
+            const isPersistedInDatabase = source !== "local" && !exercise.id.startsWith("local_ex_");
 
             return (
               <article key={exercise.id} className={`rounded-xl border p-3 transition-colors ${isSelected ? "border-indigo-300/35 bg-indigo-500/[0.08]" : "border-white/10 bg-[#090d1f]"}`}>
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <label className="flex flex-1 cursor-pointer items-start gap-2">
                     <input type="checkbox" checked={isSelected} onChange={() => toggleExerciseSelection(exercise.id)} className="mt-0.5 h-4 w-4 accent-indigo-500" />
-                    <span className="text-sm font-semibold text-white">{preview || "(brak podgladu)"}</span>
+                    <span className="flex-1">
+                      <span className="block text-sm font-semibold text-white">{preview || "(brak podgladu)"}</span>
+                      <span className="mt-1 block text-xs leading-relaxed text-indigo-100/68">{promptPreview || "(brak tresci pytania)"}</span>
+                    </span>
                   </label>
-                  <span className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${statusClass(exercise.status)}`}>{exercise.status}</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {isPersistedInDatabase ? (
+                      <span className="rounded-lg border border-cyan-300/25 bg-cyan-500/10 px-2 py-1 text-[11px] font-semibold text-cyan-100">DB</span>
+                    ) : null}
+                    <span className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${statusClass(exercise.status)}`}>{exercise.status}</span>
+                  </div>
                 </div>
-                <div className="mt-1 grid gap-1 text-[11px] text-gray-300 sm:grid-cols-2 lg:grid-cols-5">
+                <div className="mt-2 grid gap-1 text-[11px] text-gray-300 sm:grid-cols-2 lg:grid-cols-6">
                   <p>category: {exercise.category}</p>
                   <p>task_type: {exercise.task_type}</p>
                   <p>difficulty: {exercise.difficulty}</p>
                   <p>status: {exercise.status}</p>
+                  <p>dodano: {formatDate(exercise.meta.created_at)}</p>
                   <p>updated: {formatDate(exercise.meta.updated_at)}</p>
+                  <p>id: {exercise.id}</p>
                 </div>
                 <div className="mt-2 flex gap-2">
                   <button type="button" onClick={() => startEdit(exercise)} className="rounded-lg border border-white/15 bg-white/[0.03] px-3 py-1.5 text-xs font-semibold text-white">Edytuj</button>

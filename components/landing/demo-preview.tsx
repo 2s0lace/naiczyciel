@@ -1,11 +1,13 @@
 ﻿"use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Check, Sparkles, Target, TriangleAlert, X } from "lucide-react";
+import { Check, Sparkles, Target, TriangleAlert } from "lucide-react";
 import type { FeatureType } from "@/components/landing/types";
 
 interface DemoPreviewProps {
   activeTab: FeatureType;
+  onTabChange?: (tab: FeatureType) => void;
 }
 
 type TransitionPhase = "idle" | "exit" | "enterFrom";
@@ -16,11 +18,12 @@ const ENTER_KICK_MS = 24;
 const COLLAPSE_MS = 180;
 const EXPLANATION_REVEAL_MS = 130;
 
-export default function DemoPreview({ activeTab }: DemoPreviewProps) {
+export default function DemoPreview({ activeTab, onTabChange }: DemoPreviewProps) {
   const [displayedView, setDisplayedView] = useState<DisplayedView>(
     activeTab === "analysis" ? "analysis" : activeTab === "account" ? "account" : "quiz"
   );
   const [showExplanation, setShowExplanation] = useState(activeTab === "explaining");
+  const [selectedAnswer, setSelectedAnswer] = useState<"A" | "B" | null>(null);
   const [phase, setPhase] = useState<TransitionPhase>("idle");
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -140,6 +143,8 @@ export default function DemoPreview({ activeTab }: DemoPreviewProps) {
   const isAnalysis = displayedView === "analysis";
   const isAccount = displayedView === "account";
   const isExplaining = showExplanation;
+  const revealedAnswer = isExplaining ? selectedAnswer ?? "B" : null;
+  const hasAnswered = revealedAnswer !== null;
   const quizProgressValue = 7;
   const quizProgressWidth = `${(quizProgressValue / 10) * 100}%`;
   const analysisProgressValue = 80;
@@ -154,6 +159,15 @@ export default function DemoPreview({ activeTab }: DemoPreviewProps) {
       : phase === "exit"
       ? "translate-y-2 scale-[0.99] opacity-0 blur-[1.2px] duration-[200ms]"
       : "translate-y-3 scale-[0.995] opacity-0 blur-[1px] duration-[0ms]";
+
+  const handleAnswerSelect = (answer: "A" | "B") => {
+    if (hasAnswered) {
+      return;
+    }
+
+    setSelectedAnswer(answer);
+    onTabChange?.("explaining");
+  };
 
   return (
     <section
@@ -191,10 +205,13 @@ export default function DemoPreview({ activeTab }: DemoPreviewProps) {
                 <p className="mt-1.5 text-base leading-none font-extrabold tracking-tight text-white">Prośby</p>
               </div>
 
-              <div className="flex items-center justify-between rounded-xl border border-indigo-200/28 bg-gradient-to-r from-indigo-500/82 via-indigo-500/76 to-blue-500/80 px-3.5 py-3 shadow-[0_14px_24px_-20px_rgba(59,130,246,0.9)]">
+              <Link
+                href="/login"
+                className="flex items-center justify-between rounded-xl border border-indigo-200/28 bg-gradient-to-r from-indigo-500/82 via-indigo-500/76 to-blue-500/80 px-3.5 py-3 shadow-[0_14px_24px_-20px_rgba(59,130,246,0.9)] transition-transform duration-200 ease-out hover:scale-[1.01]"
+              >
                 <p className="text-sm font-bold text-white">Nowa sesja →</p>
                 <p className="rounded-md border border-white/22 bg-white/12 px-2 py-1 text-[10.5px] font-semibold text-indigo-50/95">10 pytań • 6–9 min</p>
-              </div>
+              </Link>
             </div>
           </>
         ) : isAnalysis ? (
@@ -276,28 +293,61 @@ export default function DemoPreview({ activeTab }: DemoPreviewProps) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <div
-                    className={`overflow-hidden transition-all duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
-                      isExplaining ? "max-h-0 translate-y-2 opacity-0" : "max-h-16 translate-y-0 opacity-55"
+                  <button
+                    type="button"
+                    onClick={() => handleAnswerSelect("A")}
+                    disabled={hasAnswered}
+                    className={`flex w-full items-center justify-between rounded-xl border p-3 text-left text-xs transition-all duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+                      revealedAnswer === "A"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-white ring-1 ring-emerald-500/20"
+                        : revealedAnswer === "B"
+                        ? "border-red-500/25 bg-red-500/7 text-white/70 ring-1 ring-red-500/12"
+                        : "cursor-pointer border-white/5 bg-white/[0.02] text-gray-300 hover:border-white/12 hover:bg-white/[0.035] hover:text-white"
                     }`}
-                    aria-hidden={isExplaining}
                   >
-                    <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <span className="rounded-md bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold text-gray-500">A</span>
-                        <span>It doesn&apos;t matter.</span>
-                      </div>
-                      <X size={14} className="text-red-500/40" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-xs text-white ring-1 ring-emerald-500/20">
                     <div className="flex items-center gap-2">
-                      <span className="rounded-md bg-emerald-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-200">B</span>
-                      <span className="font-semibold text-emerald-100">Never mind.</span>
+                      <span
+                        className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                          revealedAnswer === "A"
+                            ? "bg-emerald-500/20 text-emerald-200"
+                            : revealedAnswer === "B"
+                            ? "bg-red-500/16 text-red-200"
+                            : "bg-white/5 text-gray-400"
+                        }`}
+                      >
+                        A
+                      </span>
+                      <span className={revealedAnswer === "A" ? "font-medium text-emerald-100" : revealedAnswer === "B" ? "font-medium text-red-100/92" : "font-medium"}>It doesn&apos;t matter.</span>
                     </div>
-                    <Check size={14} className="text-emerald-400" />
-                  </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleAnswerSelect("B")}
+                    disabled={hasAnswered}
+                    className={`flex w-full items-center justify-between rounded-xl border p-3 text-left text-xs transition-all duration-[200ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+                      revealedAnswer === "B"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-white ring-1 ring-emerald-500/20"
+                        : revealedAnswer === "A"
+                        ? "border-red-500/25 bg-red-500/7 text-white/70 ring-1 ring-red-500/12"
+                        : "cursor-pointer border-white/5 bg-white/[0.02] text-gray-300 hover:border-white/12 hover:bg-white/[0.035] hover:text-white"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
+                          revealedAnswer === "B"
+                            ? "bg-emerald-500/20 text-emerald-200"
+                            : revealedAnswer === "A"
+                            ? "bg-red-500/16 text-red-200"
+                            : "bg-white/5 text-gray-400"
+                        }`}
+                      >
+                        B
+                      </span>
+                      <span className={revealedAnswer === "B" ? "font-medium text-emerald-100" : revealedAnswer === "A" ? "font-medium text-red-100/92" : "font-medium"}>Never mind.</span>
+                    </div>
+                  </button>
                 </div>
 
                 <div

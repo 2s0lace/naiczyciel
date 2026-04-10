@@ -1,0 +1,235 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+.app { padding: 1rem 0; max-width: 720px; }
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 1.5rem; }
+.brand-icon { width: 36px; height: 36px; background: var(--color-background-warning); border-radius: var(--border-radius-md); display: flex; align-items: center; justify-content: center; }
+.brand-icon svg { width: 20px; height: 20px; }
+.brand-name { font-size: 20px; font-weight: 500; color: var(--color-text-primary); letter-spacing: -0.5px; }
+.brand-tag { font-size: 12px; color: var(--color-text-secondary); margin-left: 4px; }
+.modes { display: flex; gap: 8px; margin-bottom: 1.25rem; }
+.mode-btn { flex: 1; padding: 10px 16px; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); background: var(--color-background-primary); cursor: pointer; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); transition: all 0.15s; }
+.mode-btn.active { background: var(--color-background-warning); border-color: var(--color-border-warning); color: var(--color-text-warning); }
+.mode-btn:hover:not(.active) { background: var(--color-background-secondary); }
+.config-panel { background: var(--color-background-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; border: 0.5px solid var(--color-border-tertiary); }
+.config-row { display: flex; align-items: center; gap: 12px; }
+.config-label { font-size: 13px; color: var(--color-text-secondary); white-space: nowrap; }
+.config-row input[type=range] { flex: 1; }
+.budget-display { font-size: 15px; font-weight: 500; color: var(--color-text-primary); min-width: 80px; text-align: right; }
+.use-tag { font-size: 12px; color: var(--color-text-tertiary); }
+.use-btns { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+.use-btn { padding: 4px 10px; border: 0.5px solid var(--color-border-tertiary); border-radius: 20px; background: var(--color-background-primary); font-size: 12px; color: var(--color-text-secondary); cursor: pointer; transition: all 0.12s; }
+.use-btn:hover, .use-btn.sel { background: var(--color-background-info); border-color: var(--color-border-info); color: var(--color-text-info); }
+.chat-area { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); min-height: 280px; max-height: 400px; overflow-y: auto; padding: 1rem; margin-bottom: 0.75rem; display: flex; flex-direction: column; gap: 12px; }
+.msg { display: flex; gap: 10px; align-items: flex-start; }
+.msg.user { flex-direction: row-reverse; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 500; }
+.avatar.ai { background: var(--color-background-warning); color: var(--color-text-warning); }
+.avatar.user { background: var(--color-background-info); color: var(--color-text-info); }
+.bubble { max-width: 82%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.55; }
+.msg.ai .bubble { background: var(--color-background-secondary); color: var(--color-text-primary); border-radius: 4px 12px 12px 12px; }
+.msg.user .bubble { background: var(--color-background-info); color: var(--color-text-info); border-radius: 12px 4px 12px 12px; }
+.typing { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-text-tertiary); animation: blink 1.2s infinite; }
+.dot:nth-child(2) { animation-delay: 0.2s; }
+.dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes blink { 0%,60%,100%{opacity:0.2} 30%{opacity:1} }
+.input-row { display: flex; gap: 8px; align-items: flex-end; }
+.msg-input { flex: 1; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 10px 14px; font-size: 14px; font-family: var(--font-sans); resize: none; background: var(--color-background-primary); color: var(--color-text-primary); min-height: 44px; max-height: 120px; line-height: 1.45; }
+.msg-input:focus { outline: none; border-color: var(--color-border-primary); }
+.send-btn { width: 44px; height: 44px; border-radius: var(--border-radius-md); border: 0.5px solid var(--color-border-warning); background: var(--color-background-warning); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: var(--color-text-warning); transition: opacity 0.12s; }
+.send-btn:hover { opacity: 0.8; }
+.send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.deal-hint { font-size: 12px; color: var(--color-text-tertiary); margin-bottom: 6px; }
+.quick-starts { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.qs-btn { padding: 5px 11px; border: 0.5px solid var(--color-border-tertiary); border-radius: 20px; background: var(--color-background-secondary); font-size: 12px; color: var(--color-text-secondary); cursor: pointer; transition: all 0.12s; }
+.qs-btn:hover { background: var(--color-background-primary); border-color: var(--color-border-secondary); color: var(--color-text-primary); }
+</style>
+
+<div class="app">
+  <div class="brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--color-text-warning);">
+        <rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h1M6 14h1M10 10h4M10 14h4"/><circle cx="18" cy="12" r="1.5" fill="currentColor"/>
+      </svg>
+    </div>
+    <span class="brand-name">RigBro <span class="brand-tag">/ AI PC builder</span></span>
+  </div>
+
+  <div class="modes">
+    <button class="mode-btn active" id="btn-build" onclick="switchMode('build')">Build a rig</button>
+    <button class="mode-btn" id="btn-deal" onclick="switchMode('deal')">Check a deal</button>
+  </div>
+
+  <div id="build-config" class="config-panel">
+    <div class="config-row">
+      <span class="config-label">Budget</span>
+      <input type="range" id="budget-slider" min="500" max="10000" step="100" value="2500" oninput="updateBudget()">
+      <span class="budget-display" id="budget-label">2500 zł</span>
+    </div>
+    <div style="margin-top: 10px;">
+      <span class="use-tag">What's it for?</span>
+      <div class="use-btns">
+        <button class="use-btn sel" id="use-gaming" onclick="toggleUse('gaming')">Gaming</button>
+        <button class="use-btn" id="use-work" onclick="toggleUse('work')">Work / office</button>
+        <button class="use-btn" id="use-creative" onclick="toggleUse('creative')">Creative / editing</button>
+        <button class="use-btn" id="use-stream" onclick="toggleUse('stream')">Streaming</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="deal-config" class="config-panel" style="display:none;">
+    <p style="font-size: 13px; color: var(--color-text-secondary); line-height: 1.5;">Paste the listing title + specs below — works with OLX, Allegro, or just freehand text. The AI will tell you if the price makes sense.</p>
+  </div>
+
+  <div id="quick-starts-area" class="quick-starts">
+    <button class="qs-btn" onclick="quickSend('where do i even start, never built a pc before')">never built before 🤷</button>
+    <button class="qs-btn" onclick="quickSend('what parts do i actually need to buy')">what parts do I need?</button>
+    <button class="qs-btn" onclick="quickSend('should i buy used or new parts')">new vs used?</button>
+    <button class="qs-btn" onclick="quickSend('intel or amd cpu rn, which is better value')">intel vs amd?</button>
+  </div>
+
+  <div class="chat-area" id="chat"></div>
+
+  <div class="input-row">
+    <textarea class="msg-input" id="user-input" placeholder="ask anything about your build..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+      oninput="autoResize(this)"></textarea>
+    <button class="send-btn" id="send-btn" onclick="sendMsg()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+let mode = 'build';
+let budget = 2500;
+let useCase = 'gaming';
+let messages = [];
+let isLoading = false;
+
+function switchMode(m) {
+  mode = m;
+  document.getElementById('btn-build').classList.toggle('active', m === 'build');
+  document.getElementById('btn-deal').classList.toggle('active', m === 'deal');
+  document.getElementById('build-config').style.display = m === 'build' ? '' : 'none';
+  document.getElementById('deal-config').style.display = m === 'deal' ? '' : 'none';
+  const qs = document.getElementById('quick-starts-area');
+  if (m === 'deal') {
+    qs.innerHTML = `
+      <button class="qs-btn" onclick="quickSend('i5-12400F + GTX 1080 na OLX za 1200 zł, dobra oferta?')">paste example deal ↗</button>
+      <button class="qs-btn" onclick="quickSend('RTX 3060 12GB uzywana za 900 zł na OLX, warto?')">RTX 3060 za 900 zł?</button>
+    `;
+    document.getElementById('user-input').placeholder = 'paste the listing here, e.g. "i5-12400F + 16GB RAM, 1200 zł"...';
+  } else {
+    qs.innerHTML = `
+      <button class="qs-btn" onclick="quickSend('where do i even start, never built a pc before')">never built before 🤷</button>
+      <button class="qs-btn" onclick="quickSend('what parts do i actually need to buy')">what parts do I need?</button>
+      <button class="qs-btn" onclick="quickSend('should i buy used or new parts')">new vs used?</button>
+      <button class="qs-btn" onclick="quickSend('intel or amd cpu rn, which is better value')">intel vs amd?</button>
+    `;
+    document.getElementById('user-input').placeholder = 'ask anything about your build...';
+  }
+  messages = [];
+  document.getElementById('chat').innerHTML = '';
+}
+
+function updateBudget() {
+  budget = parseInt(document.getElementById('budget-slider').value);
+  document.getElementById('budget-label').textContent = budget.toLocaleString('pl-PL') + ' zł';
+}
+
+function toggleUse(u) {
+  useCase = u;
+  ['gaming','work','creative','stream'].forEach(x => {
+    document.getElementById('use-'+x).classList.toggle('sel', x === u);
+  });
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function appendMsg(role, text) {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  const initials = role === 'ai' ? 'RB' : 'ME';
+  div.innerHTML = `<div class="avatar ${role}">${initials}</div><div class="bubble">${text.replace(/\n/g,'<br>')}</div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div;
+}
+
+function showTyping() {
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = 'msg ai';
+  div.id = 'typing-indicator';
+  div.innerHTML = `<div class="avatar ai">RB</div><div class="bubble"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping() {
+  const t = document.getElementById('typing-indicator');
+  if (t) t.remove();
+}
+
+function buildSystemPrompt() {
+  if (mode === 'build') {
+    return `You are RigBro — a casual, opinionated PC building assistant. You know the Polish PC market really well (OLX, Allegro, Morele, x-kom, MediaMarkt PL). Prices in PLN. The user has a budget of ${budget} PLN for a ${useCase} PC. Be helpful but real — if something is overpriced, say so. If a part choice is questionable, call it out. Use natural gen-z/casual language but keep it readable and genuinely helpful. Give specific part recommendations with actual model names. Keep replies concise — 2-4 short paragraphs max. Don't use markdown headers, just plain text with line breaks.`;
+  } else {
+    return `You are RigBro — a PC deal evaluator who knows the Polish market inside out (OLX, Allegro, x-kom, Morele). The user will paste a listing or describe a deal, probably in PLN. Evaluate the deal honestly: check if the price is fair, what the parts are worth, any red flags, and whether they should buy it. Be direct — if it's trash, say it's trash. If it's actually fire, hype it up. Mention current market value and comparable alternatives. Keep it concise, max 3-4 paragraphs, no markdown headers.`;
+  }
+}
+
+async function quickSend(text) {
+  document.getElementById('user-input').value = text;
+  await sendMsg();
+}
+
+async function sendMsg() {
+  if (isLoading) return;
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  messages.push({ role: 'user', content: text });
+  appendMsg('user', text);
+  isLoading = true;
+  document.getElementById('send-btn').disabled = true;
+  showTyping();
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: buildSystemPrompt(),
+        messages: messages
+      })
+    });
+    const data = await res.json();
+    removeTyping();
+    const reply = data.content?.[0]?.text || 'yo something went wrong on my end, try again';
+    messages.push({ role: 'assistant', content: reply });
+    appendMsg('ai', reply);
+  } catch(e) {
+    removeTyping();
+    appendMsg('ai', 'something went wrong connecting — try again in a sec');
+  }
+  isLoading = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+appendMsg('ai', `yo! i'm RigBro 👾 set your budget above and tell me what you're building — or hit one of the quick buttons to get started. if you got a deal to check out, switch to "Check a deal" tab.`);
+</script>

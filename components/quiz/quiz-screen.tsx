@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BookOpen, Brain, CheckCheck, Languages, Sparkles } from "lucide-react";
 import { AnswerList } from "@/components/quiz/answer-list";
+import { AnswerOption } from "@/components/quiz/answer-option";
 import { ExplanationPanel } from "@/components/quiz/explanation-panel";
 import { QuestionCard } from "@/components/quiz/question-card";
 import { QuizFooterAction } from "@/components/quiz/quiz-footer-action";
@@ -18,7 +20,7 @@ import {
   getProgressStorageKey,
   type ActiveQuizSessionMap,
 } from "@/lib/quiz/storage-keys";
-import type { QuizAnswerSnapshot, QuizQuestion, QuizSessionPayload, QuizSummary } from "@/lib/quiz/types";
+import type { QuizAnswerSnapshot, QuizOption, QuizQuestion, QuizSessionPayload, QuizSummary } from "@/lib/quiz/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { QUIZ_SOUND_MUTED_STORAGE_KEY, quizSoundManager } from "@/lib/quiz/quiz-sound-manager";
 
@@ -41,12 +43,50 @@ type SaveAnswerPayload = {
   isCorrect: boolean;
 };
 
+type AnswerableItem = {
+  id: string;
+  prompt: string;
+  options: QuizOption[];
+};
+
 function toModeLabel(mode: string): string {
   if (mode === "reactions") {
     return "Reakcje";
   }
 
   return mode.charAt(0).toUpperCase() + mode.slice(1);
+}
+
+function toDisplayTaskTitle(title: string, type: QuizQuestion["type"]): string {
+  const cleaned = title.trim();
+
+  if (!cleaned) {
+    return "";
+  }
+
+  const normalized = cleaned.toLowerCase().replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+
+  if (normalized.includes("mock") && normalized.includes("reading mc")) {
+    return "Przykładowe czytanie";
+  }
+
+  if (normalized.includes("mock") && normalized.includes("gap fill text")) {
+    return "Przykładowe uzupełnianie tekstu";
+  }
+
+  if (normalized === "reading mc") {
+    return "Czytanie";
+  }
+
+  if (normalized === "gap_fill_text") {
+    return "Uzupełnianie tekstu";
+  }
+
+  if (type !== "single_question") {
+    return cleaned.replace(/[_-]+/g, " ");
+  }
+
+  return cleaned;
 }
 
 function sanitizeWarning(value: string): string {
@@ -58,6 +98,22 @@ function resolveHintText(question: QuizQuestion | null): string {
     return "";
   }
 
+  if (question.hintText) {
+    const cleaned = question.hintText.trim();
+
+    if (cleaned.length > 0) {
+      return cleaned;
+    }
+  }
+
+  if (question.patternTip) {
+    const cleaned = question.patternTip.replace(/^pattern\s*:\s*/i, "").trim();
+
+    if (cleaned.length > 0) {
+      return cleaned;
+    }
+  }
+
   if (question.warningTip) {
     const cleaned = sanitizeWarning(question.warningTip);
 
@@ -66,13 +122,197 @@ function resolveHintText(question: QuizQuestion | null): string {
     }
   }
 
+  return "Pomysl, jaka reakcja bylaby naturalna w tym kontekscie."; /*
+
   return "Zwróć uwagę na naturalny ton reakcji i unikaj tłumaczenia dosłownego.";
+*/
 }
+
+function getAnswerableItems(question: QuizQuestion | null): AnswerableItem[] {
+  if (!question) {
+    return [];
+  }
+
+  if (question.type === "single_question") {
+    return [
+      {
+        id: question.id,
+        prompt: question.prompt,
+        options: question.options,
+      },
+    ];
+  }
+
+  return question.questions.map((item) => ({
+    id: item.id,
+    prompt: item.prompt,
+    options: item.options,
+  }));
+}
+
+function getAnswerableItemsMap(questions: QuizQuestion[]) {
+  return new Map(
+    questions.flatMap((question) =>
+      getAnswerableItems(question).map((item) => [item.id, item] as const),
+    ),
+  );
+}
+
+function isQuestionFullyAnswered(question: QuizQuestion | null, answers: Record<string, LocalAnswerState>) {
+  const items = getAnswerableItems(question);
+  return items.length > 0 && items.every((item) => Boolean(answers[item.id]));
+}
+
+function getQuestionResult(question: QuizQuestion | null, answers: Record<string, LocalAnswerState>) {
+  const items = getAnswerableItems(question);
+  const correct = items.filter((item) => answers[item.id]?.isCorrect).length;
+
+  return {
+    total: items.length,
+    correct,
+  };
+}
+
+type GapChipState = {
+  text?: string;
+  status: "empty" | "draft" | "correct" | "wrong";
+};
+
+function renderGapFillPassage(params: {
+  passage: string;
+  chipStateById: Map<string, GapChipState>;
+}) {
+  const { passage, chipStateById } = params;
+  const parts: React.ReactNode[] = [];
+  const tokenRegex = /\[(\d+)\]/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = tokenRegex.exec(passage)) !== null) {
+    const [fullMatch, tokenId] = match;
+    const textBefore = passage.slice(lastIndex, match.index);
+
+    if (textBefore) {
+      parts.push(textBefore);
+    }
+
+    const chipState = chipStateById.get(tokenId) ?? { status: "empty" as const };
+    const answeredText = chipState.text?.trim();
+
+    parts.push(
+      <span
+        key={`gap-token-${tokenId}-${match.index}`}
+        className={`mx-0.5 inline-flex min-h-[1.9rem] items-center rounded-md border px-2.5 py-0.5 align-middle text-[11px] font-semibold transition-colors xl:min-h-[2rem] ${
+          chipState.status === "correct"
+            ? "border-emerald-300/26 bg-emerald-500/10 text-emerald-50"
+            : chipState.status === "wrong"
+              ? "border-rose-300/28 bg-rose-500/10 text-rose-50"
+              : chipState.status === "draft"
+                ? "border-indigo-300/24 bg-indigo-500/[0.08] text-indigo-100/92"
+                : "border-indigo-300/20 bg-indigo-500/[0.06] text-indigo-100/92"
+        }`}
+      >
+        {answeredText ? (
+          <span className="inline-flex items-center gap-1.5">
+            <span
+              className={`font-mono text-[11px] ${
+                chipState.status === "wrong"
+                  ? "text-rose-100/72 line-through decoration-rose-300/50"
+                  : chipState.status === "correct"
+                    ? "text-emerald-100/70"
+                    : "text-indigo-100/70"
+              }`}
+            >
+              {tokenId}
+            </span>
+            <span className="truncate">{answeredText}</span>
+          </span>
+        ) : (
+          <span className="inline-flex items-end gap-1.5">
+            <span className="border-b border-dashed border-indigo-200/46 px-1 pb-[1px] text-transparent select-none">word</span>
+            <span className="translate-y-[-2px] font-mono text-[10px] text-indigo-100/74">{tokenId}</span>
+          </span>
+        )}
+      </span>,
+    );
+
+    lastIndex = match.index + fullMatch.length;
+  }
+
+  const trailingText = passage.slice(lastIndex);
+
+  if (trailingText) {
+    parts.push(trailingText);
+  }
+
+  return parts;
+}
+
+function renderGapFillReviewedOptions(params: {
+  item: AnswerableItem;
+  selectedOptionId: string | null;
+}) {
+  const { item, selectedOptionId } = params;
+  const correctOption = item.options.find((option) => option.isCorrect) ?? null;
+  const selectedOption = item.options.find((option) => option.id === selectedOptionId) ?? null;
+
+  if (!correctOption) {
+    return (
+      <AnswerList
+        options={item.options}
+        selectedOptionId={selectedOptionId}
+        correctOptionId={null}
+        hiddenOptionId={null}
+        isLocked
+        onSelect={() => {}}
+      />
+    );
+  }
+
+  const secondaryOptions = item.options.filter((option) => {
+    if (selectedOption && option.id === selectedOption.id) {
+      return false;
+    }
+
+    return option.id !== correctOption.id;
+  });
+
+  return (
+    <div className="space-y-2.5">
+      {selectedOption && selectedOption.id !== correctOption.id ? (
+        <>
+          <AnswerOption option={selectedOption} state="wrong" onSelect={() => {}} />
+          <AnswerOption option={correctOption} state="revealed_correct" onSelect={() => {}} />
+        </>
+      ) : (
+        <AnswerOption option={correctOption} state="correct" onSelect={() => {}} />
+      )}
+
+      {secondaryOptions.length > 0 ? (
+        <div className="grid grid-cols-2 gap-2">
+          {secondaryOptions.map((option) => (
+            <div
+              key={option.id}
+              className="rounded-2xl border border-white/10 bg-white/[0.018] px-3 py-4 text-center opacity-65"
+            >
+              <div className="mx-auto inline-flex h-8 min-w-[2rem] items-center justify-center rounded-md border border-indigo-300/16 bg-indigo-500/[0.08] px-2 text-xs font-semibold text-indigo-100">
+                {option.label}
+              </div>
+              <p className="mt-3 text-[0.95rem] leading-6 text-white/88">{option.text}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 
 type PersistedQuizProgress = {
   version: 1;
   currentQuestionIndex: number;
   answers: Record<string, LocalAnswerState>;
+  draftSelections: Record<string, string>;
   hintVisibleMap: Record<string, boolean>;
   hintUsedMap: Record<string, boolean>;
   fiftyFiftyUsedMap: Record<string, boolean>;
@@ -98,19 +338,6 @@ const QUIZ_ONBOARDING_STEPS: QuizOnboardingStep[] = [
     body: "Usunie jedną błędną odpowiedź i pomoże ruszyć dalej.",
   },
 ];
-
-function readInitialSoundEnabled(): boolean {
-  if (typeof window === "undefined") {
-    return true;
-  }
-
-  try {
-    return window.localStorage.getItem(QUIZ_SOUND_MUTED_STORAGE_KEY) !== "1";
-  } catch {
-    return true;
-  }
-}
-
 
 type HalftoneVariant = "quiz" | "results";
 
@@ -156,8 +383,20 @@ function QuizHalftoneBackground({ variant }: { variant: HalftoneVariant }) {
     </div>
   );
 }
+
+const RESULTS_BACKGROUND_ICONS = [
+  { Icon: Sparkles, className: "left-[8%] top-[18%] h-5 w-5 rotate-[-8deg] text-indigo-200/[0.07] blur-[1.6px]" },
+  { Icon: Languages, className: "right-[12%] top-[16%] h-5 w-5 rotate-[10deg] text-sky-100/[0.07] blur-[1.6px]" },
+  { Icon: BookOpen, className: "left-[14%] top-[34%] h-6 w-6 rotate-[-10deg] text-white/[0.07] blur-[1.8px]" },
+  { Icon: CheckCheck, className: "right-[16%] top-[33%] h-5 w-5 rotate-[8deg] text-emerald-200/[0.07] blur-[1.6px]" },
+  { Icon: Brain, className: "left-[9%] top-[56%] h-6 w-6 rotate-[-6deg] text-indigo-100/[0.07] blur-[1.8px]" },
+  { Icon: Sparkles, className: "right-[10%] top-[58%] h-4 w-4 rotate-[14deg] text-amber-100/[0.07] blur-[1.4px]" },
+  { Icon: Languages, className: "left-[18%] bottom-[16%] h-5 w-5 rotate-[6deg] text-white/[0.07] blur-[1.6px]" },
+  { Icon: BookOpen, className: "right-[18%] bottom-[18%] h-6 w-6 rotate-[-12deg] text-indigo-100/[0.07] blur-[1.8px]" },
+];
+
 function buildSummaryFromLocal(questions: QuizQuestion[], answers: Record<string, LocalAnswerState>): QuizSummary {
-  const totalQuestions = questions.length;
+  const totalQuestions = questions.reduce((sum, question) => sum + getAnswerableItems(question).length, 0);
 
   let correctAnswers = 0;
   const areaStats: Record<string, { total: number; correct: number }> = {};
@@ -165,13 +404,16 @@ function buildSummaryFromLocal(questions: QuizQuestion[], answers: Record<string
   for (const question of questions) {
     const area = question.category || "Reakcje";
     const current = areaStats[area] ?? { total: 0, correct: 0 };
-    current.total += 1;
+    const items = getAnswerableItems(question);
+    current.total += items.length;
 
-    const answer = answers[question.id];
+    for (const item of items) {
+      const answer = answers[item.id];
 
-    if (answer?.isCorrect) {
-      correctAnswers += 1;
-      current.correct += 1;
+      if (answer?.isCorrect) {
+        correctAnswers += 1;
+        current.correct += 1;
+      }
     }
 
     areaStats[area] = current;
@@ -242,6 +484,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   const [mode, setMode] = useState(initialMode);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, LocalAnswerState>>({});
+  const [draftSelections, setDraftSelections] = useState<Record<string, string>>({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [isLocked, setIsLocked] = useState(false);
@@ -261,7 +504,9 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   const [isAuthenticatedUser, setIsAuthenticatedUser] = useState<boolean | null>(null);
   const [reviewModeActive, setReviewModeActive] = useState(initialReviewMode);
   const [isCompletedSession, setIsCompletedSession] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(readInitialSoundEnabled);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [taskValidationMessage, setTaskValidationMessage] = useState<string | null>(null);
+  const [translatedPassageMap, setTranslatedPassageMap] = useState<Record<string, boolean>>({});
 
   const answersRef = useRef<Record<string, LocalAnswerState>>({});
   const failedSavesRef = useRef<Record<string, SaveAnswerPayload>>({});
@@ -327,20 +572,22 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       }
 
       const questionById = new Map(nextQuestions.map((question) => [question.id, question]));
+      const answerableItems = getAnswerableItemsMap(nextQuestions);
       const sanitizedAnswers: Record<string, LocalAnswerState> = {};
+      const sanitizedDraftSelections: Record<string, string> = {};
 
       const rawAnswers = parsed.answers ?? {};
 
       for (const [questionId, answer] of Object.entries(rawAnswers)) {
-        const question = questionById.get(questionId);
+        const item = answerableItems.get(questionId);
 
-        if (!question || !answer || typeof answer !== "object") {
+        if (!item || !answer || typeof answer !== "object") {
           continue;
         }
 
         const selectedOptionId = typeof answer.selectedOptionId === "string" ? answer.selectedOptionId : "";
 
-        if (!selectedOptionId || !question.options.some((option) => option.id === selectedOptionId)) {
+        if (!selectedOptionId || !item.options.some((option) => option.id === selectedOptionId)) {
           continue;
         }
 
@@ -352,6 +599,20 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
           isCorrect: Boolean(answer.isCorrect),
           saveState,
         };
+      }
+
+      for (const [questionId, selectedOptionId] of Object.entries(parsed.draftSelections ?? {})) {
+        const item = answerableItems.get(questionId);
+
+        if (!item || typeof selectedOptionId !== "string") {
+          continue;
+        }
+
+        if (!item.options.some((option) => option.id === selectedOptionId)) {
+          continue;
+        }
+
+        sanitizedDraftSelections[questionId] = selectedOptionId;
       }
 
       const sanitizeBooleanMap = (map: Record<string, unknown> | undefined) => {
@@ -375,7 +636,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       for (const [questionId, value] of Object.entries((parsed.hiddenOptionMap ?? {}) as Record<string, unknown>)) {
         const question = questionById.get(questionId);
 
-        if (!question) {
+        if (!question || question.type !== "single_question") {
           continue;
         }
 
@@ -400,6 +661,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
         version: 1,
         currentQuestionIndex: safeIndex,
         answers: sanitizedAnswers,
+        draftSelections: sanitizedDraftSelections,
         hintVisibleMap: sanitizedHintVisibleMap,
         hintUsedMap: sanitizedHintUsedMap,
         fiftyFiftyUsedMap: sanitizedFiftyMap,
@@ -450,18 +712,50 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   const currentQuestion = questions[currentQuestionIndex] ?? null;
   const totalQuestions = questions.length;
   const safeCurrent = totalQuestions > 0 ? currentQuestionIndex + 1 : 0;
+  const currentItems = useMemo(() => getAnswerableItems(currentQuestion), [currentQuestion]);
+  const currentTaskResult = useMemo(() => getQuestionResult(currentQuestion, answers), [answers, currentQuestion]);
+  const currentTaskAnswered = useMemo(() => isQuestionFullyAnswered(currentQuestion, answers), [answers, currentQuestion]);
+  const currentQuestionPassed = currentTaskResult.total > 0 && currentTaskResult.correct === currentTaskResult.total;
+  const currentQuestionSaveStates = currentItems
+    .map((item) => answers[item.id]?.saveState)
+    .filter((value): value is LocalAnswerState["saveState"] => Boolean(value));
+  const currentQuestionSaveState =
+    currentQuestionSaveStates.includes("error")
+      ? "error"
+      : currentQuestionSaveStates.includes("pending")
+        ? "pending"
+        : currentQuestionSaveStates.length > 0
+          ? "saved"
+          : null;
 
   const correctOptionId = useMemo(
-    () => currentQuestion?.options.find((option) => option.isCorrect)?.id ?? null,
+    () => (currentQuestion?.type === "single_question" ? currentQuestion.options.find((option) => option.isCorrect)?.id ?? null : null),
     [currentQuestion],
   );
 
-  const currentAnswer = currentQuestion ? answers[currentQuestion.id] : undefined;
+  const currentAnswer = currentQuestion?.type === "single_question" ? answers[currentQuestion.id] : undefined;
   const currentHintVisible = currentQuestion ? Boolean(hintVisibleMap[currentQuestion.id]) : false;
   const currentHintUsed = currentQuestion ? Boolean(hintUsedMap[currentQuestion.id]) : false;
   const currentFiftyFiftyUsed = currentQuestion ? Boolean(fiftyFiftyUsedMap[currentQuestion.id]) : false;
   const currentHiddenOptionId = currentQuestion ? hiddenOptionMap[currentQuestion.id] ?? null : null;
   const currentHintText = useMemo(() => resolveHintText(currentQuestion), [currentQuestion]);
+  const showTranslatedPassage =
+    currentQuestion !== null &&
+    currentQuestion.type !== "single_question" &&
+    Boolean(currentQuestion.passageTranslation) &&
+    translatedPassageMap[currentQuestion.id] === true;
+  const currentDisplayedPassage =
+    currentQuestion && currentQuestion.type !== "single_question"
+      ? showTranslatedPassage && currentQuestion.passageTranslation
+        ? currentQuestion.passageTranslation
+        : currentQuestion.passage
+      : null;
+  const alternateDisplayedPassage =
+    currentQuestion && currentQuestion.type !== "single_question" && currentQuestion.passageTranslation
+      ? showTranslatedPassage
+        ? currentQuestion.passage
+        : currentQuestion.passageTranslation
+      : null;
 
   const summary = useMemo(() => {
     return buildSummaryFromLocal(questions, answers);
@@ -473,7 +767,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       return 0;
     }
 
-    const firstUnanswered = questions.findIndex((question) => !answers[question.id]);
+    const firstUnanswered = questions.findIndex((question) => !isQuestionFullyAnswered(question, answers));
     return firstUnanswered === -1 ? questions.length - 1 : firstUnanswered;
   }, [answers, questions]);
 
@@ -487,13 +781,12 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
         return "current";
       }
 
-      const answer = answers[question.id];
-
-      if (!answer) {
+      if (!isQuestionFullyAnswered(question, answers)) {
         return "idle";
       }
 
-      return answer.isCorrect ? "correct" : "wrong";
+      const result = getQuestionResult(question, answers);
+      return result.total > 0 && result.correct === result.total ? "correct" : "wrong";
     });
   }, [answers, currentQuestionIndex, questions]);
 
@@ -505,22 +798,26 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
 
       const boundedIndex = Math.max(0, Math.min(questions.length - 1, rawIndex));
       const nextQuestion = questions[boundedIndex];
-      const existingAnswer = answersRef.current[nextQuestion.id];
+      const nextItems = getAnswerableItems(nextQuestion);
+      const existingAnswer = nextItems[0] ? answersRef.current[nextItems[0].id] : undefined;
+      const fullyAnswered = isQuestionFullyAnswered(nextQuestion, answersRef.current);
+      const result = getQuestionResult(nextQuestion, answersRef.current);
 
       setCurrentQuestionIndex(boundedIndex);
+      setTaskValidationMessage(null);
 
-      if (existingAnswer) {
-        setSelectedOptionId(existingAnswer.selectedOptionId);
+      if (fullyAnswered) {
+        setSelectedOptionId(existingAnswer?.selectedOptionId ?? null);
         setIsLocked(true);
-        setSessionStatus(existingAnswer.isCorrect ? "answered_correct" : "answered_incorrect");
+        setSessionStatus(result.total > 0 && result.correct === result.total ? "answered_correct" : "answered_incorrect");
         return;
       }
 
-      setSelectedOptionId(null);
+      setSelectedOptionId(nextItems[0] ? draftSelections[nextItems[0].id] ?? null : null);
       setIsLocked(false);
       setSessionStatus("idle");
     },
-    [questions],
+    [draftSelections, questions],
   );
 
   const markSaveState = useCallback((questionId: string, saveState: LocalAnswerState["saveState"]) => {
@@ -647,6 +944,8 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     setElapsedSeconds(0);
     setIsTimerStoppedAfterLastAnswer(false);
     setHasStartedQuizInteraction(false);
+    setDraftSelections({});
+    setTaskValidationMessage(null);
     setReviewModeActive(initialReviewMode);
     setIsCompletedSession(false);
     completionSoundPlayedRef.current = false;
@@ -684,11 +983,14 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
 
       if (!response.ok) {
         const message = typeof payload.error === "string" && payload.error.trim().length > 0
-          ? payload.error
+          ? payload.details && payload.details.trim().length > 0
+            ? `${payload.error} ${payload.details}`
+            : payload.error
           : "Nie uda\u0142o si\u0119 pobra\u0107 pyta\u0144.";
-      if (typeof payload.details === "string" && payload.details.trim().length > 0) {
-        console.warn("Quiz hydrate details:", payload.details);
-      }
+
+        if (typeof payload.details === "string" && payload.details.trim().length > 0) {
+          console.warn("Quiz hydrate details:", payload.details);
+        }
 
         throw new Error(message);
       }
@@ -702,19 +1004,19 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       setMode(typeof data.mode === "string" ? data.mode : initialMode);
       setQuestions(data.questions);
 
-      const questionById = new Map(data.questions.map((question) => [question.id, question]));
+      const answerableItems = getAnswerableItemsMap(data.questions);
       const persistedProgress = readPersistedProgress(data.questions);
       const hydratedAnswers: Record<string, LocalAnswerState> = {};
       const answerList = Array.isArray(data.answers) ? data.answers : [];
 
       for (const answer of answerList) {
-        const question = questionById.get(answer.questionId);
+        const item = answerableItems.get(answer.questionId);
 
-        if (!question) {
+        if (!item) {
           continue;
         }
 
-        if (!question.options.some((option) => option.id === answer.selectedOptionId)) {
+        if (!item.options.some((option) => option.id === answer.selectedOptionId)) {
           continue;
         }
 
@@ -746,6 +1048,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
 
       answersRef.current = mergedAnswers;
       setAnswers(mergedAnswers);
+      setDraftSelections(persistedProgress?.draftSelections ?? {});
 
       const restoredHintVisible = persistedProgress?.hintVisibleMap ?? {};
       const restoredHintUsed = persistedProgress?.hintUsedMap ?? {};
@@ -775,7 +1078,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       inFlightSavesRef.current = {};
       setFailedSaveCount(Object.keys(queuedFailedSaves).length);
 
-      const allAnswered = data.questions.every((question) => Boolean(mergedAnswers[question.id]));
+      const allAnswered = data.questions.every((question) => isQuestionFullyAnswered(question, mergedAnswers));
       const completedFromPayload = data.status === "completed" || allAnswered;
       const shouldStartInReview = initialReviewMode || Boolean(persistedProgress?.reviewModeActive);
 
@@ -789,7 +1092,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       } else if (completedFromPayload) {
         targetIndex = Math.max(data.questions.length - 1, 0);
       } else {
-        const firstUnansweredIndex = data.questions.findIndex((question) => !mergedAnswers[question.id]);
+        const firstUnansweredIndex = data.questions.findIndex((question) => !isQuestionFullyAnswered(question, mergedAnswers));
         const fallbackIndex = firstUnansweredIndex === -1 ? Math.max(data.questions.length - 1, 0) : firstUnansweredIndex;
 
         if (persistedProgress) {
@@ -802,19 +1105,23 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       targetIndex = Math.max(0, Math.min(data.questions.length - 1, targetIndex));
 
       const targetQuestion = data.questions[targetIndex];
-      const targetAnswer = targetQuestion ? mergedAnswers[targetQuestion.id] : undefined;
+      const targetItems = getAnswerableItems(targetQuestion);
+      const targetAnswer = targetItems[0] ? mergedAnswers[targetItems[0].id] : undefined;
+      const targetAnswered = targetQuestion ? isQuestionFullyAnswered(targetQuestion, mergedAnswers) : false;
+      const targetResult = targetQuestion ? getQuestionResult(targetQuestion, mergedAnswers) : { correct: 0, total: 0 };
 
       setCurrentQuestionIndex(targetIndex);
+      setTaskValidationMessage(null);
 
       if (completedFromPayload && !shouldStartInReview) {
         setSelectedOptionId(targetAnswer?.selectedOptionId ?? null);
-        setIsLocked(Boolean(targetAnswer));
+        setIsLocked(targetAnswered);
         setSessionStatus("finished");
         didCompleteRef.current = true;
-      } else if (targetAnswer) {
-        setSelectedOptionId(targetAnswer.selectedOptionId);
+      } else if (targetAnswered) {
+        setSelectedOptionId(targetAnswer?.selectedOptionId ?? null);
         setIsLocked(true);
-        setSessionStatus(targetAnswer.isCorrect ? "answered_correct" : "answered_incorrect");
+        setSessionStatus(targetResult.total > 0 && targetResult.correct === targetResult.total ? "answered_correct" : "answered_incorrect");
         didCompleteRef.current = false;
       } else {
         setSelectedOptionId(null);
@@ -825,6 +1132,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
 
       const hasAnyInteraction =
         Object.keys(mergedAnswers).length > 0 ||
+        Object.keys(persistedProgress?.draftSelections ?? {}).length > 0 ||
         Object.keys(restoredHintUsed).length > 0 ||
         Object.keys(restoredFiftyUsed).length > 0;
 
@@ -840,6 +1148,18 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   useEffect(() => {
     void hydrateSession();
   }, [hydrateSession]);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      setSoundEnabled(window.localStorage.getItem(QUIZ_SOUND_MUTED_STORAGE_KEY) !== "1");
+    } catch {
+      setSoundEnabled(true);
+    }
+  }, []);
+
   useEffect(() => {
     quizSoundManager.setEnabled(soundEnabled);
 
@@ -874,6 +1194,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       version: 1,
       currentQuestionIndex,
       answers,
+      draftSelections,
       hintVisibleMap,
       hintUsedMap,
       fiftyFiftyUsedMap,
@@ -884,6 +1205,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   }, [
     answers,
     currentQuestionIndex,
+    draftSelections,
     fiftyFiftyUsedMap,
     hiddenOptionMap,
     hintUsedMap,
@@ -1029,7 +1351,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   }, [flushFailedSaves]);
 
   const handleSelectOption = (optionId: string) => {
-    if (!currentQuestion || isLocked || reviewModeActive) {
+    if (!currentQuestion || currentQuestion.type !== "single_question" || isLocked || reviewModeActive) {
       return;
     }
 
@@ -1041,6 +1363,27 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       return;
     }
 
+    setHasStartedQuizInteraction(true);
+    setSelectedOptionId(optionId);
+    setTaskValidationMessage(null);
+    setDraftSelections((prev) => ({
+      ...prev,
+      [currentQuestion.id]: optionId,
+    }));
+  };
+
+  const handleCheckSingleQuestion = () => {
+    if (!currentQuestion || currentQuestion.type !== "single_question" || isLocked || reviewModeActive) {
+      return;
+    }
+
+    const optionId = selectedOptionId ?? draftSelections[currentQuestion.id] ?? null;
+
+    if (!optionId) {
+      setTaskValidationMessage("Zaznacz odpowiedź, aby sprawdzić to pytanie.");
+      return;
+    }
+
     const chosenOption = currentQuestion.options.find((option) => option.id === optionId);
 
     if (!chosenOption) {
@@ -1048,7 +1391,9 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     }
 
     registerSoundInteraction();
+    playClickSound();
     playFeedbackSound(chosenOption.isCorrect);
+    setTaskValidationMessage(null);
 
     const localAnswer: LocalAnswerState = {
       questionId: currentQuestion.id,
@@ -1083,6 +1428,96 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     saveAnswerInBackground(savePayload);
   };
 
+  const handleSelectGroupedOption = (itemId: string, optionId: string) => {
+    if (!currentQuestion || currentQuestion.type === "single_question" || isLocked || reviewModeActive) {
+      return;
+    }
+
+    const item = currentItems.find((entry) => entry.id === itemId);
+
+    if (!item) {
+      return;
+    }
+
+    if (!item.options.some((option) => option.id === optionId)) {
+      return;
+    }
+
+    registerSoundInteraction();
+    playClickSound();
+    setHasStartedQuizInteraction(true);
+    setTaskValidationMessage(null);
+
+    setDraftSelections((prev) => ({
+      ...prev,
+      [itemId]: optionId,
+    }));
+  };
+
+  const handleCheckGroupedQuestion = () => {
+    if (!currentQuestion || currentQuestion.type === "single_question" || isLocked || reviewModeActive) {
+      return;
+    }
+
+    const missingItems = currentItems.filter((item) => !draftSelections[item.id]);
+
+    if (missingItems.length > 0) {
+      setTaskValidationMessage("Zaznacz odpowiedź przy każdym podpunkcie.");
+      return;
+    }
+
+    registerSoundInteraction();
+    playClickSound();
+    setHasStartedQuizInteraction(true);
+    setTaskValidationMessage(null);
+
+    const nextAnswers: Record<string, LocalAnswerState> = { ...answersRef.current };
+    const savePayloads: SaveAnswerPayload[] = [];
+    let correctCount = 0;
+
+    for (const item of currentItems) {
+      const selectedOptionId = draftSelections[item.id];
+      const selectedOption = item.options.find((option) => option.id === selectedOptionId);
+
+      if (!selectedOptionId || !selectedOption) {
+        continue;
+      }
+
+      const localAnswer: LocalAnswerState = {
+        questionId: item.id,
+        selectedOptionId,
+        isCorrect: selectedOption.isCorrect,
+        saveState: "pending",
+      };
+
+      nextAnswers[item.id] = localAnswer;
+      failedSavesRef.current[item.id] = {
+        questionId: item.id,
+        optionId: selectedOptionId,
+        isCorrect: selectedOption.isCorrect,
+      };
+      savePayloads.push(failedSavesRef.current[item.id]);
+
+      if (selectedOption.isCorrect) {
+        correctCount += 1;
+      }
+    }
+
+    answersRef.current = nextAnswers;
+    setAnswers(nextAnswers);
+    setIsLocked(true);
+    setSelectedOptionId(null);
+    setSessionStatus(correctCount === currentItems.length ? "answered_correct" : "answered_incorrect");
+    setIsTimerStoppedAfterLastAnswer(currentQuestionIndex >= totalQuestions - 1);
+    setFailedSaveCount(Object.keys(failedSavesRef.current).length);
+
+    playFeedbackSound(correctCount === currentItems.length);
+
+    for (const payload of savePayloads) {
+      saveAnswerInBackground(payload);
+    }
+  };
+
   const handleToggleHint = () => {
     if (!currentQuestion || isLocked || reviewModeActive) {
       return;
@@ -1102,7 +1537,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     }));
   };
   const handleUseFiftyFifty = () => {
-    if (!currentQuestion || isLocked || reviewModeActive || fiftyFiftyUsedMap[currentQuestion.id]) {
+    if (!currentQuestion || currentQuestion.type !== "single_question" || isLocked || reviewModeActive || fiftyFiftyUsedMap[currentQuestion.id]) {
       return;
     }
 
@@ -1219,7 +1654,43 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   }, [reviewModeActive, sessionStatus]);
 
   const isLastQuestion = currentQuestionIndex >= totalQuestions - 1;
-  const canGoNext = reviewModeActive ? totalQuestions > 0 : isLocked;
+  const currentTaskReadyToCheck = useMemo(() => {
+    if (!currentQuestion) {
+      return false;
+    }
+
+    if (currentQuestion.type === "single_question") {
+      return Boolean(selectedOptionId ?? draftSelections[currentQuestion.id]);
+    }
+
+    return currentItems.length > 0 && currentItems.every((item) => Boolean(draftSelections[item.id]));
+  }, [currentItems, currentQuestion, draftSelections, selectedOptionId]);
+
+  const footerActionLabel = reviewModeActive
+    ? isLastQuestion
+      ? "Zobacz podsumowanie"
+      : "Dalej"
+    : isLocked
+      ? isLastQuestion
+        ? "Zobacz podsumowanie"
+        : "Dalej"
+      : "Sprawdź";
+
+  const canFooterAct = reviewModeActive ? totalQuestions > 0 : isLocked || currentTaskReadyToCheck;
+
+  const handleFooterPrimaryAction = () => {
+    if (reviewModeActive || isLocked) {
+      handleNext();
+      return;
+    }
+
+    if (currentQuestion?.type === "single_question") {
+      handleCheckSingleQuestion();
+      return;
+    }
+
+    handleCheckGroupedQuestion();
+  };
 
   const footerHelperText = useMemo(() => {
     if (reviewModeActive) {
@@ -1231,6 +1702,10 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     }
 
     if (!isLocked) {
+      if (currentQuestion?.type !== "single_question") {
+        return "Najpierw zaznacz wszystkie podpunkty i kliknij Sprawdz.";
+      }
+
       if (isLastQuestion) {
         return "Najpierw wybierz odpowiedź, aby zobaczyć podsumowanie.";
       }
@@ -1239,7 +1714,31 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     }
 
     return undefined;
-  }, [isLastQuestion, isLocked, reviewModeActive]);
+  }, [currentQuestion, isLastQuestion, isLocked, reviewModeActive]);
+
+  const effectiveFooterHelperText = useMemo(() => {
+    if (reviewModeActive) {
+      if (isLastQuestion) {
+        return "Koniec przeglądu. Przejdź do podsumowania.";
+      }
+
+      return "Tryb przeglądu: sprawdzaj wszystkie pytania po kolei.";
+    }
+
+    if (!isLocked) {
+      if (currentQuestion?.type === "single_question") {
+        if (isLastQuestion) {
+          return "Zaznacz odpowiedź i kliknij Sprawdź, aby zobaczyć podsumowanie.";
+        }
+
+        return "Zaznacz odpowiedź i kliknij Sprawdź.";
+      }
+
+      return "Zaznacz wszystkie podpunkty i kliknij Sprawdź.";
+    }
+
+    return undefined;
+  }, [currentQuestion, isLastQuestion, isLocked, reviewModeActive]);
   if (isLoading) {
     return (
       <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_50%_-12%,rgba(79,70,229,0.18),rgba(5,5,16,1)_46%)] text-white">
@@ -1292,9 +1791,16 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
 
   if (sessionStatus === "finished" && !reviewModeActive) {
     return (
-      <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_50%_-12%,rgba(79,70,229,0.18),rgba(5,5,16,1)_46%)] text-white">
+      <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(ellipse_80%_25%_at_50%_0%,#1e1a6020_0%,transparent_100%),#0C0E1A] text-white">
         <QuizHalftoneBackground variant="results" />
-        <div className="mx-auto w-full max-w-[1300px] px-4 pb-10 md:px-6 xl:px-8">
+        <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute inset-x-[10%] top-[38%] h-[24px] bg-[radial-gradient(ellipse_at_center,rgba(52,211,153,0.22)_0%,rgba(52,211,153,0.09)_34%,transparent_72%)] blur-2xl" />
+          <div className="absolute inset-x-[10%] top-[calc(38%+18px)] h-[24px] bg-[radial-gradient(ellipse_at_center,rgba(251,191,36,0.2)_0%,rgba(251,191,36,0.09)_34%,transparent_72%)] blur-2xl" />
+          {RESULTS_BACKGROUND_ICONS.map(({ Icon, className }, index) => (
+            <Icon key={`results-icon-${index}`} className={`absolute ${className}`} strokeWidth={1.8} />
+          ))}
+        </div>
+        <div className="mx-auto w-full max-w-[1300px] px-4 pb-8 md:px-6 xl:px-8">
           <ResultsHeader backHref="/e8" />
           <QuizSummaryCard summary={summary} sessionId={sessionId} mode={mode} />
         </div>
@@ -1306,7 +1812,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   const desktopHelperText =
     footerHelperText ??
     (failedSaveCount <= 0
-      ? "Natychmiastowy feedback, zapis w tle."
+      ? ""
       : failedSaveCount === 1
         ? "1 odpowiedź czeka na synchronizację."
         : `${failedSaveCount} odpowiedzi czekają na synchronizację.`);
@@ -1314,7 +1820,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_50%_-12%,rgba(79,70,229,0.18),rgba(5,5,16,1)_46%)] text-white">
         <QuizHalftoneBackground variant="quiz" />
-      <div className="mx-auto w-full max-w-[1300px] px-4 pb-36 md:px-6 xl:px-8 xl:pb-16">
+      <div className="mx-auto w-full max-w-[1300px] px-4 pb-44 md:px-6 xl:px-8 xl:pb-16">
         <div className="xl:mx-auto xl:max-w-[1120px]">
           <QuizHeader modeLabel={toModeLabel(mode)} current={safeCurrent} total={totalQuestions} elapsedSeconds={reviewModeActive ? undefined : elapsedSeconds} soundEnabled={soundEnabled} onToggleSound={toggleSound} />
 
@@ -1325,14 +1831,103 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
               </div>
 
               <section data-onboarding-target="question-area" className="mt-2.5 rounded-2xl border border-indigo-300/18 bg-[radial-gradient(circle_at_50%_100%,rgba(99,102,241,0.2),rgba(12,15,36,0.95)_44%,rgba(6,8,18,0.98)_100%)] px-4 py-4 shadow-[0_24px_38px_-30px_rgba(99,102,241,0.58)] xl:mt-0 xl:px-5 xl:py-5">
-                <QuestionCard category={currentQuestion.category} prompt={currentQuestion.prompt} />
+                {currentQuestion.type === "single_question" ? (
+                  <QuestionCard category={currentQuestion.category} prompt={currentQuestion.prompt} />
+                ) : (
+                  <section className={`space-y-4 xl:space-y-4 ${currentQuestion.type === "gap_fill_text" ? "xl:max-w-[700px]" : "xl:max-w-[720px]"}`}>
+                    <div>
+                      <p className="text-[10px] font-semibold tracking-[0.14em] text-indigo-100/58 uppercase xl:text-[11px]">{currentQuestion.category}</p>
+                      {currentQuestion.title ? (
+                        <h1 className="mt-2 text-[1.08rem] leading-7 font-semibold tracking-[-0.01em] text-white xl:mt-2 xl:text-[1.22rem] xl:leading-8">
+                          {toDisplayTaskTitle(currentQuestion.title, currentQuestion.type)}
+                        </h1>
+                      ) : null}
+                      <div
+                        className={`mt-3 text-white/92 ${
+                          currentQuestion.type === "gap_fill_text"
+                            ? "rounded-[1.2rem] border border-white/[0.08] bg-white/[0.02] px-3.5 py-3.5 text-[0.98rem] leading-[1.72] xl:px-4 xl:py-3.5 xl:text-[1.04rem] xl:leading-8"
+                            : "border-l-2 border-l-indigo-300/40 pl-3.5 text-[1rem] leading-[1.72] xl:pl-4 xl:text-[1rem] xl:leading-7"
+                        }`}
+                      >
+                        {currentQuestion.type === "gap_fill_text" ? (
+                          <div className="max-w-[62ch] whitespace-pre-line text-justify">
+                            {renderGapFillPassage({
+                              passage: currentDisplayedPassage ?? currentQuestion.passage,
+                              chipStateById: new Map(
+                                currentItems.flatMap((item) => {
+                                  const selectedOptionId = answers[item.id]?.selectedOptionId ?? draftSelections[item.id];
+                                  const selectedOption = item.options.find((option) => option.id === selectedOptionId);
 
-                <QuizUtilityRow
-                  fiftyFiftyUsed={currentFiftyFiftyUsed}
-                  disabled={isLocked || reviewModeActive}
-                  onHintToggle={handleToggleHint}
-                  onUseFiftyFifty={handleUseFiftyFifty}
-                />
+                                  if (!selectedOption) {
+                                    return [];
+                                  }
+
+                                  const savedAnswer = answers[item.id];
+
+                                  return [[
+                                    item.id,
+                                    {
+                                      text: selectedOption.text,
+                                      status: savedAnswer
+                                        ? savedAnswer.isCorrect
+                                          ? "correct"
+                                          : "wrong"
+                                        : "draft",
+                                    },
+                                  ] as const];
+                                }),
+                              ),
+                            })}
+                          </div>
+                        ) : (
+                          <div className="grid">
+                            <div className="col-start-1 row-start-1 max-w-[62ch] whitespace-pre-line text-justify">
+                              {currentDisplayedPassage ?? currentQuestion.passage}
+                            </div>
+                            {alternateDisplayedPassage ? (
+                              <div
+                                aria-hidden="true"
+                                className="invisible col-start-1 row-start-1 max-w-[62ch] whitespace-pre-line text-justify"
+                              >
+                                {alternateDisplayedPassage}
+                              </div>
+                            ) : null}
+                          </div>
+                        )}
+                      </div>
+                      {currentQuestion.type === "gap_fill_text" ? (
+                        <p className="mt-2 text-[11px] leading-5 text-indigo-100/62 xl:text-xs">
+                          Spójrz na luki w tekście i wybierz odpowiedź do każdej z nich poniżej.
+                        </p>
+                      ) : null}
+                    </div>
+
+                  </section>
+                )}
+
+                {currentQuestion.type === "single_question" ? (
+                  <QuizUtilityRow
+                    fiftyFiftyUsed={currentFiftyFiftyUsed}
+                    disabled={isLocked || reviewModeActive}
+                    onHintToggle={handleToggleHint}
+                    onUseFiftyFifty={handleUseFiftyFifty}
+                  />
+                ) : currentQuestion.passageTranslation ? (
+                  <section className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTranslatedPassageMap((prev) => ({
+                          ...prev,
+                          [currentQuestion.id]: !prev[currentQuestion.id],
+                        }));
+                      }}
+                      className="inline-flex h-8 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.03] px-3 text-[11px] font-medium text-white/62 transition-colors hover:bg-white/[0.05] hover:text-white/82"
+                    >
+                      {showTranslatedPassage ? "Pokaż po angielsku" : "Pokaż po polsku"}
+                    </button>
+                  </section>
+                ) : null}
               </section>
 
               <div
@@ -1345,19 +1940,111 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                     currentHintVisible && currentHintUsed ? "translate-y-0" : "-translate-y-1"
                   }`}
                 >
-                  <span className="mr-1 text-[10px] font-bold tracking-[0.12em] text-indigo-200/85 uppercase">Uwaga</span>
+                  <span className="mr-1 text-[10px] font-bold tracking-[0.12em] text-indigo-200/85 uppercase">Wskazowka</span>
                   {currentHintText}
                 </div>
               </div>
 
-              <AnswerList
-                options={currentQuestion.options}
-                selectedOptionId={selectedOptionId}
-                correctOptionId={correctOptionId}
-                hiddenOptionId={currentHiddenOptionId}
-                isLocked={isLocked || reviewModeActive}
-                onSelect={handleSelectOption}
-              />
+              {currentQuestion.type === "single_question" ? (
+                <AnswerList
+                  options={currentQuestion.options}
+                  selectedOptionId={selectedOptionId}
+                  correctOptionId={correctOptionId}
+                  hiddenOptionId={currentHiddenOptionId}
+                  isLocked={isLocked || reviewModeActive}
+                  onSelect={handleSelectOption}
+                />
+              ) : (
+                <section className={`mt-3 space-y-2.5 xl:mt-5 ${currentQuestion.type === "gap_fill_text" ? "xl:max-w-[720px]" : ""}`}>
+                  {currentItems.map((item, index) => {
+                    const savedAnswer = answers[item.id];
+                    const selectedOptionIdForItem = savedAnswer?.selectedOptionId ?? draftSelections[item.id] ?? null;
+                    const correctOptionIdForItem = item.options.find((option) => option.isCorrect)?.id ?? null;
+                    const isAnswered = Boolean(selectedOptionIdForItem);
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`rounded-[1.35rem] border px-3 py-3 xl:px-4 xl:py-3.5 ${
+                          currentQuestion.type === "gap_fill_text"
+                            ? savedAnswer
+                              ? savedAnswer.isCorrect
+                                ? "border-emerald-300/45 bg-[linear-gradient(180deg,rgba(34,197,94,0.05),rgba(255,255,255,0.02))]"
+                                : "border-rose-300/40 bg-[linear-gradient(180deg,rgba(248,113,113,0.05),rgba(255,255,255,0.02))]"
+                              : isAnswered
+                                ? "border-indigo-300/20 bg-[linear-gradient(180deg,rgba(99,102,241,0.08),rgba(255,255,255,0.025))]"
+                                : "border-white/10 bg-white/[0.02]"
+                            : "border-white/10 bg-white/[0.02]"
+                        }`}
+                      >
+                        <div className="mb-2.5 flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                              {currentQuestion.type === "gap_fill_text" ? (
+                                <>
+                                  <span className="text-[13px] font-medium text-indigo-100/84">Luka {index + 1}</span>
+                                </>
+                              ) : (
+                                <span className="text-[11px] font-semibold tracking-[0.14em] text-indigo-200/68 uppercase">
+                                  Pytanie {index + 1}
+                                </span>
+                              )}
+                            </div>
+                            {currentQuestion.type === "gap_fill_text" ? null : (
+                              <p className="text-[0.94rem] leading-6 font-semibold text-white xl:text-[1rem] xl:leading-7">
+                                {`${index + 1}. ${item.prompt}`}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {currentQuestion.type === "gap_fill_text" && savedAnswer ? (
+                          renderGapFillReviewedOptions({
+                            item,
+                            selectedOptionId: selectedOptionIdForItem,
+                          })
+                        ) : (
+                          <AnswerList
+                            options={item.options}
+                            selectedOptionId={selectedOptionIdForItem}
+                            correctOptionId={correctOptionIdForItem}
+                            hiddenOptionId={null}
+                            isLocked={Boolean(savedAnswer) || reviewModeActive}
+                            onSelect={(optionId) => {
+                              handleSelectGroupedOption(item.id, optionId);
+                            }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+
+                </section>
+              )}
+
+              {!isLocked && !reviewModeActive && taskValidationMessage ? (
+                <p className="mt-3 text-sm text-amber-200">{taskValidationMessage}</p>
+              ) : null}
+
+              {currentQuestion.type !== "single_question" && currentTaskAnswered ? (
+                <div className="xl:hidden">
+                  <ExplanationPanel
+                    isCorrect={currentQuestionPassed}
+                    explanation={currentQuestion.explanation}
+                    patternTip={currentQuestion.patternTip}
+                    warningTip={currentQuestion.warningTip}
+                  />
+                  <p className="mt-1.5 text-xs text-indigo-100/70">
+                    {currentQuestionSaveState === "pending"
+                      ? pendingSaveCount > 0
+                        ? "Odpowiedz dodana lokalnie. Synchronizacja trwa w tle."
+                        : "Zapisywanie odpowiedzi..."
+                      : currentQuestionSaveState === "error"
+                        ? "Brak polaczenia. Odpowiedz zostanie wyslana ponownie automatycznie."
+                        : "Odpowiedz zapisana."}
+                  </p>
+                </div>
+              ) : null}
 
               {currentAnswer ? (
                 <div className="xl:hidden">
@@ -1405,15 +2092,35 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
 
                   <button
                     type="button"
-                    onClick={handleNext}
-                    disabled={!canGoNext || sessionStatus === "loading_next"}
+                    onClick={handleFooterPrimaryAction}
+                    disabled={!canFooterAct || sessionStatus === "loading_next"}
                     className="mt-4 w-full rounded-2xl bg-gradient-to-r from-indigo-500 to-blue-500 py-3.5 text-base font-semibold text-white shadow-[0_14px_34px_-22px_rgba(59,130,246,0.8)] transition-all duration-150 active:scale-[0.992] disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    {sessionStatus === "loading_next" ? "Ładowanie..." : isLastQuestion ? "Zobacz podsumowanie" : "Dalej"}
+                    {sessionStatus === "loading_next" ? "Ładowanie..." : footerActionLabel}
                   </button>
 
-                  <p className="mt-1.5 text-center text-[11px] text-indigo-100/68">{desktopHelperText}</p>
+                  <p className="mt-1.5 text-center text-[11px] text-indigo-100/68">{effectiveFooterHelperText ?? desktopHelperText}</p>
                 </section>
+
+                {currentQuestion.type !== "single_question" && currentTaskAnswered ? (
+                  <section>
+                    <ExplanationPanel
+                      isCorrect={currentQuestionPassed}
+                      explanation={currentQuestion.explanation}
+                      patternTip={currentQuestion.patternTip}
+                      warningTip={currentQuestion.warningTip}
+                    />
+                    <p className="mt-1.5 text-[12px] text-indigo-100/70">
+                      {currentQuestionSaveState === "pending"
+                        ? pendingSaveCount > 0
+                          ? "Odpowiedz dodana lokalnie. Synchronizacja trwa w tle."
+                          : "Zapisywanie odpowiedzi..."
+                        : currentQuestionSaveState === "error"
+                          ? "Brak polaczenia. Odpowiedz zostanie wyslana ponownie automatycznie."
+                          : "Odpowiedz zapisana."}
+                    </p>
+                  </section>
+                ) : null}
 
                 {currentAnswer ? (
                   <section>
@@ -1441,12 +2148,12 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
       </div>
 
       <QuizFooterAction
-        canGoNext={canGoNext}
-        isLastQuestion={isLastQuestion}
+        canAct={canFooterAct}
         isTransitioning={sessionStatus === "loading_next"}
         failedSaveCount={failedSaveCount}
-        helperText={footerHelperText}
-        onNext={handleNext}
+        actionLabel={footerActionLabel}
+        helperText={effectiveFooterHelperText}
+        onAction={handleFooterPrimaryAction}
         className="xl:hidden"
       />
 

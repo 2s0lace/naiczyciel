@@ -59,8 +59,8 @@ export default function MobileHeader() {
       className={cn(
         "sticky top-0 z-50 will-change-[background-color,border-color,box-shadow,backdrop-filter] transition-[background-color,border-color,box-shadow,backdrop-filter] duration-250 ease-[cubic-bezier(0.22,1,0.36,1)]",
         isDetached
-          ? "border-b border-white/10 bg-[#050510]/94 shadow-[0_16px_32px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl"
-          : "bg-transparent shadow-none backdrop-blur-[6px]",
+          ? "border-b border-white/10 bg-[#050510]/94 shadow-[0_16px_32px_-30px_rgba(0,0,0,0.9)] md:backdrop-blur-xl"
+          : "bg-transparent shadow-none md:backdrop-blur-[6px]",
       )}
     >
       <div

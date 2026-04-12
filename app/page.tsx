@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { BookOpen, Brain, ChevronRight, MessageSquareMore, Repeat2, Sparkles, Target, TrendingUp, Zap, type LucideIcon } from "lucide-react";
+import { BookOpen, Brain, MessageSquareMore, Repeat2, Sparkles, Target, TrendingUp, Zap, type LucideIcon } from "lucide-react";
 import AuthHeaderActions from "@/components/auth/auth-header-actions";
 import { ParallaxGridLayer } from "@/components/landing/parallax-grid-layer";
 import { RevealOnView } from "@/components/landing/ui/reveal-on-view";
@@ -211,9 +211,9 @@ export default function LandingPage() {
         <RevealOnView threshold={0.2}>
           <div className="relative mx-auto w-full max-w-5xl">
             <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-              <span className="absolute left-[-2rem] top-[3.4rem] h-24 w-24 rounded-full bg-[radial-gradient(circle,rgba(0,212,255,0.10),rgba(0,212,255,0.03)_42%,transparent_72%)] blur-3xl md:left-[-3rem] md:top-[4.4rem] md:h-32 md:w-32" />
-              <span className="absolute right-[4%] top-[1.4rem] h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.08),rgba(99,102,241,0.025)_40%,transparent_74%)] blur-3xl md:h-36 md:w-36" />
-              <span className="absolute left-[34%] top-[7.2rem] h-20 w-40 bg-[radial-gradient(ellipse,rgba(255,255,255,0.035),rgba(255,255,255,0.012)_38%,transparent_72%)] blur-3xl md:left-[38%] md:top-[8rem] md:h-24 md:w-52" />
+              <span className="absolute left-[-2rem] top-[3.4rem] hidden h-24 w-24 rounded-full bg-[radial-gradient(circle,rgba(0,212,255,0.10),rgba(0,212,255,0.03)_42%,transparent_72%)] blur-3xl md:left-[-3rem] md:top-[4.4rem] md:block md:h-32 md:w-32" />
+              <span className="absolute right-[4%] top-[1.4rem] hidden h-28 w-28 rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.08),rgba(99,102,241,0.025)_40%,transparent_74%)] blur-3xl md:block md:h-36 md:w-36" />
+              <span className="absolute left-[34%] top-[7.2rem] hidden h-20 w-40 bg-[radial-gradient(ellipse,rgba(255,255,255,0.035),rgba(255,255,255,0.012)_38%,transparent_72%)] blur-3xl md:left-[38%] md:top-[8rem] md:block md:h-24 md:w-52" />
               {HONESTY_AMBIENT_SYMBOLS.map((symbol, index) =>
                 symbol.kind === "icon" ? (
                   <span
@@ -301,23 +301,11 @@ export default function LandingPage() {
                 </svg>
               </div>
             </div>
-            <section className="relative z-[16] mx-auto mt-4 flex w-full max-w-md flex-col items-center px-5 pb-10 text-center md:hidden">
-              <p className="font-gloria-hallelujah relative top-[24px] left-[90px] mb-5 rotate-[4deg] text-[0.768rem] tracking-[0.02em] text-cyan-300/90">
-                Gotowy, żeby zacząć?
-              </p>
-              <Link
-                href="/e8/quiz"
-                className="group relative mt-4 flex w-full max-w-[320px] items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-900/30 transition-[transform,filter,box-shadow,background-color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985]"
-              >
-                Zacznij test
-                <ChevronRight size={20} className="text-indigo-200 transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]" />
-              </Link>
-            </section>
           </div>
         </RevealOnView>
       </section>
 
-      <div aria-hidden className="pointer-events-none absolute inset-0 z-[6] overflow-hidden">
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-[6] hidden overflow-hidden md:block">
         {FLOATING_ICON_CARDS.map((card, index) => (
           <span
             key={`floating-icon-card-${index}`}
@@ -334,11 +322,11 @@ export default function LandingPage() {
         ))}
       </div>
       <div
-        className="pointer-events-none absolute -top-24 -right-20 h-[26rem] w-[26rem] rounded-full blur-[100px]"
+        className="pointer-events-none absolute -top-24 -right-20 hidden h-[26rem] w-[26rem] rounded-full blur-[100px] md:block"
         style={{ backgroundColor: "#00D4FF", opacity: 0.08 }}
       />
       <div
-        className="pointer-events-none absolute -bottom-24 -left-20 h-[26rem] w-[26rem] rounded-full blur-[100px]"
+        className="pointer-events-none absolute -bottom-24 -left-20 hidden h-[26rem] w-[26rem] rounded-full blur-[100px] md:block"
         style={{ backgroundColor: "#7C3AED", opacity: 0.08 }}
       />
       <MarketingFooter

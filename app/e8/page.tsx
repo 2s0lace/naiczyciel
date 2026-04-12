@@ -1,9 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import type { Session, User } from "@supabase/supabase-js";
-import { useEffect, useMemo, useState } from "react";
-import E8AuthenticatedDashboard from "@/components/landing/e8-authenticated-dashboard";
+import { useState } from "react";
 import DemoPreview from "@/components/landing/demo-preview";
 
 import E8NumbersBento from "@/components/landing/e8-numbers-bento";
@@ -14,19 +12,9 @@ import MobileHeader from "@/components/landing/mobile-header";
 import { ParallaxGridLayer } from "@/components/landing/parallax-grid-layer";
 import PricingSection from "@/components/landing/pricing-section";
 import type { FeatureType } from "@/components/landing/types";
-import { resolveDisplayNameFromMetadata } from "@/lib/auth/display-name";
-import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { MarketingFooter } from "@/components/layout/marketing-footer";
 import tornPaperImage from "@/img/torn-paper-vector-vintage-sticker-with-design-space.png";
 import whitePaperTextureBackground from "@/img/white-paper-texture-background.png";
-
-function shouldShowDashboardOnboarding(user: User | null | undefined): boolean {
-  if (!user) {
-    return false;
-  }
-
-  return user.user_metadata?.dashboard_onboarding_completed === false;
-}
 
 function PublicE8Landing({
   activeTab,
@@ -75,7 +63,7 @@ function PublicE8Landing({
       </div>
 
       <div className="relative mt-8 overflow-clip md:mt-12">
-        <div className="absolute inset-y-0 left-1/2 w-[1600px] -translate-x-1/2 translate-y-[145px] md:-translate-y-[5px] xl:translate-y-[45px] overflow-visible lg:w-[100vw] xl:w-[94vw] max-w-[84rem]">
+        <div className="absolute inset-y-0 left-1/2 hidden w-[1600px] -translate-x-1/2 translate-y-[145px] overflow-visible md:block md:-translate-y-[5px] lg:w-[100vw] xl:w-[94vw] xl:translate-y-[45px] max-w-[84rem]">
           <Image
             src={tornPaperImage}
             alt=""
@@ -88,13 +76,13 @@ function PublicE8Landing({
         <div className="relative z-10 mx-auto w-full max-w-md px-5 pb-8 md:max-w-4xl md:px-6 md:pb-14 lg:max-w-6xl lg:px-9 lg:pb-14 xl:max-w-[82rem] xl:px-10 2xl:max-w-[94rem] 2xl:px-12 min-[2200px]:max-w-[124rem] min-[2200px]:px-16">
           <div className="relative z-20 pb-[6rem] md:pb-0 lg:pb-0 xl:pb-[10rem]">
             <div
-              className="pointer-events-none absolute inset-x-0 top-0 bottom-0 h-full lg:h-[calc(100%+30px)] left-1/2 right-1/2 -z-20 -ml-[50vw] -mr-[50vw] opacity-[0.96] translate-y-[30px] md:translate-y-0 lg:-translate-y-[30px]"
+              className="pointer-events-none absolute inset-x-0 top-0 bottom-0 h-full left-1/2 right-1/2 -z-20 -ml-[50vw] -mr-[50vw] opacity-[0.96] translate-y-[30px] md:translate-y-0 lg:h-[calc(100%+30px)] lg:-translate-y-[30px]"
               style={{
                 backgroundImage: `url(${whitePaperTextureBackground.src})`,
                 backgroundPosition: "center bottom",
                 backgroundRepeat: "no-repeat",
                 backgroundSize: "cover",
-                filter: "saturate(0.58) contrast(0.74) blur(0.8px) drop-shadow(0 14px 18px rgba(0,0,0,0.12)) drop-shadow(0 28px 34px rgba(0,0,0,0.18))"
+                filter: "saturate(0.72) contrast(0.88) drop-shadow(0 10px 16px rgba(0,0,0,0.1))",
               }}
             />
             <div className="pointer-events-none absolute left-1/2 right-1/2 top-0 -z-10 h-60 -ml-[50vw] -mr-[50vw] bg-[linear-gradient(180deg,#050510_0%,rgba(5,5,16,0.98)_16%,rgba(5,5,16,0.82)_38%,rgba(5,5,16,0.46)_66%,rgba(5,5,16,0.12)_86%,rgba(5,5,16,0)_100%)] md:h-36 lg:h-44" />
@@ -120,75 +108,6 @@ function PublicE8Landing({
 export default function E8Landing() {
   const [activeTab, setActiveTab] = useState<FeatureType>("sets");
   const [visitedTabs, setVisitedTabs] = useState<FeatureType[]>([]);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isAuthResolved, setIsAuthResolved] = useState(false);
-  const [forcePlansView, setForcePlansView] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    let unsubscribe: (() => void) | null = null;
-
-    try {
-      const supabase = getSupabaseBrowserClient();
-
-      void (async () => {
-        try {
-          const { data } = await supabase.auth.getSession();
-
-          if (!mounted) {
-            return;
-          }
-
-          setSession(data.session ?? null);
-        } finally {
-          if (mounted) {
-            setIsAuthResolved(true);
-          }
-        }
-      })();
-
-      const {
-        data: { subscription },
-      } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-        if (!mounted) {
-          return;
-        }
-
-        setSession(nextSession);
-      });
-
-      unsubscribe = () => subscription.unsubscribe();
-    } catch {
-      if (mounted) {
-        setSession(null);
-        setIsAuthResolved(true);
-      }
-    }
-
-    return () => {
-      mounted = false;
-
-      if (unsubscribe) {
-        unsubscribe();
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      setForcePlansView(params.get("plans") === "1");
-    } catch {
-      setForcePlansView(false);
-    }
-  }, []);
-
-  const userDisplayName = useMemo(
-    () => resolveDisplayNameFromMetadata(session?.user?.user_metadata, "Ty"),
-    [session?.user?.user_metadata],
-  );
-  const shouldRunOnboarding = useMemo(() => shouldShowDashboardOnboarding(session?.user), [session?.user]);
-  const isAuthenticated = Boolean(session?.access_token && session?.user);
   const handleTabChange = (tab: FeatureType) => {
     setActiveTab(tab);
     setVisitedTabs((prev) => {
@@ -205,14 +124,6 @@ export default function E8Landing() {
       return nextVisitedTabs;
     });
   };
-
-  if (!isAuthResolved) {
-    return <main className="viewport-shell bg-[#050510]" aria-hidden="true" />;
-  }
-
-  if (isAuthenticated && session?.access_token && !forcePlansView) {
-    return <E8AuthenticatedDashboard accessToken={session.access_token} userDisplayName={userDisplayName} shouldRunOnboarding={shouldRunOnboarding} />;
-  }
 
   return <PublicE8Landing activeTab={activeTab} visitedTabs={visitedTabs} onTabChange={handleTabChange} />;
 }

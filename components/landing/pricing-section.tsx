@@ -5,13 +5,9 @@ import { useRouter } from "next/navigation";
 import { BrainCircuit, CalendarDays, Check, Layers3, Paperclip, PenLine, PencilRuler, Pin } from "lucide-react";
 import { useMemo } from "react";
 import buyCtaImage from "@/img/buycta.png";
-import calendarImage from "@/img/kalendarz.png";
 
 const EXAM_MONTH_INDEX = 4;
 const EXAM_DAY = 13;
-const INK_SPLASH_MASK =
-  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 420' preserveAspectRatio='none'><path fill='white' d='M62 126C74 72 118 20 198 24C272 28 321 52 393 40C468 28 523 8 622 18C716 28 760 53 856 42C957 30 1077 20 1138 64C1183 100 1172 154 1163 207C1155 253 1176 303 1151 351C1124 404 1056 409 976 400C895 391 842 410 751 416C664 421 606 398 516 404C432 410 378 430 288 418C198 406 93 414 52 368C14 325 28 270 24 216C21 172 35 152 62 126Z'/></svg>\")";
-
 function getNextExamDate(baseDate: Date) {
   const today = new Date(baseDate);
   today.setHours(0, 0, 0, 0);
@@ -158,13 +154,15 @@ export default function PricingSection() {
           </div>
           <div className="relative top-[118px] z-[1] md:top-[80px]">
             <div
-              className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,248,239,0.035)_0%,rgba(14,16,28,0.09)_18%,rgba(12,14,24,0.18)_58%,rgba(6,7,14,0.2)_100%)] opacity-[0.42]"
+              className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(135deg,rgba(255,248,239,0.035)_0%,rgba(14,16,28,0.09)_18%,rgba(12,14,24,0.18)_58%,rgba(6,7,14,0.2)_100%)] opacity-[0.42] min-[900px]:block"
               style={{
-                maskImage: INK_SPLASH_MASK,
+                maskImage:
+                  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 420' preserveAspectRatio='none'><path fill='white' d='M62 126C74 72 118 20 198 24C272 28 321 52 393 40C468 28 523 8 622 18C716 28 760 53 856 42C957 30 1077 20 1138 64C1183 100 1172 154 1163 207C1155 253 1176 303 1151 351C1124 404 1056 409 976 400C895 391 842 410 751 416C664 421 606 398 516 404C432 410 378 430 288 418C198 406 93 414 52 368C14 325 28 270 24 216C21 172 35 152 62 126Z'/></svg>\")",
                 maskRepeat: "no-repeat",
                 maskPosition: "center",
                 maskSize: "100% 100%",
-                WebkitMaskImage: INK_SPLASH_MASK,
+                WebkitMaskImage:
+                  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 420' preserveAspectRatio='none'><path fill='white' d='M62 126C74 72 118 20 198 24C272 28 321 52 393 40C468 28 523 8 622 18C716 28 760 53 856 42C957 30 1077 20 1138 64C1183 100 1172 154 1163 207C1155 253 1176 303 1151 351C1124 404 1056 409 976 400C895 391 842 410 751 416C664 421 606 398 516 404C432 410 378 430 288 418C198 406 93 414 52 368C14 325 28 270 24 216C21 172 35 152 62 126Z'/></svg>\")",
                 WebkitMaskRepeat: "no-repeat",
                 WebkitMaskPosition: "center",
                 WebkitMaskSize: "100% 100%",
@@ -174,11 +172,13 @@ export default function PricingSection() {
             <div
               className="relative isolate overflow-hidden bg-transparent"
               style={{
-                maskImage: INK_SPLASH_MASK,
+                maskImage:
+                  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 420' preserveAspectRatio='none'><path fill='white' d='M62 126C74 72 118 20 198 24C272 28 321 52 393 40C468 28 523 8 622 18C716 28 760 53 856 42C957 30 1077 20 1138 64C1183 100 1172 154 1163 207C1155 253 1176 303 1151 351C1124 404 1056 409 976 400C895 391 842 410 751 416C664 421 606 398 516 404C432 410 378 430 288 418C198 406 93 414 52 368C14 325 28 270 24 216C21 172 35 152 62 126Z'/></svg>\")",
                 maskRepeat: "no-repeat",
                 maskPosition: "center",
                 maskSize: "100% 100%",
-                WebkitMaskImage: INK_SPLASH_MASK,
+                WebkitMaskImage:
+                  "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 420' preserveAspectRatio='none'><path fill='white' d='M62 126C74 72 118 20 198 24C272 28 321 52 393 40C468 28 523 8 622 18C716 28 760 53 856 42C957 30 1077 20 1138 64C1183 100 1172 154 1163 207C1155 253 1176 303 1151 351C1124 404 1056 409 976 400C895 391 842 410 751 416C664 421 606 398 516 404C432 410 378 430 288 418C198 406 93 414 52 368C14 325 28 270 24 216C21 172 35 152 62 126Z'/></svg>\")",
                 WebkitMaskRepeat: "no-repeat",
                 WebkitMaskPosition: "center",
                 WebkitMaskSize: "100% 100%",
@@ -189,35 +189,19 @@ export default function PricingSection() {
                 alt=""
                 aria-hidden
                 fill
-                className="absolute inset-0 hidden h-full w-full scale-[1.64] object-cover object-[center_62%] opacity-[0.96] blur-[1.5px] brightness-[0.4] saturate-[0.7] min-[900px]:block"
+                className="absolute inset-0 h-full w-full object-cover object-[center_62%] opacity-[0.96] brightness-[0.46] saturate-[0.8] min-[900px]:scale-[1.64] min-[900px]:brightness-[0.4] min-[900px]:saturate-[0.7]"
               />
-              <div className="absolute inset-x-0 bottom-0 h-[67%] overflow-hidden min-[900px]:hidden">
-                <Image
-                  src={buyCtaImage}
-                  alt=""
-                  aria-hidden
-                  fill
-                  className="scale-[1.54] object-cover object-[center_68%] opacity-[0.96] blur-[1.5px] brightness-[0.4] saturate-[0.7]"
-                />
-              </div>
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.16)_0%,rgba(0,0,0,0.22)_36%,rgba(0,0,0,0.18)_72%,rgba(0,0,0,0.26)_100%)]" />
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(255,255,255,0.05),transparent_22%),radial-gradient(circle_at_84%_78%,rgba(0,0,0,0.1),transparent_28%)]" />
-              <div className="absolute inset-x-0 top-0 h-[33%] overflow-hidden min-[900px]:inset-y-0 min-[900px]:left-0 min-[900px]:right-auto min-[900px]:h-auto min-[900px]:w-[24.8%]">
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,14,0.52)_0%,rgba(5,7,14,0.3)_28%,rgba(5,7,14,0.58)_100%)] min-[900px]:bg-[linear-gradient(135deg,rgba(0,0,0,0.16)_0%,rgba(0,0,0,0.22)_36%,rgba(0,0,0,0.18)_72%,rgba(0,0,0,0.26)_100%)]" />
+              <div className="absolute inset-0 hidden min-[900px]:block bg-[radial-gradient(circle_at_18%_14%,rgba(255,255,255,0.05),transparent_22%),radial-gradient(circle_at_84%_78%,rgba(0,0,0,0.1),transparent_28%)]" />
+              <div className="absolute inset-x-0 top-0 hidden h-[33%] overflow-hidden min-[900px]:inset-y-0 min-[900px]:left-0 min-[900px]:right-auto min-[900px]:block min-[900px]:h-auto min-[900px]:w-[24.8%]">
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,8,16,0.04)_0%,rgba(6,8,16,0.02)_64%,transparent_100%)]" />
-                <Image
-                  src={calendarImage}
-                  alt=""
-                  aria-hidden
-                  fill
-                  className="scale-[1.12] object-cover object-[center_58%] opacity-[0.96] blur-[0.6px] brightness-[0.56] saturate-[0.78]"
-                />
                 <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,12,0.26)_0%,rgba(4,6,12,0.34)_42%,rgba(4,6,12,0.48)_100%)] min-[900px]:bg-[linear-gradient(180deg,rgba(0,0,0,0.12)_0%,rgba(0,0,0,0.18)_42%,rgba(0,0,0,0.34)_100%)]" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(0,0,0,0.16),transparent_42%)]" />
               </div>
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.028)_0%,rgba(255,255,255,0.01)_20%,rgba(0,0,0,0.03)_64%,rgba(0,0,0,0.075)_100%)]" />
-              <div className="pointer-events-none absolute inset-[1px] bg-[linear-gradient(135deg,rgba(255,250,242,0.055)_0%,rgba(255,250,242,0.022)_28%,rgba(24,18,13,0.012)_62%,rgba(24,18,13,0.055)_100%)] shadow-[inset_1px_1px_0_rgba(255,249,241,0.16),inset_-1px_-1px_0_rgba(28,22,16,0.18),inset_16px_16px_20px_-20px_rgba(255,247,236,0.075),inset_-16px_-16px_20px_-20px_rgba(18,14,10,0.1)]" />
-              <div className="pointer-events-none absolute inset-[3px] rounded-[inherit] bg-[repeating-linear-gradient(0deg,rgba(255,255,255,0.016)_0,rgba(255,255,255,0.016)_1px,transparent_1px,transparent_5px),repeating-linear-gradient(90deg,rgba(255,255,255,0.012)_0,rgba(255,255,255,0.012)_1px,transparent_1px,transparent_6px)] opacity-[0.2] mix-blend-soft-light" />
-              <div className="pointer-events-none absolute inset-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.055),inset_0_-2px_0_rgba(0,0,0,0.32),inset_20px_0_28px_-24px_rgba(255,255,255,0.026),inset_-24px_0_30px_-24px_rgba(0,0,0,0.16),inset_0_18px_24px_-22px_rgba(255,255,255,0.05),inset_0_-18px_24px_-20px_rgba(4,6,14,0.18)]" />
+              <div className="pointer-events-none absolute inset-0 hidden min-[900px]:block bg-[linear-gradient(180deg,rgba(255,255,255,0.028)_0%,rgba(255,255,255,0.01)_20%,rgba(0,0,0,0.03)_64%,rgba(0,0,0,0.075)_100%)]" />
+              <div className="pointer-events-none absolute inset-[1px] hidden min-[900px]:block bg-[linear-gradient(135deg,rgba(255,250,242,0.055)_0%,rgba(255,250,242,0.022)_28%,rgba(24,18,13,0.012)_62%,rgba(24,18,13,0.055)_100%)] shadow-[inset_1px_1px_0_rgba(255,249,241,0.16),inset_-1px_-1px_0_rgba(28,22,16,0.18),inset_16px_16px_20px_-20px_rgba(255,247,236,0.075),inset_-16px_-16px_20px_-20px_rgba(18,14,10,0.1)]" />
+              <div className="pointer-events-none absolute inset-[3px] hidden min-[900px]:block rounded-[inherit] bg-[repeating-linear-gradient(0deg,rgba(255,255,255,0.016)_0,rgba(255,255,255,0.016)_1px,transparent_1px,transparent_5px),repeating-linear-gradient(90deg,rgba(255,255,255,0.012)_0,rgba(255,255,255,0.012)_1px,transparent_1px,transparent_6px)] opacity-[0.2] mix-blend-soft-light" />
+              <div className="pointer-events-none absolute inset-0 hidden min-[900px]:block shadow-[inset_0_1px_0_rgba(255,255,255,0.055),inset_0_-2px_0_rgba(0,0,0,0.32),inset_20px_0_28px_-24px_rgba(255,255,255,0.026),inset_-24px_0_30px_-24px_rgba(0,0,0,0.16),inset_0_18px_24px_-22px_rgba(255,255,255,0.05),inset_0_-18px_24px_-20px_rgba(4,6,14,0.18)]" />
 
               <div className="relative px-3 py-4 md:px-4 md:py-4">
                 <div className="relative flex flex-col px-6 pt-7 pb-5 text-white min-[900px]:hidden">

@@ -8,10 +8,9 @@ import {
   fetchSessionAnswers,
 } from "@/lib/quiz/repository";
 import { getSetSlots, getSetsForTier, type E8SetDefinition } from "@/lib/quiz/set-catalog";
-import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
 import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
 import type { QuizMode } from "@/lib/quiz/types";
-import { getLocalSessionPayload, getOwnedLocalSession, isLocalSessionId } from "@/lib/quiz/local-store";
+import { getAccessibleLocalSession, getLocalSessionPayload, isLocalSessionId } from "@/lib/quiz/local-store";
 import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 type RouteContext = {
@@ -168,6 +167,23 @@ export async function GET(request: Request, context: RouteContext) {
     }
 
     const access = await resolveAccessTierFromRequest(request);
+    const localSession = isLocalSessionId(sessionId) ? getAccessibleLocalSession(sessionId, access.userId) : null;
+
+    if (isLocalSessionId(sessionId)) {
+      const localPayload = localSession ? getLocalSessionPayload(sessionId) : null;
+
+      if (!localPayload) {
+        console.log("GET", { sessionId, sessionFound: false, localSessionFound: !!localSession });
+        return NextResponse.json(
+          {
+            error: "Nie udalo sie rozpoczac quizu. Brak lokalnej sesji.",
+          },
+          { status: 404 },
+        );
+      }
+
+      return NextResponse.json(localPayload);
+    }
 
     if (!access.userId || !access.accessToken) {
       return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
@@ -177,22 +193,6 @@ export async function GET(request: Request, context: RouteContext) {
       accessToken: access.accessToken,
       allowBootstrap: false,
     });
-
-    if (isLocalSessionId(sessionId)) {
-      const localSession = getOwnedLocalSession(sessionId, access.userId);
-      const localPayload = localSession ? getLocalSessionPayload(sessionId) : null;
-
-      if (!localPayload) {
-        return NextResponse.json(
-          {
-            error: "Sesja lokalna nie istnieje.",
-          },
-          { status: 404 },
-        );
-      }
-
-      return NextResponse.json(localPayload);
-    }
 
     const url = new URL(request.url);
     const requestedMode = url.searchParams.get("mode") ?? "reactions";
@@ -204,20 +204,20 @@ export async function GET(request: Request, context: RouteContext) {
     const requestedFocusSource = url.searchParams.get("focusSource")?.trim().toLowerCase() || null;
     const requestedFocusRaw = url.searchParams.get("focusRaw")?.trim() || null;
     const supabase = getSupabaseUserClient(access.accessToken);
+    const sessionResult = await supabase
+      .from("quiz_sessions")
+      .select("id, user_id, status, mode, requested_count")
+      .eq("id", sessionId)
+      .eq("user_id", access.userId)
+      .maybeSingle();
+    const session = !sessionResult.error && sessionResult.data ? sessionResult.data : null;
 
-    let sessionLookup;
-
-    try {
-      sessionLookup = await requireOwnedSession(supabase, sessionId, access.userId);
-    } catch {
+    if (!session) {
+      console.log("GET", { sessionId, sessionFound: !!session, localSessionFound: !!localSession });
       return NextResponse.json({ error: "Sesja nie istnieje." }, { status: 404 });
     }
 
-    const sessionSetId = normalizeSetId(
-      typeof sessionLookup.set_id === "string" ? sessionLookup.set_id : null,
-    );
-
-    const effectiveSetId = requestedSetId ?? sessionSetId;
+    const effectiveSetId = requestedSetId ?? null;
     const tierSets = getSetsForTier(access.tier);
     const tierSetMap = new Map(tierSets.map((setItem) => [setItem.id, setItem]));
     const allSetMap = access.role === "admin" ? new Map(getSetSlots().map((setItem) => [setItem.id, setItem])) : null;
@@ -234,7 +234,7 @@ export async function GET(request: Request, context: RouteContext) {
       );
     }
 
-    const sessionMode = typeof sessionLookup.mode === "string" ? sessionLookup.mode : null;
+    const sessionMode = typeof session.mode === "string" ? session.mode : null;
     const modeHint = (explicitSelectedSet?.mode ?? sessionMode ?? requestedMode) as QuizMode;
     const tierModes = normalizeModeList(tierSets.map((setItem) => setItem.mode));
     const sessionDerivedModes = parseModesFromValue(sessionMode).filter((mode) => tierModes.includes(mode));
@@ -250,7 +250,7 @@ export async function GET(request: Request, context: RouteContext) {
 
     const selectedSet = explicitSelectedSet ?? null;
     const mode = (selectedSet?.mode ?? serializeModeValue(effectiveModes) ?? modeHint) as QuizMode;
-    const sessionRequestedCount = asFiniteNumber(sessionLookup.requested_count);
+    const sessionRequestedCount = asFiniteNumber(session.requested_count);
     const requestedCountResolved = clampQuestionCount(
       Number.isFinite(requestedCount) ? requestedCount : sessionRequestedCount ?? 10,
     );
@@ -338,7 +338,7 @@ export async function GET(request: Request, context: RouteContext) {
       focusLabel: requestedFocusLabel,
       focusSource: requestedFocusSource,
       focusRaw: requestedFocusRaw,
-      status: typeof sessionLookup.status === "string" ? sessionLookup.status : "in_progress",
+      status: typeof session.status === "string" ? session.status : "in_progress",
       questions,
       answers,
     });

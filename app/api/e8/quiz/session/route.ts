@@ -225,21 +225,26 @@ export async function POST(request: Request) {
           ]
         : baseVariants;
 
-    let createdSessionId: string | null = null;
+    let createdSession: { id: string } | null = null;
     let insertError: { message?: string } | null = null;
 
     for (const payload of insertVariants) {
       const result = await supabase.from("quiz_sessions").insert(payload).select("id").single();
 
       if (!result.error && result.data?.id) {
-        createdSessionId = String(result.data.id);
+        createdSession = {
+          id: String(result.data.id),
+        };
         break;
       }
 
       insertError = result.error ?? insertError;
     }
 
-    if (!createdSessionId) {
+    console.log("CREATE", { sessionId: createdSession?.id ?? null, saved: !!createdSession });
+
+    if (!createdSession) {
+      console.log("[DEBUG create] FAIL: createdSessionId is null", { insertError });
       console.error("[quiz-start] insert failed", insertError);
       return NextResponse.json(
         {
@@ -249,8 +254,10 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log("[DEBUG create] SUCCESS: sessionId=", createdSession.id, "setId=", effectiveSetId);
+
     return NextResponse.json({
-      sessionId: createdSessionId,
+      sessionId: createdSession.id,
       mode,
       setId: effectiveSetId,
       modes: selectedModes,

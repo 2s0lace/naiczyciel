@@ -281,14 +281,7 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            mode,
-            correctAnswers: summary.correctAnswers,
-            totalQuestions: summary.totalQuestions,
-            scorePercent: summary.scorePercent,
-            strongestArea: summary.strongestArea ?? "brak",
-            weakestArea: summary.weakestArea ?? "brak",
-          }),
+          body: JSON.stringify({ mode }),
         });
 
         if (!response.ok) {
@@ -315,7 +308,7 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
         setIsLoading(false);
       }
     },
-    [hasGeneratedForSession, isLoading, mode, persist, sessionId, summary.correctAnswers, summary.scorePercent, summary.strongestArea, summary.totalQuestions, summary.weakestArea],
+    [hasGeneratedForSession, isLoading, mode, persist, sessionId],
   );
 
   useEffect(() => {
@@ -370,11 +363,41 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
           <p className="text-[14px] leading-[1.65]">Tworzę podsumowanie po wyniku quizu...</p>
         </div>
       ) : feedback ? (
-        <article className="mt-4">
+        <article className="mt-4 space-y-4">
           <div className="border-l-2 border-l-[#6C63FF] pl-3">
             <ReportLabel>Ocena ogólna</ReportLabel>
             <p className="mt-1.5 text-[14px] leading-[1.65] text-white/70">{diagnosisParagraph}</p>
           </div>
+
+          {summary.categoryBreakdown.length > 0 && (
+            <div className="border-l-2 border-l-white/10 pl-3">
+              <ReportLabel>Kategorie</ReportLabel>
+              <ul className="mt-2 space-y-1.5">
+                {summary.categoryBreakdown
+                  .sort((a, b) => (b.percent ?? -1) - (a.percent ?? -1))
+                  .map((c) => (
+                    <li key={c.label} className="flex items-center justify-between gap-4">
+                      <span className="text-[13px] text-white/55">{c.label}</span>
+                      <span
+                        className={`text-[13px] tabular-nums font-medium ${
+                          !c.has_data || c.percent === null
+                            ? "text-white/20"
+                            : c.percent === 0
+                              ? "text-white/30"
+                              : c.percent >= 70
+                                ? "text-emerald-400/80"
+                                : c.percent >= 40
+                                  ? "text-amber-400/80"
+                                  : "text-rose-400/80"
+                        }`}
+                      >
+                        {!c.has_data || c.percent === null ? "—" : `${c.percent}%`}
+                      </span>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          )}
         </article>
       ) : null}
 

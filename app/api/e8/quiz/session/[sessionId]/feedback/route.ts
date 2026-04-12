@@ -1,17 +1,18 @@
-import OpenAI from "openai";
-import { NextResponse } from "next/server";
+import OpenAI from “openai”;
+import { NextResponse } from “next/server”;
 import {
   AI_GENERATION_RATE_LIMIT_ACTION,
   buildRateLimitErrorPayload,
   enforceAiRateLimit,
-} from "@/lib/ai/rate-limit";
-import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
-import { buildSummary, fetchSessionAnswers } from "@/lib/quiz/repository";
-import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
-import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
-import { loadQuestionsForOwnedSession } from "@/lib/quiz/session-questions";
-import { getOpenAIServerClient } from "@/lib/openai/server";
-import { getSupabaseUserClient } from "@/lib/supabase/server";
+} from “@/lib/ai/rate-limit”;
+import { resolveAccessTierFromRequest } from “@/lib/quiz/access-tier”;
+import { buildSummary, fetchSessionAnswers } from “@/lib/quiz/repository”;
+import type { CategoryBreakdownItem } from “@/lib/quiz/types”;
+import { requireOwnedSession } from “@/lib/quiz/require-owned-session”;
+import { loadSetCatalogFromDatabase } from “@/lib/quiz/set-catalog-store”;
+import { loadQuestionsForOwnedSession } from “@/lib/quiz/session-questions”;
+import { getOpenAIServerClient } from “@/lib/openai/server”;
+import { getSupabaseUserClient } from “@/lib/supabase/server”;
 
 type RouteContext = {
   params: Promise<{ sessionId: string }>;
@@ -22,102 +23,55 @@ type SanitizedPayload = {
   correctAnswers: number;
   totalQuestions: number;
   scorePercent: number;
-  strongestArea: string;
-  weakestArea: string;
+  categoryBreakdown: CategoryBreakdownItem[];
 };
-
-const AREA_CANONICAL: Record<string, string> = {
-  "codzienne reakcje": "Codzienne reakcje",
-  wsparcie: "Wsparcie",
-  prosby: "Prosby",
-  "dobre wiadomosci": "Dobre wiadomosci",
-  planowanie: "Planowanie",
-  pomoc: "Pomoc",
-  spotkania: "Spotkania",
-  opinia: "Opinia",
-  przeprosiny: "Przeprosiny",
-  brak: "brak",
-};
-
-function normalizeToken(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .replace(/\s+/g, " ");
-}
-
-function sanitizeArea(value: unknown): string {
-  if (typeof value !== "string") {
-    return "brak";
-  }
-
-  const normalized = normalizeToken(value);
-  return AREA_CANONICAL[normalized] ?? "brak";
-}
 
 function buildPrompt(payload: SanitizedPayload) {
-  const sessionDetails = [
-    `Tryb: ${payload.mode}`,
-    `Wynik: ${payload.correctAnswers}/${payload.totalQuestions} (${payload.scorePercent}%)`,
-    `Mocna strona (metryka): ${payload.strongestArea}`,
-    `Do poprawy (metryka): ${payload.weakestArea}`,
-  ].join(" | ");
+  const dataBlock = JSON.stringify(
+    {
+      mode: payload.mode,
+      score: `${payload.correctAnswers}/${payload.totalQuestions} (${payload.scorePercent}%)`,
+      categories: payload.categoryBreakdown,
+    },
+    null,
+    2,
+  );
 
   return [
-    "Tworz krotka informacje zwrotna dla ucznia po rozwiazaniu zestawu z angielskiego.",
-    "",
-    "Cel:",
-    "Feedback ma byc pomocny, prosty, konkretny i wspierajacy. Ma brzmiec jak dobra wskazowka od nauczyciela, a nie jak automatyczny raport albo coachingowy slogan.",
-    "",
-    "Dane o tej sesji:",
-    sessionDetails,
-    "",
-    "Zasady:",
-    "- pisz po polsku",
-    "- ton: spokojny, zyczliwy, konkretny",
-    "- nie zawstydzaj ucznia",
-    "- nie uzywaj slow typu: „niestety”, „tylko”, „slabo”, „porazka”",
-    "- nie oceniaj ucznia jako osoby",
-    "- oceniaj wylacznie wynik i obszar do poprawy",
-    "- nie uzywaj pustych sformulowan typu „dzialajace schematy”, „musisz sie bardziej postarac”, „wiecej zyskasz”",
-    "- nie pisz ogolnikow, jesli nie ma konkretu",
-    "- pokaz 1 mocna strone, nawet mala",
-    "- wskaz 1 glowny problem",
-    "- zaproponuj 1 prosty nastepny krok",
-    "- maksymalnie 4 krotkie sekcje",
-    "- kazda sekcja ma miec 1-2 zdania",
-    "- jezyk ma byc zrozumialy dla ucznia szkoly podstawowej",
-    "",
-    "Struktura:",
-    "1. Ocena ogolna",
-    "2. Co juz dziala",
-    "3. Nad czym popracowac",
-    "4. Co zrobic teraz",
-    "",
-    "Dodatkowe wytyczne:",
-    "- jesli wynik jest niski, zachowaj wspierajacy ton i pokaz, ze da sie poprawic jeden konkretny obszar",
-    "- jesli wynik jest sredni, pokaz, co juz dziala i co da najwiekszy progres",
-    "- jesli wynik jest wysoki, pochwal konkretnie i wskaz maly kolejny krok",
-    "- jesli z danych wynika konkretny typ bledu, nazwij go prostym jezykiem",
-    "- jesli brak szczegolowych danych o bledach, nie zmyslaj — napisz ostroznie i ogolnie, ale nadal konkretnie",
-    "",
-    "Styl:",
-    "- krotkie zdania",
-    "- naturalny jezyk",
-    "- zero mentorsko-korporacyjnego tonu",
-    "- feedback ma pomagac uczniowi zrozumiec: „co bylo nie tak?” i „co zrobic dalej?”",
-    "",
-    "Jesli to mozliwe, odwola sie do konkretnego typu bledu, np.:",
-    "- pomylenie czasu",
-    "- niezrozumienie sensu pytania",
-    "- wybranie odpowiedzi po jednym slowie z tekstu",
-    "- pominiecie slowa przeczacego",
-    "- zbyt szybkie zgadywanie bez sprawdzenia kontekstu",
-    "",
-    "Na koncu wygeneruj tylko gotowy feedback dla ucznia, bez komentarzy technicznych i bez wyjasniania zasad.",
-  ].join("\n");
+    “Jestes nauczycielem jezyka angielskiego. Napisz krotki feedback po sesji quizowej.”,
+    “”,
+    “Dane sesji (JSON):”,
+    “```json”,
+    dataBlock,
+    “```”,
+    “”,
+    “Zasady — przeczytaj uwazanie:”,
+    “- Pisz wylacznie na podstawie powyzszego JSON. Nie zgaduj. Nie wymyslaj.”,
+    “- Kategorie z has_data:true pojawily sie w tej sesji — mozesz je opisac.”,
+    “- Kategorie z percent:0 i has_data:true pojawily sie, ale wynik byl zerowy — opisz to wprost.”,
+    “- Jezeli zadna kategoria nie ma percent>=50, sekcje 'Mocna strona' pomin lub napisz ogolnie o probie.”,
+    “- Nie wymyslaj kategorii, ktore nie sa w JSON.”,
+    “- Ton: konkretny, spokojny, jak nauczyciel — nie robot, nie coach.”,
+    “- Krotkie zdania. Jezyk prosty.”,
+    “- ZAKAZ uzywania zwrotow: 'wyniki nie zostaly zarejestrowane', 'sugeruje trudnosci',”,
+    “  'pokazuje pewna zdolnosc', 'w tej kategorii', 'na podstawie danych', 'niestety', 'porazka'.”,
+    “”,
+    “Format odpowiedzi — uzyj DOKLADNIE tych naglowkow, w tej kolejnosci:”,
+    “”,
+    “Ocena ogólna:”,
+    “[1 zdanie o ogolnym wyniku]”,
+    “”,
+    “Mocna strona:”,
+    “[1 zdanie — TYLKO jesli jakakolwiek kategoria ma percent>=50, inaczej napisz 'Pierwsza sesja to dobry start.']”,
+    “”,
+    “Do poprawy:”,
+    “[1 zdanie o kategorii z najnizszym percent wsrod has_data:true]”,
+    “”,
+    “Na teraz:”,
+    “[1 konkretna akcja do wykonania w nastepnej sesji]”,
+    “”,
+    “Napisz sam feedback. Bez komentarzy, bez wyjasniania zasad.”,
+  ].join(“\n”);
 }
 
 function extractResponseText(response: { output_text?: string }) {
@@ -202,8 +156,7 @@ export async function POST(request: Request, context: RouteContext) {
       correctAnswers: summary.correctAnswers,
       totalQuestions: summary.totalQuestions,
       scorePercent: summary.scorePercent,
-      strongestArea: sanitizeArea(summary.strongestArea),
-      weakestArea: sanitizeArea(summary.weakestArea),
+      categoryBreakdown: summary.categoryBreakdown,
     };
     const prompt = buildPrompt(payload);
     const openai = getOpenAIServerClient();
@@ -219,7 +172,7 @@ export async function POST(request: Request, context: RouteContext) {
           model: "gpt-4o-mini",
           input: prompt,
           temperature: 0.2,
-          max_output_tokens: 180,
+          max_output_tokens: 300,
         },
         {
           signal: timeoutController.signal,

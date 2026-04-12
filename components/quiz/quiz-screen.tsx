@@ -432,12 +432,21 @@ function buildSummaryFromLocal(questions: QuizQuestion[], answers: Record<string
     }))
     .sort((a, b) => b.ratio - a.ratio);
 
+  const categoryBreakdown = Object.entries(areaStats).map(([label, stats]) => ({
+    label,
+    attempts: stats.total,
+    correct: stats.correct,
+    percent: stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : null,
+    has_data: stats.total > 0,
+  }));
+
   return {
     totalQuestions,
     correctAnswers,
     scorePercent: totalQuestions > 0 ? Math.round((correctAnswers / totalQuestions) * 100) : 0,
     strongestArea: rankedAreas[0]?.area,
     weakestArea: rankedAreas[rankedAreas.length - 1]?.area,
+    categoryBreakdown,
   };
 }
 
@@ -986,6 +995,13 @@ export function QuizScreen({
 
       void (async () => {
         try {
+          // Wait for in-flight answer saves to drain before completing (max 4s).
+          // The /complete route recomputes score from DB — answers must be persisted first.
+          const deadline = Date.now() + 4000;
+          while (Object.keys(inFlightSavesRef.current).length > 0 && Date.now() < deadline) {
+            await new Promise<void>((resolve) => window.setTimeout(resolve, 80));
+          }
+
           const authHeaders = await getAuthHeaders();
 
           await fetch(`/api/e8/quiz/session/${encodeURIComponent(sessionId)}/complete`, {

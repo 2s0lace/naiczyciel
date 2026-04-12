@@ -340,7 +340,7 @@ async function fetchAnswerAnalytics(accessToken: string, sessionIds: string[]): 
 
 async function fetchTagPerformance(accessToken: string, answerRows: SessionAnswerMetric[]): Promise<TagAggregate[]> {
   const questionIds = answerRows
-    .map((entry) => entry.questionId)
+    .map((entry) => (entry.questionId.includes("::") ? entry.questionId.split("::")[0] ?? entry.questionId : entry.questionId))
     .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
 
   if (questionIds.length === 0) {
@@ -434,7 +434,8 @@ async function fetchTagPerformance(accessToken: string, answerRows: SessionAnswe
   };
 
   for (const answer of answerRows) {
-    const tags = exerciseTags.get(answer.questionId);
+    const exerciseId = answer.questionId.includes("::") ? answer.questionId.split("::")[0] ?? answer.questionId : answer.questionId;
+    const tags = exerciseTags.get(exerciseId);
 
     if (!tags) {
       continue;

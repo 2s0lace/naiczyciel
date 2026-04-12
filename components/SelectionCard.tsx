@@ -34,29 +34,29 @@ export const SelectionCard = ({
 
   const cardChromeClass = isTeacher
     ? "border-white/10 shadow-[0_0_22px_rgba(34,197,94,0.12),0_20px_44px_-34px_rgba(87,212,160,0.2)] hover:border-teacher/28 hover:shadow-[0_0_26px_rgba(34,197,94,0.16),0_24px_50px_-36px_rgba(87,212,160,0.3)]"
-    : "border-cyan-300/40 shadow-[0_0_20px_rgba(56,189,248,0.15),0_24px_52px_-38px_rgba(56,189,248,0.32)] hover:border-cyan-200/52 hover:shadow-[0_0_24px_rgba(56,189,248,0.22),0_30px_60px_-40px_rgba(56,189,248,0.42)]";
+    : "border-emerald-300/40 shadow-[0_0_20px_rgba(52,211,153,0.15),0_24px_52px_-38px_rgba(52,211,153,0.32)] hover:border-emerald-200/52 hover:shadow-[0_0_24px_rgba(52,211,153,0.22),0_30px_60px_-40px_rgba(52,211,153,0.42)]";
 
   const radialToneClass = isTeacher
     ? "bg-[radial-gradient(circle_at_86%_12%,rgba(87,212,160,0.24),rgba(87,212,160,0)_58%)]"
-    : "bg-[radial-gradient(circle_at_84%_10%,rgba(99,102,241,0.22),rgba(99,102,241,0)_56%)]";
+    : "bg-[radial-gradient(circle_at_84%_10%,rgba(52,211,153,0.22),rgba(52,211,153,0)_56%)]";
 
   const ambientToneClass = isTeacher
     ? "bg-[linear-gradient(140deg,rgba(41,112,85,0.26),rgba(8,24,20,0.08)_44%,rgba(87,212,160,0.18)_100%)]"
-    : "bg-[linear-gradient(138deg,rgba(99,102,241,0.24),rgba(37,99,235,0.08)_42%,rgba(168,85,247,0.2)_100%)]";
+    : "bg-[linear-gradient(138deg,rgba(16,185,129,0.24),rgba(5,46,22,0.08)_42%,rgba(52,211,153,0.2)_100%)]";
 
-  const labelToneClass = isTeacher ? "text-emerald-100/78" : "text-indigo-100/72";
+  const labelToneClass = isTeacher ? "text-emerald-100/78" : "text-emerald-100/72";
 
   const statusToneClass = isTeacher
     ? "border-teacher/40 bg-teacher/14 text-teacher"
-    : "border-student/40 bg-student/14 text-student";
+    : "border-emerald-400/40 bg-emerald-400/14 text-emerald-400";
 
   const ctaToneClass = isTeacher
     ? "border-teacher/45 bg-[linear-gradient(135deg,rgba(87,212,160,0.30),rgba(47,118,90,0.5))] text-emerald-50 group-hover:border-teacher/65"
-    : "border-indigo-200/24 bg-[linear-gradient(135deg,rgba(79,70,229,0.32),rgba(37,99,235,0.25))] text-white group-hover:border-indigo-100/44";
+    : "border-emerald-300/30 bg-[linear-gradient(135deg,rgba(16,185,129,0.32),rgba(5,150,105,0.40))] text-emerald-50 group-hover:border-emerald-200/50";
 
   const ctaGlowClass = isTeacher
     ? "group-hover:shadow-[0_10px_24px_-14px_rgba(87,212,160,0.72)]"
-    : "group-hover:shadow-[0_10px_24px_-14px_rgba(99,102,241,0.8)]";
+    : "group-hover:shadow-[0_10px_24px_-14px_rgba(52,211,153,0.72)]";
 
   return (
     <Link
@@ -82,10 +82,10 @@ export const SelectionCard = ({
           className={`absolute inset-0 opacity-0 transition-opacity duration-[220ms] ease-[var(--ease-premium)] group-hover:opacity-100 ${
             isTeacher
               ? "bg-[radial-gradient(circle_at_85%_18%,rgba(87,212,160,0.11),rgba(87,212,160,0)_58%)]"
-              : "bg-[radial-gradient(circle_at_84%_16%,rgba(99,102,241,0.12),rgba(99,102,241,0)_58%)]"
+              : "bg-[radial-gradient(circle_at_84%_16%,rgba(52,211,153,0.12),rgba(52,211,153,0)_58%)]"
           }`}
         />
-        <div className={`absolute right-4 bottom-3 ${isTeacher ? "text-emerald-200" : "text-indigo-200"} opacity-[0.05]`}>
+        <div className={`absolute right-4 bottom-3 text-emerald-200 opacity-[0.05]`}>
           {isTeacher ? <Presentation size={80} strokeWidth={1.8} /> : <GraduationCap size={80} strokeWidth={1.8} />}
         </div>
       </div>

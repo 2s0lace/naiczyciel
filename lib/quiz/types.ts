@@ -64,10 +64,19 @@ export type QuizSessionPayload = {
   answers: QuizAnswerSnapshot[];
 };
 
+export type CategoryBreakdownItem = {
+  label: string;
+  attempts: number;
+  correct: number;
+  percent: number | null;
+  has_data: boolean;
+};
+
 export type QuizSummary = {
   totalQuestions: number;
   correctAnswers: number;
   scorePercent: number;
   strongestArea?: string;
   weakestArea?: string;
+  categoryBreakdown: CategoryBreakdownItem[];
 };

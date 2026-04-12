@@ -3,7 +3,7 @@ import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
 import { buildSummary, fetchSessionAnswers } from "@/lib/quiz/repository";
 import {
   completeLocalSession,
-  getOwnedLocalSession,
+  getAccessibleLocalSession,
   isLocalSessionId,
 } from "@/lib/quiz/local-store";
 import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
@@ -32,22 +32,13 @@ export async function POST(request: Request, context: RouteContext) {
     const fallbackMode = typeof body.mode === "string" ? body.mode : "reactions";
     const access = await resolveAccessTierFromRequest(request);
 
-    if (!access.userId || !access.accessToken) {
-      return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
-    }
-
-    await loadSetCatalogFromDatabase({
-      accessToken: access.accessToken,
-      allowBootstrap: false,
-    });
-
     if (isLocalSessionId(sessionId)) {
-      const localSession = getOwnedLocalSession(sessionId, access.userId);
+      const localSession = getAccessibleLocalSession(sessionId, access.userId);
 
       if (!localSession) {
         return NextResponse.json(
           {
-            error: "Nie znaleziono sesji do zakonczenia.",
+            error: "Nie udalo sie rozpoczac quizu. Brak lokalnej sesji.",
           },
           { status: 404 },
         );
@@ -66,6 +57,15 @@ export async function POST(request: Request, context: RouteContext) {
         storage: "local",
       });
     }
+
+    if (!access.userId || !access.accessToken) {
+      return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
+    }
+
+    await loadSetCatalogFromDatabase({
+      accessToken: access.accessToken,
+      allowBootstrap: false,
+    });
 
     const supabase = getSupabaseUserClient(access.accessToken);
 
@@ -113,9 +113,12 @@ export async function POST(request: Request, context: RouteContext) {
       .eq("user_id", access.userId);
 
     if (primaryUpdate.error) {
-      const fallbackPatch: Record<string, string> = {
+      const fallbackPatch: Record<string, string | number> = {
         status: "completed",
         completed_at: finishedAt,
+        total_questions: summary.totalQuestions,
+        correct_answers: summary.correctAnswers,
+        score_percent: summary.scorePercent,
         user_id: access.userId,
       };
 

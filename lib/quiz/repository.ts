@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { validateExerciseRecord, type UniversalExerciseRecord } from "@/lib/quiz/admin-exercise";
-import type { QuizAnswerSnapshot, QuizQuestion, QuizQuestionItem, QuizOption } from "@/lib/quiz/types";
+import type { CategoryBreakdownItem, QuizAnswerSnapshot, QuizQuestion, QuizQuestionItem, QuizOption } from "@/lib/quiz/types";
 
 type QuestionRow = {
   id: string | number;
@@ -825,6 +825,7 @@ export function buildSummary(params: {
   scorePercent: number;
   strongestArea?: string;
   weakestArea?: string;
+  categoryBreakdown: CategoryBreakdownItem[];
 } {
   const { questions, answers } = params;
   const totalQuestions = questions.reduce((sum, question) => sum + countAnswerableItems(question), 0);
@@ -863,11 +864,20 @@ export function buildSummary(params: {
     .filter((item) => item.total > 0)
     .sort((a, b) => b.ratio - a.ratio);
 
+  const categoryBreakdown: CategoryBreakdownItem[] = Object.entries(areaStats).map(([label, stats]) => ({
+    label,
+    attempts: stats.total,
+    correct: stats.correct,
+    percent: stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : null,
+    has_data: stats.total > 0,
+  }));
+
   return {
     totalQuestions,
     correctAnswers,
     scorePercent,
     strongestArea: ranked[0]?.area,
     weakestArea: ranked[ranked.length - 1]?.area,
+    categoryBreakdown,
   };
 }

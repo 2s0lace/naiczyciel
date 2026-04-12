@@ -737,12 +737,11 @@ function mergeRowsWithDerivedAnswerStats(
 
     return {
       ...row,
-      total_questions:
-        asNullableNumber(row.total_questions) ?? stats.totalQuestions,
-      correct_answers:
-        asNullableNumber(row.correct_answers) ?? stats.correctAnswers,
-      score_percent:
-        asNullableNumber(row.score_percent) ?? stats.scorePercent,
+      // Derived stats come from actual answer records — always prefer them
+      // over stored values which may be 0 due to a race condition on /complete.
+      total_questions: stats.totalQuestions,
+      correct_answers: stats.correctAnswers,
+      score_percent: stats.scorePercent,
       status:
         asText(row.status).toLowerCase() === "completed" ? row.status : "completed",
     };

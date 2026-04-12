@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash } from "node:crypto";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient } from "@/lib/supabase/server";
 
 const USER_HOURLY_LIMIT = 10;
 const USER_DAILY_LIMIT = 50;
@@ -100,7 +100,7 @@ async function consumeCounter(params: {
   limit: number;
   window: WindowKind;
 }): Promise<CounterResult> {
-  const supabase = getSupabaseServerClient();
+  const supabase = getSupabaseAdminClient();
   const now = new Date();
   const windowStart = startOfWindow(now, params.window);
   const windowStartIso = windowStart.toISOString();

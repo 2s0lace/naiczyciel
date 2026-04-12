@@ -54,8 +54,8 @@ function SocialIconButton({
   const isConfigured = href.trim().length > 0;
   const baseClassName =
     variant === "light"
-      ? "inline-flex h-10 w-10 items-center justify-center rounded-full text-white drop-shadow-[0_4px_12px_rgba(255,255,255,0.18)] min-[769px]:h-11 min-[769px]:w-11"
-      : "inline-flex h-9 w-9 items-center justify-center text-black";
+      ? "inline-flex h-8 w-8 items-center justify-center rounded-full text-white drop-shadow-[0_4px_12px_rgba(255,255,255,0.18)] min-[1100px]:h-9 min-[1100px]:w-9 min-[1600px]:h-11 min-[1600px]:w-11"
+      : "inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center text-black min-[1100px]:h-6 min-[1100px]:w-6 min-[1600px]:h-9 min-[1600px]:w-9";
 
   if (!isConfigured) {
     return (
@@ -84,11 +84,11 @@ function SocialIconButton({
 export function SocialLinks({ className, disableHover = false, variant = "dark" }: SocialLinksProps) {
   const iconClassName =
     variant === "light"
-      ? "h-[18px] w-[18px] text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.34)] min-[769px]:h-[20px] min-[769px]:w-[20px]"
-      : "h-[15px] w-[15px] text-black min-[769px]:h-[17px] min-[769px]:w-[17px]";
+      ? "h-4 w-4 text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.34)] min-[1100px]:h-[17px] min-[1100px]:w-[17px] min-[1600px]:h-5 min-[1600px]:w-5"
+      : "h-[11px] w-[11px] text-black min-[1100px]:h-[13px] min-[1100px]:w-[13px] min-[1600px]:h-[17px] min-[1600px]:w-[17px]";
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
+    <div className={cn("flex items-center gap-0.5 min-[1100px]:gap-1 min-[1600px]:gap-2", className)}>
       <SocialIconButton
         label="Instagram"
         href={SOCIAL_URLS.instagram}

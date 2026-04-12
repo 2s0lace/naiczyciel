@@ -27,7 +27,7 @@ export function QuizHeader({ current, total, elapsedSeconds, backHref = "/e8", s
   const roundedProgress = Math.round(progress);
 
   return (
-    <header className="sticky top-0 z-40 -mx-4 bg-[#050510]/88 px-4 pt-1.5 pb-1.5 backdrop-blur-xl md:px-5 xl:mx-auto xl:mt-3 xl:max-w-[1120px] xl:rounded-2xl xl:border xl:border-white/10 xl:bg-[#050510]/82 xl:px-5 xl:pt-2.5 xl:pb-2">
+    <header className="sticky top-0 z-40 -mx-4 bg-[#050510]/88 px-4 pt-1.5 pb-1.5 backdrop-blur-xl md:px-5 xl:mx-auto xl:mt-3 xl:max-w-[1120px] xl:rounded-2xl xl:border xl:border-white/10 xl:bg-[#050510]/82 xl:px-5 xl:pt-2.5 xl:pb-2 min-[1440px]:max-w-[1240px] min-[1440px]:px-6 min-[1440px]:pt-3 min-[1440px]:pb-2.5 2xl:max-w-[1380px] min-[2200px]:max-w-[1540px] min-[2200px]:px-7">
       <div className="relative flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5 xl:gap-2">
           <Link

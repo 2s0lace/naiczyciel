@@ -1,4 +1,4 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -11,8 +11,8 @@ import { MarketingFooter } from "@/components/layout/marketing-footer";
 import bottomCenterAsset from "@/img/8969331.png";
 import landingLogo from "@/img/Bez nazwy-3.png";
 import paperCutNoteElementAlt from "@/img/papirek1.png";
-import paperCutNoteElement from "@/img/papirek.png";
 import paperCutDesignElement from "@/img/paper-cut-design-element.png";
+import { HeroNoteCard } from "@/components/landing/hero-note-card";
 
 const EDU_NOTIFY_MAILTO =
   "mailto:kontakt@naiczyciel.pl?subject=Powiadom%20mnie%20o%20EDU&body=Cze%C5%9B%C4%87%2C%20poprosz%C4%99%20o%20powiadomienie%20o%20starcie%20panelu%20EDU.";
@@ -32,26 +32,26 @@ type FloatingIconCard = {
 
 type AmbientHeroSymbol =
   | {
-      kind: "icon";
-      Icon: LucideIcon;
-      positionClass: string;
-      colorClass: string;
-      sizeClass: string;
-      rotate: number;
-      opacity: number;
-      blur?: number;
-    }
+    kind: "icon";
+    Icon: LucideIcon;
+    positionClass: string;
+    colorClass: string;
+    sizeClass: string;
+    rotate: number;
+    opacity: number;
+    blur?: number;
+  }
   | {
-      kind: "glyph";
-      glyph: string;
-      positionClass: string;
-      colorClass: string;
-      sizeClass: string;
-      rotate: number;
-      opacity: number;
-      blur?: number;
-      weightClass?: string;
-    };
+    kind: "glyph";
+    glyph: string;
+    positionClass: string;
+    colorClass: string;
+    sizeClass: string;
+    rotate: number;
+    opacity: number;
+    blur?: number;
+    weightClass?: string;
+  };
 
 const FLOATING_ICON_CARDS: FloatingIconCard[] = [
   { Icon: BookOpen, positionClass: "top-[11%] left-[3.5%]", rotate: -12, delay: "0s", duration: "5.8s" },
@@ -234,115 +234,85 @@ export default function LandingPage() {
                 ),
               )}
             </div>
-              <div className="relative mx-auto h-[34rem] w-full max-w-5xl md:h-[46rem]">
-                <p className="font-gloria-hallelujah absolute left-[4%] top-0 z-[4] rotate-[-4deg] text-[13px] tracking-[0.04em] text-cyan-300/90 md:left-[3%] md:text-[15px]">
-                  Bądźmy szczerzy
-                </p>
-                <h1
-                  className="absolute left-[4%] top-[2.1rem] z-[4] max-w-[19rem] text-[clamp(23px,6.2vw,28px)] leading-[1.02] text-white md:left-[3%] md:top-[2.8rem] md:max-w-[19rem] md:text-[clamp(39px,4.7vw,63px)]"
-                  style={{ fontFamily: "var(--font-figtree)", fontWeight: 900 }}
-                >
-                  <span className="block md:hidden">AI ma pomagać w nauce,</span>
-                  <span className="block md:hidden">NIE myśleć za Ciebie.</span>
-                  <span className="hidden md:block">AI ma</span>
-                  <span className="hidden md:block">pomagać</span>
-                  <span className="hidden md:block">w nauce,</span>
-                  <span className="hidden md:block">NIE</span>
-                  <span className="hidden md:block">myśleć za</span>
-                  <span className="hidden md:block">Ciebie.</span>
-                </h1>
+            <div className="relative mx-auto w-full max-w-5xl pt-2 min-[1080px]:h-[46rem] min-[1080px]:pt-0">
+              <p className="font-gloria-hallelujah relative z-[4] ml-[4%] rotate-[-4deg] text-[13px] tracking-[0.04em] text-cyan-300/90 min-[768px]:ml-[3%] min-[768px]:text-[15px] min-[1080px]:absolute min-[1080px]:left-[3%] min-[1080px]:top-0 min-[1080px]:ml-0">
+                Bądźmy szczerzy
+              </p>
+              <h1
+                className="relative z-[4] mt-5 ml-[4%] max-w-[12rem] text-[clamp(23px,6.2vw,28px)] leading-[1.02] text-white min-[768px]:ml-[3%] min-[768px]:max-w-[16rem] min-[768px]:text-[clamp(39px,4.7vw,63px)] min-[1080px]:absolute min-[1080px]:left-[3%] min-[1080px]:top-[2.8rem] min-[1080px]:mt-0 min-[1080px]:ml-0 min-[1080px]:max-w-[19rem]"
+                style={{ fontFamily: "var(--font-figtree)", fontWeight: 900 }}
+              >
+                <span className="block md:hidden">AI ma pomagać w nauce,</span>
+                <span className="block md:hidden">NIE myśleć za Ciebie.</span>
+                <span className="hidden md:block">AI ma</span>
+                <span className="hidden md:block">pomagać</span>
+                <span className="hidden md:block">w nauce,</span>
+                <span className="hidden md:block">NIE</span>
+                <span className="hidden md:block">myśleć za</span>
+                <span className="hidden md:block">Ciebie.</span>
+              </h1>
 
-                <div className="pointer-events-none absolute left-[calc(50%+50px)] top-[calc(5.95rem-98px)] z-[3] w-[181.44%] -translate-x-1/2 md:left-[2%] md:top-[8.5rem] md:w-[95%] md:translate-x-[175px] md:-translate-y-[330px] relative">
-                  <Image
-                    src={paperCutNoteElement}
-                    alt=""
-                    aria-hidden
-                    className="h-auto w-full object-contain [filter:drop-shadow(0_28px_52px_rgba(0,0,0,0.48))_drop-shadow(0_12px_22px_rgba(0,0,0,0.28))]"
-                  />
-                  <div
-                    aria-hidden
-                    className="absolute left-[12px] top-[68px] z-[3] hidden flex-col gap-[14px]"
-                  >
-                    {Array.from({ length: 6 }).map((_, index) => (
-                      <span
-                        key={`paper-punch-hole-${index}`}
-                        className="block h-[8px] w-[8px] rounded-full bg-[#050510] md:h-[11px] md:w-[11px]"
-                        style={{
-                          boxShadow:
-                            "inset 0 1px 1px rgba(0,0,0,0.38), inset 0 -1px 2px rgba(255,255,255,0.05), 0 0 0 1px rgba(58,46,24,0.16), 1px 1px 2px rgba(0,0,0,0.14)",
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <div className="absolute left-[170px] top-[178px] z-[2] flex w-[58%] flex-col items-start justify-start md:left-[260px] md:top-[290px] md:w-[58%]">
-                    <div
-                      className="font-gloria-hallelujah flex w-full max-w-[62%] flex-col gap-2 text-[12.52px] text-[#1a1a1a]/90 md:max-w-[60%] md:text-[16.7px]"
-                      style={{ overflowWrap: "break-word", wordBreak: "normal", whiteSpace: "normal", lineHeight: 1.25 }}
-                    >
-                      <p>AI potrafi pomóc, ale bardzo łatwo zacząć klikać więcej, a myśleć mniej. AI ma wspierać ucznia, nie zastępować jego własnego myślenia.</p>
-                      <p>Dlatego w nAIczycielu najpierw odpowiadasz Ty, a AI dopiero potem pomaga sprawdzić i wyjaśnić.</p>
-                      <p className="pt-1 text-[11.64px] text-[#1a1a1a]/72 md:text-[14.1px]">Źródła: Lee et al., CHI 2025 / Microsoft Research; Khalil et al., 2025 systematic review.</p>
-                    </div>
-                  </div>
-                </div>
+              <HeroNoteCard className="pointer-events-none relative left-1/2 z-[3] -mt-16 w-[200%] max-w-[50rem] -translate-x-[44%] min-[768px]:hidden" />
 
-                <div className="pointer-events-none absolute left-1/2 top-[20.25rem] z-[2] hidden w-[126%] -translate-x-1/2 rotate-0 md:left-auto md:right-[2%] md:top-[18rem] md:block md:w-[108%] md:translate-x-[320px] md:-translate-y-[560px] md:rotate-[9deg]">
-                  <Image
-                    src={paperCutNoteElementAlt}
-                    alt=""
-                    aria-hidden
-                    className="h-auto w-full object-contain opacity-92 [filter:drop-shadow(0_20px_34px_rgba(0,0,0,0.24))]"
-                  />
-                  <div aria-hidden className="absolute inset-[18%_14%_18%_14%] z-[3] hidden md:block">
-                    <BookOpen className="absolute left-[16%] top-[26%] h-10 w-10 text-[#1a1a1a]/72 [filter:drop-shadow(0_1px_0_rgba(255,255,255,0.08))]" strokeWidth={2.4} />
-                    <Target className="absolute left-[44%] top-[42%] h-10 w-10 text-[#1a1a1a]/72 [filter:drop-shadow(0_1px_0_rgba(255,255,255,0.08))]" strokeWidth={2.4} />
-                    <Brain className="absolute right-[20%] top-[22%] h-10 w-10 translate-x-[-100px] translate-y-[300px] text-[#1a1a1a]/72 [filter:drop-shadow(0_1px_0_rgba(255,255,255,0.08))]" strokeWidth={2.4} />
-                    <Zap className="absolute right-[26%] bottom-[18%] h-9 w-9 text-[#1a1a1a]/72 [filter:drop-shadow(0_1px_0_rgba(255,255,255,0.08))]" strokeWidth={2.35} />
-                  </div>
-                </div>
+              <HeroNoteCard className="pointer-events-none relative z-[3] hidden min-[768px]:mr-[3%] min-[768px]:ml-auto min-[768px]:block min-[768px]:w-[105%] min-[768px]:max-w-none min-[1080px]:absolute min-[1080px]:left-[2%] min-[1080px]:top-[8.5rem] min-[1080px]:mx-0 min-[1080px]:mt-0 min-[1080px]:w-[95%] min-[1080px]:max-w-none min-[1080px]:translate-x-[175px] min-[1080px]:-translate-y-[330px]" />
 
-                <div
+              <div className="pointer-events-none absolute left-1/2 top-[20.25rem] z-[2] hidden w-[126%] -translate-x-1/2 rotate-0 min-[1080px]:left-auto min-[1080px]:right-[2%] min-[1080px]:top-[18rem] min-[1080px]:block min-[1080px]:w-[108%] min-[1080px]:translate-x-[320px] min-[1080px]:-translate-y-[560px] min-[1080px]:rotate-[9deg]">
+                <Image
+                  src={paperCutNoteElementAlt}
+                  alt=""
                   aria-hidden
-                  className="pointer-events-none absolute hidden right-[16%] top-[14.1rem] z-[5] h-[72px] w-[126px] -translate-x-[100px] translate-y-[20px] md:block md:right-[17%] md:top-[16.5rem] md:h-[82px] md:w-[140px] md:translate-x-[130px] md:-translate-y-[160px] md:rotate-[8deg]"
-                >
-                  <svg viewBox="0 0 140 82" className="h-full w-full" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <defs>
-                      <linearGradient id="chart-line-gradient" x1="6" y1="70" x2="134" y2="16" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#0EA5E9" stopOpacity="0.75" />
-                        <stop offset="1" stopColor="#22D3EE" stopOpacity="0.95" />
-                      </linearGradient>
-                      <linearGradient id="chart-bar-gradient" x1="0" y1="82" x2="0" y2="0" gradientUnits="userSpaceOnUse">
-                        <stop stopColor="#22D3EE" stopOpacity="0.16" />
-                        <stop offset="1" stopColor="#67E8F9" stopOpacity="0.55" />
-                      </linearGradient>
-                    </defs>
-                    <path d="M8 70H132" stroke="rgba(148, 163, 184, 0.35)" strokeWidth="1.2" />
-                    <rect x="18" y="46" width="10" height="24" rx="2.5" fill="url(#chart-bar-gradient)" />
-                    <rect x="44" y="38" width="10" height="32" rx="2.5" fill="url(#chart-bar-gradient)" />
-                    <rect x="70" y="30" width="10" height="40" rx="2.5" fill="url(#chart-bar-gradient)" />
-                    <rect x="96" y="22" width="10" height="48" rx="2.5" fill="url(#chart-bar-gradient)" />
-                    <path d="M10 62L36 53L62 45L88 32L116 21L130 16" stroke="url(#chart-line-gradient)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
-                    <circle cx="10" cy="62" r="2.2" fill="#67E8F9" />
-                    <circle cx="36" cy="53" r="2.2" fill="#67E8F9" />
-                    <circle cx="62" cy="45" r="2.2" fill="#67E8F9" />
-                    <circle cx="88" cy="32" r="2.2" fill="#67E8F9" />
-                    <circle cx="116" cy="21" r="2.2" fill="#67E8F9" />
-                    <circle cx="130" cy="16" r="2.2" fill="#67E8F9" />
-                  </svg>
+                  className="h-auto w-full object-contain opacity-92 [filter:drop-shadow(0_20px_34px_rgba(0,0,0,0.24))]"
+                />
+                <div aria-hidden className="absolute inset-[18%_14%_18%_14%] z-[3] hidden min-[1080px]:block">
+                  <BookOpen className="absolute left-[16%] top-[26%] h-10 w-10 text-[#1a1a1a]/72 [filter:drop-shadow(0_1px_0_rgba(255,255,255,0.08))]" strokeWidth={2.4} />
+                  <Target className="absolute left-[44%] top-[42%] h-10 w-10 text-[#1a1a1a]/72 [filter:drop-shadow(0_1px_0_rgba(255,255,255,0.08))]" strokeWidth={2.4} />
+                  <Brain className="absolute right-[20%] top-[22%] h-10 w-10 translate-x-[-100px] translate-y-[300px] text-[#1a1a1a]/72 [filter:drop-shadow(0_1px_0_rgba(255,255,255,0.08))]" strokeWidth={2.4} />
+                  <Zap className="absolute right-[26%] bottom-[18%] h-9 w-9 text-[#1a1a1a]/72 [filter:drop-shadow(0_1px_0_rgba(255,255,255,0.08))]" strokeWidth={2.35} />
                 </div>
               </div>
-              <section className="relative top-[-100px] z-[8] mx-auto mt-[-2.75rem] flex w-full max-w-md flex-col items-center px-5 pb-3 text-center md:hidden">
-                <p className="font-gloria-hallelujah relative top-[24px] left-[90px] mb-5 rotate-[4deg] text-[0.768rem] tracking-[0.02em] text-cyan-300/90">
-                  Gotowy, żeby zacząć?
-                </p>
-                <Link
-                  href="/e8/quiz"
-                  className="group relative mt-4 flex w-full max-w-[320px] items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-900/30 transition-[transform,filter,box-shadow,background-color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985]"
-                >
-                  Zacznij test
-                  <ChevronRight size={20} className="text-indigo-200 transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]" />
-                </Link>
-              </section>
+
+              <div
+                aria-hidden
+                className="pointer-events-none absolute hidden right-[16%] top-[14.1rem] z-[5] h-[72px] w-[126px] -translate-x-[100px] translate-y-[20px] min-[1080px]:block min-[1080px]:right-[17%] min-[1080px]:top-[16.5rem] min-[1080px]:h-[82px] min-[1080px]:w-[140px] min-[1080px]:translate-x-[130px] min-[1080px]:-translate-y-[160px] min-[1080px]:rotate-[8deg]"
+              >
+                <svg viewBox="0 0 140 82" className="h-full w-full" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <defs>
+                    <linearGradient id="chart-line-gradient" x1="6" y1="70" x2="134" y2="16" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#0EA5E9" stopOpacity="0.75" />
+                      <stop offset="1" stopColor="#22D3EE" stopOpacity="0.95" />
+                    </linearGradient>
+                    <linearGradient id="chart-bar-gradient" x1="0" y1="82" x2="0" y2="0" gradientUnits="userSpaceOnUse">
+                      <stop stopColor="#22D3EE" stopOpacity="0.16" />
+                      <stop offset="1" stopColor="#67E8F9" stopOpacity="0.55" />
+                    </linearGradient>
+                  </defs>
+                  <path d="M8 70H132" stroke="rgba(148, 163, 184, 0.35)" strokeWidth="1.2" />
+                  <rect x="18" y="46" width="10" height="24" rx="2.5" fill="url(#chart-bar-gradient)" />
+                  <rect x="44" y="38" width="10" height="32" rx="2.5" fill="url(#chart-bar-gradient)" />
+                  <rect x="70" y="30" width="10" height="40" rx="2.5" fill="url(#chart-bar-gradient)" />
+                  <rect x="96" y="22" width="10" height="48" rx="2.5" fill="url(#chart-bar-gradient)" />
+                  <path d="M10 62L36 53L62 45L88 32L116 21L130 16" stroke="url(#chart-line-gradient)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="10" cy="62" r="2.2" fill="#67E8F9" />
+                  <circle cx="36" cy="53" r="2.2" fill="#67E8F9" />
+                  <circle cx="62" cy="45" r="2.2" fill="#67E8F9" />
+                  <circle cx="88" cy="32" r="2.2" fill="#67E8F9" />
+                  <circle cx="116" cy="21" r="2.2" fill="#67E8F9" />
+                  <circle cx="130" cy="16" r="2.2" fill="#67E8F9" />
+                </svg>
+              </div>
+            </div>
+            <section className="relative z-[16] mx-auto mt-4 flex w-full max-w-md flex-col items-center px-5 pb-10 text-center md:hidden">
+              <p className="font-gloria-hallelujah relative top-[24px] left-[90px] mb-5 rotate-[4deg] text-[0.768rem] tracking-[0.02em] text-cyan-300/90">
+                Gotowy, żeby zacząć?
+              </p>
+              <Link
+                href="/e8/quiz"
+                className="group relative mt-4 flex w-full max-w-[320px] items-center justify-center gap-2 rounded-2xl bg-indigo-600 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-900/30 transition-[transform,filter,box-shadow,background-color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.985]"
+              >
+                Zacznij test
+                <ChevronRight size={20} className="text-indigo-200 transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]" />
+              </Link>
+            </section>
           </div>
         </RevealOnView>
       </section>
@@ -396,4 +366,3 @@ export default function LandingPage() {
     </main>
   );
 }
-

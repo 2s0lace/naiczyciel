@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
   try {
     const access = await resolveAccessTierFromRequest(request);
 
-    if (!access.userId) {
+    if (!access.userId || !access.accessToken) {
       return NextResponse.json(
         {
           error: "Brak autoryzacji.",
@@ -16,18 +16,7 @@ export async function POST(request: Request) {
       );
     }
 
-    let supabase: ReturnType<typeof getSupabaseServerClient>;
-
-    try {
-      supabase = getSupabaseServerClient();
-    } catch {
-      return NextResponse.json(
-        {
-          error: "Brak połączenia z bazą danych.",
-        },
-        { status: 500 },
-      );
-    }
+    const supabase = getSupabaseUserClient(access.accessToken);
 
     const sessionsResult = await supabase
       .from("quiz_sessions")
@@ -36,10 +25,10 @@ export async function POST(request: Request) {
       .limit(5000);
 
     if (sessionsResult.error) {
+      console.error("[progress-reset] sessions lookup failed", sessionsResult.error);
       return NextResponse.json(
         {
-          error: "Nie udało się pobrać sesji użytkownika.",
-          details: sessionsResult.error.message,
+          error: "Nie udalo sie pobrac sesji uzytkownika.",
         },
         { status: 500 },
       );
@@ -56,10 +45,10 @@ export async function POST(request: Request) {
         .in("session_id", sessionIds);
 
       if (statsDelete.error) {
+        console.error("[progress-reset] stats delete failed", statsDelete.error);
         return NextResponse.json(
           {
-            error: "Nie udało się usunąć statystyk progresu.",
-            details: statsDelete.error.message,
+            error: "Nie udalo sie usunac statystyk progresu.",
           },
           { status: 500 },
         );
@@ -71,10 +60,10 @@ export async function POST(request: Request) {
         .in("session_id", sessionIds);
 
       if (answersDelete.error) {
+        console.error("[progress-reset] answers delete failed", answersDelete.error);
         return NextResponse.json(
           {
-            error: "Nie udało się usunąć odpowiedzi z sesji.",
-            details: answersDelete.error.message,
+            error: "Nie udalo sie usunac odpowiedzi z sesji.",
           },
           { status: 500 },
         );
@@ -87,10 +76,10 @@ export async function POST(request: Request) {
       .eq("user_id", access.userId);
 
     if (sessionsDelete.error) {
+      console.error("[progress-reset] sessions delete failed", sessionsDelete.error);
       return NextResponse.json(
         {
-          error: "Nie udało się usunąć sesji użytkownika.",
-          details: sessionsDelete.error.message,
+          error: "Nie udalo sie usunac sesji uzytkownika.",
         },
         { status: 500 },
       );
@@ -101,12 +90,11 @@ export async function POST(request: Request) {
       deletedSessions: sessionIds.length,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[progress-reset] unexpected error", error);
 
     return NextResponse.json(
       {
-        error: "Nie udało się zresetować progresu.",
-        details: message,
+        error: "Nie udalo sie zresetowac progresu.",
       },
       { status: 500 },
     );

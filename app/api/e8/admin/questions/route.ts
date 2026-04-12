@@ -17,7 +17,7 @@ import {
 } from "@/lib/quiz/admin-exercise";
 import { getSetSlots } from "@/lib/quiz/set-catalog";
 import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient, getSupabaseServerClient, getSupabaseUserClient } from "@/lib/supabase/server";
 
 type AdminSource = "supabase" | "local" | "mixed";
 
@@ -173,10 +173,14 @@ function shouldUseServiceRoleForAdmin() {
 
 function createAdminSupabaseClient(accessToken: string | null) {
   if (shouldUseServiceRoleForAdmin()) {
-    return getSupabaseServerClient();
+    return getSupabaseAdminClient();
   }
 
-  return getSupabaseServerClient(accessToken);
+  if (!accessToken) {
+    throw new Error("Brak tokenu dostepu dla admina.");
+  }
+
+  return getSupabaseUserClient(accessToken);
 }
 
 async function requireAdmin(request: Request) {
@@ -524,12 +528,12 @@ export async function GET(request: Request) {
     supabase = createAdminSupabaseClient(authGuard.accessToken);
   } catch (error) {
     const fallbackExercises = listAdminExercises(filters);
-    const message = error instanceof Error ? error.message : "Brak konfiguracji Supabase na serwerze.";
+    console.error("[admin-questions] supabase init failed", error);
 
     return NextResponse.json(
       {
         error: "Nie mozna nawiazac polaczenia z Supabase.",
-        details: [message],
+        details: ["Sprawdz konfiguracje polaczenia z baza danych."],
         source: "local" satisfies AdminSource,
         exercises: fallbackExercises,
       },
@@ -538,15 +542,24 @@ export async function GET(request: Request) {
   }
 
   try {
-    await loadSetCatalogFromDatabase(authGuard.accessToken);
+    await loadSetCatalogFromDatabase({
+      accessToken: authGuard.accessToken,
+      allowBootstrap: true,
+    });
     let exercises = await listFromSupabase(supabase, filters);
     exercises = excludeExercisesFromSets(exercises, filters.exclude_set_ids ?? []);
 
     if (exercises.length === 0 && isUnfiltered(filters)) {
       try {
         const alternateClient = shouldUseServiceRoleForAdmin()
-          ? getSupabaseServerClient(authGuard.accessToken)
-          : getSupabaseServerClient();
+          ? authGuard.accessToken
+            ? getSupabaseUserClient(authGuard.accessToken)
+            : null
+          : getSupabaseAdminClient();
+        
+        if (!alternateClient) {
+          throw new Error("Brak tokenu dostepu dla admina.");
+        }
         const alternateExercises = await listFromSupabase(alternateClient, filters);
 
         if (alternateExercises.length > 0) {
@@ -562,14 +575,17 @@ export async function GET(request: Request) {
       exercises,
     });
   } catch (error) {
-    await loadSetCatalogFromDatabase(authGuard.accessToken);
+    await loadSetCatalogFromDatabase({
+      accessToken: authGuard.accessToken,
+      allowBootstrap: true,
+    });
     const fallbackExercises = excludeExercisesFromSets(listAdminExercises(filters), filters.exclude_set_ids ?? []);
-    const message = error instanceof Error ? error.message : "Nie udalo sie pobrac cwiczen z bazy.";
+    console.error("[admin-questions] list failed", error);
 
     return NextResponse.json(
       {
         error: "Nie udalo sie pobrac cwiczen z Supabase.",
-        details: [message],
+        details: ["Sprobuj ponownie za chwile."],
         source: "local" satisfies AdminSource,
         exercises: fallbackExercises,
       },
@@ -590,7 +606,8 @@ export async function POST(request: Request) {
   const validated = validateExerciseRecord(rawExercise);
 
   if (!validated.isValid || !validated.exercise) {
-    return NextResponse.json({ error: "Validation failed.", details: validated.errors }, { status: 400 });
+    console.error("[admin-questions] validation failed", validated.errors);
+    return NextResponse.json({ error: "Nieprawidlowe dane wejsciowe." }, { status: 400 });
   }
 
   let supabase: ReturnType<typeof getSupabaseServerClient>;
@@ -598,8 +615,11 @@ export async function POST(request: Request) {
   try {
     supabase = createAdminSupabaseClient(authGuard.accessToken);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Brak konfiguracji Supabase na serwerze.";
-    return NextResponse.json({ error: "Nie mozna nawiazac polaczenia z Supabase.", details: [message] }, { status: 500 });
+    console.error("[admin-questions] create init failed", error);
+    return NextResponse.json(
+      { error: "Nie mozna nawiazac polaczenia z Supabase.", details: ["Sprawdz konfiguracje polaczenia z baza danych."] },
+      { status: 500 },
+    );
   }
 
   try {
@@ -610,12 +630,12 @@ export async function POST(request: Request) {
       exercise,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Supabase create failed";
+    console.error("[admin-questions] create failed", error);
 
     return NextResponse.json(
       {
         error: "Nie udalo sie zapisac cwiczenia w Supabase.",
-        details: [message],
+        details: ["Sprobuj ponownie za chwile."],
       },
       { status: 500 },
     );
@@ -642,8 +662,11 @@ export async function PUT(request: Request) {
   try {
     supabase = createAdminSupabaseClient(authGuard.accessToken);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Brak konfiguracji Supabase na serwerze.";
-    return NextResponse.json({ error: "Nie mozna nawiazac polaczenia z Supabase.", details: [message] }, { status: 500 });
+    console.error("[admin-questions] update init failed", error);
+    return NextResponse.json(
+      { error: "Nie mozna nawiazac polaczenia z Supabase.", details: ["Sprawdz konfiguracje polaczenia z baza danych."] },
+      { status: 500 },
+    );
   }
 
   if (rawMany && rawMany.length > 0) {
@@ -670,12 +693,12 @@ export async function PUT(request: Request) {
         exercises: imported,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Supabase import failed";
+      console.error("[admin-questions] bulk import failed", error);
 
       return NextResponse.json(
         {
           error: "Nie udalo sie zaimportowac rekordow do Supabase.",
-          details: [message],
+          details: ["Sprobuj ponownie za chwile."],
         },
         { status: 500 },
       );
@@ -700,12 +723,12 @@ export async function PUT(request: Request) {
         updatedCount: exercises.length,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Supabase bulk status update failed";
+      console.error("[admin-questions] bulk status failed", error);
 
       return NextResponse.json(
         {
           error: "Nie udalo sie masowo zmienic statusu cwiczen w Supabase.",
-          details: [message],
+          details: ["Sprobuj ponownie za chwile."],
         },
         { status: 500 },
       );
@@ -722,7 +745,8 @@ export async function PUT(request: Request) {
   const validated = validateExerciseRecord(rawExercise);
 
   if (!validated.isValid || !validated.exercise) {
-    return NextResponse.json({ error: "Validation failed.", details: validated.errors }, { status: 400 });
+    console.error("[admin-questions] validation failed", validated.errors);
+    return NextResponse.json({ error: "Nieprawidlowe dane wejsciowe." }, { status: 400 });
   }
 
   try {
@@ -733,12 +757,12 @@ export async function PUT(request: Request) {
       exercise,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Supabase update failed";
+    console.error("[admin-questions] update failed", error);
 
     return NextResponse.json(
       {
         error: "Nie udalo sie zaktualizowac cwiczenia w Supabase.",
-        details: [message],
+        details: ["Sprobuj ponownie za chwile."],
       },
       { status: 500 },
     );
@@ -775,8 +799,11 @@ export async function DELETE(request: Request) {
   try {
     supabase = createAdminSupabaseClient(authGuard.accessToken);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Brak konfiguracji Supabase na serwerze.";
-    return NextResponse.json({ error: "Nie mozna nawiazac polaczenia z Supabase.", details: [message] }, { status: 500 });
+    console.error("[admin-questions] delete init failed", error);
+    return NextResponse.json(
+      { error: "Nie mozna nawiazac polaczenia z Supabase.", details: ["Sprawdz konfiguracje polaczenia z baza danych."] },
+      { status: 500 },
+    );
   }
 
   try {
@@ -797,12 +824,12 @@ export async function DELETE(request: Request) {
       exercise,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : hardDelete ? "Supabase hard delete failed" : "Supabase deactivate failed";
+    console.error("[admin-questions] delete failed", error);
 
     return NextResponse.json(
       {
         error: hardDelete ? "Nie udalo sie usunac cwiczen w Supabase." : "Nie udalo sie zdezaktywowac cwiczenia w Supabase.",
-        details: [message],
+        details: ["Sprobuj ponownie za chwile."],
       },
       { status: 500 },
     );

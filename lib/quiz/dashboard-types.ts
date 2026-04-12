@@ -1,6 +1,6 @@
 import type { AccessTier, E8SetDefinition } from "@/lib/quiz/set-catalog";
 
-export type DashboardSessionStatus = "in_progress" | "completed" | "unknown";
+export type DashboardSessionStatus = "in_progress" | "completed" | "cancelled" | "unknown";
 
 export type DashboardSession = {
   id: string;
@@ -22,8 +22,12 @@ export type DashboardStats = {
   solvedQuestions: number;
   averageScorePercent: number | null;
   averageDurationMinutes: number | null;
+  strongestCategory: string | null;
+  weakestCategory: string | null;
   strongestMode: string | null;
   weakestMode: string | null;
+  weakestTargetSource: "grammar" | "vocabulary" | "skill" | null;
+  weakestTargetRaw: string | null;
   lastScorePercent: number | null;
 };
 

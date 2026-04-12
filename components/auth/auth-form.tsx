@@ -57,12 +57,13 @@ const inputBase =
   "w-full rounded-lg border border-[#1c2a3f] bg-[#080c17] px-3.5 py-2.5 text-sm text-[#dde4f0] " +
   "outline-none placeholder:text-[#384e6a] " +
   "transition-[border-color,background-color] duration-200 " +
+  "hover:border-[#263452] hover:bg-[#090e1b] " +
   "focus:border-[#3730a3] focus:bg-[#090e1b] " +
   "disabled:opacity-50";
 
 const inputWithIcon = inputBase + " pr-10";
 
-const labelClass = "block text-[11px] font-semibold tracking-[0.08em] text-[#5c738f] uppercase";
+const labelClass = "block text-[12px] font-semibold tracking-[0.08em] text-[#5c738f] uppercase";
 
 // ─── module-level sub-components (NEVER define inside a component render) ─────
 
@@ -195,7 +196,7 @@ function AuthDivider() {
   return (
     <div className="flex items-center gap-3">
       <span className="h-px flex-1 bg-[#141f30]" />
-      <span className="text-[10px] font-medium tracking-[0.12em] text-[#2d4056] uppercase">albo</span>
+      <span className="text-[11px] font-medium tracking-[0.12em] text-[#2d4056] uppercase">albo</span>
       <span className="h-px flex-1 bg-[#141f30]" />
     </div>
   );
@@ -215,7 +216,7 @@ function GoogleButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-[#1c2a3f] bg-[#080c17] py-2.5 text-[13px] font-medium text-[#8095a8] transition-[border-color,background-color,color] duration-150 hover:border-[#263452] hover:bg-[#0b1020] hover:text-[#a0b1c8] active:scale-[0.987] disabled:cursor-not-allowed disabled:opacity-50"
+      className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-white/[0.06] bg-white/[0.03] py-2.5 text-[13px] font-medium text-[#8095a8] backdrop-blur-md transition-[border-color,background-color,color] duration-150 hover:border-white/[0.10] hover:bg-white/[0.06] hover:text-[#a0b1c8] active:scale-[0.987] disabled:cursor-not-allowed disabled:opacity-50"
     >
       {loading ? (
         <Spinner size="sm" />
@@ -381,7 +382,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           <button
             type="submit"
             disabled={isLoading}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#3b35b8] py-2.5 text-sm font-semibold text-white/95 transition-[background-color,transform] duration-150 hover:bg-[#4338ca] active:scale-[0.987] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-b from-[#4338ca] to-[#3b35b8] py-2.5 text-sm font-semibold text-white/95 [box-shadow:inset_0_1px_rgba(255,255,255,0.15),0_4px_24px_-6px_rgba(67,56,202,0.55)] transition-[filter,transform,box-shadow] duration-150 hover:brightness-110 active:scale-[0.987] active:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? <Spinner size="sm" /> : null}
             Wyślij link
@@ -488,7 +489,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
           <button
             type="submit"
             disabled={isAuthenticating}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#3b35b8] py-2.5 text-sm font-semibold text-white/95 transition-[background-color,transform] duration-150 hover:bg-[#4338ca] active:scale-[0.987] disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-b from-[#4338ca] to-[#3b35b8] py-2.5 text-sm font-semibold text-white/95 [box-shadow:inset_0_1px_rgba(255,255,255,0.15),0_4px_24px_-6px_rgba(67,56,202,0.55)] transition-[filter,transform,box-shadow] duration-150 hover:brightness-110 active:scale-[0.987] active:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading ? <Spinner size="sm" /> : null}
             {isRegister ? "Utwórz konto" : "Zaloguj się"}
@@ -505,7 +506,7 @@ export default function AuthForm({ mode }: AuthFormProps) {
       </form>
 
       {/* Register / login switch */}
-      <p className="mt-6 text-center text-[12px] text-[#2d4056]">
+      <p className="mt-6 text-center text-[12px] text-[#384e6a]">
         {isRegister ? (
           <>
             Masz już konto?{" "}

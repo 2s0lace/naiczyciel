@@ -9,7 +9,8 @@ import { useEffect, useMemo, useState } from "react";
 import AvatarPicker from "@/components/avatar/avatar-picker";
 import { Spinner } from "@/components/ui/spinner";
 import { AuthAnimatedBg } from "@/components/auth/auth-animated-bg";
-import { clearRoleCookie, isAdminEmail, setRoleCookie } from "@/lib/auth/role";
+import { ParallaxGridLayer } from "@/components/landing/parallax-grid-layer";
+import { clearRoleCookie, isAdminEmail, sanitizeUserMetadata, setRoleCookie } from "@/lib/auth/role";
 import {
   isSafeDisplayNameCandidate,
   resolveDisplayNameFromMetadata,
@@ -50,7 +51,7 @@ async function ensureAvatarMetadata(supabase: SupabaseClient, user: User): Promi
     return { user, avatarKey: currentAvatarKey };
   }
   const { data, error } = await supabase.auth.updateUser({
-    data: { ...(user.user_metadata ?? {}), avatar_key: DEFAULT_AVATAR_KEY },
+    data: sanitizeUserMetadata({ ...(user.user_metadata ?? {}), avatar_key: DEFAULT_AVATAR_KEY }),
   });
   if (error || !data.user) {
     return {
@@ -241,7 +242,7 @@ export default function AccountPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase.auth.updateUser({
-        data: { ...(user.user_metadata ?? {}), avatar_key: nextAvatarKey },
+        data: sanitizeUserMetadata({ ...(user.user_metadata ?? {}), avatar_key: nextAvatarKey }),
       });
       if (error) throw new Error(error.message);
       setUser(
@@ -270,7 +271,7 @@ export default function AccountPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase.auth.updateUser({
-        data: { ...(user.user_metadata ?? {}), gender: nextGender },
+        data: sanitizeUserMetadata({ ...(user.user_metadata ?? {}), gender: nextGender }),
       });
       if (error) throw new Error(error.message);
       setUser(
@@ -303,7 +304,7 @@ export default function AccountPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase.auth.updateUser({
-        data: { ...(user.user_metadata ?? {}), display_name: nextDisplayName },
+        data: sanitizeUserMetadata({ ...(user.user_metadata ?? {}), display_name: nextDisplayName }),
       });
       if (error) throw new Error(error.message);
       const nextUser =
@@ -329,7 +330,7 @@ export default function AccountPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const { data, error } = await supabase.auth.updateUser({
-        data: { ...(user.user_metadata ?? {}), dashboard_onboarding_completed: false },
+        data: sanitizeUserMetadata({ ...(user.user_metadata ?? {}), dashboard_onboarding_completed: false }),
       });
       if (error) throw new Error(error.message);
       setUser(
@@ -396,6 +397,7 @@ export default function AccountPage() {
   return (
     <div className="relative min-h-screen text-white">
       <AuthAnimatedBg />
+      <ParallaxGridLayer />
 
       {/* Back link */}
       <div className="relative z-10 px-5 pt-5 md:px-8">

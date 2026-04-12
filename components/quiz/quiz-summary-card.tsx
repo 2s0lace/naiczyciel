@@ -202,18 +202,18 @@ export function QuizSummaryCard({ summary, sessionId, mode }: QuizSummaryCardPro
   }, [resolveTierForUpsell]);
 
   return (
-    <section className="mt-4 pb-8 xl:mt-6 xl:pb-8">
-      <div className="space-y-9 xl:mx-auto xl:grid xl:max-w-[1120px] xl:grid-cols-[minmax(0,620px)_minmax(0,480px)] xl:items-start xl:gap-8 xl:space-y-0">
-        <div className="space-y-7">
-          <section className="relative px-0 py-1">
+    <section className="mt-4 pb-8 xl:mt-6 xl:pb-8 2xl:pb-12 min-[2200px]:pb-16">
+      <div className="space-y-9 xl:mx-auto xl:grid xl:max-w-[1120px] xl:grid-cols-[minmax(0,620px)_minmax(0,480px)] xl:items-start xl:gap-8 xl:space-y-0 min-[1440px]:max-w-[1240px] min-[1440px]:grid-cols-[minmax(0,680px)_minmax(0,520px)] min-[1440px]:gap-10 2xl:max-w-[1380px] 2xl:grid-cols-[minmax(0,760px)_minmax(0,580px)] 2xl:gap-12 min-[2200px]:max-w-[1540px] min-[2200px]:grid-cols-[minmax(0,860px)_minmax(0,640px)] min-[2200px]:gap-14">
+        <div className="space-y-7 2xl:space-y-9 min-[2200px]:space-y-10">
+          <section className="relative px-0 py-1 min-[1440px]:py-2 2xl:py-4 min-[2200px]:py-5">
             <div
               aria-hidden
               className="pointer-events-none absolute -left-8 -top-5 h-36 w-52 bg-[radial-gradient(ellipse_50%_40%_at_20%_20%,#3d35a820_0%,transparent_70%)]"
             />
             <div className="relative flex items-end justify-between gap-4">
-              <p className="text-[80px] leading-none font-extrabold tracking-[-3px] text-white">{summary.scorePercent}%</p>
+              <p className="text-[80px] leading-none font-extrabold tracking-[-3px] text-white min-[1440px]:text-[92px] 2xl:text-[104px] min-[2200px]:text-[118px]">{summary.scorePercent}%</p>
               <div className="pb-1 text-right">
-                <p className="text-[40px] leading-none font-bold tracking-[-0.04em] text-white">
+                <p className="text-[40px] leading-none font-bold tracking-[-0.04em] text-white min-[1440px]:text-[46px] 2xl:text-[52px] min-[2200px]:text-[58px]">
                   {summary.correctAnswers}/{summary.totalQuestions}
                 </p>
                 <p className="mt-1 text-[12px] font-medium tracking-[0.02em] text-white/42">poprawnych odpowiedzi</p>
@@ -229,11 +229,13 @@ export function QuizSummaryCard({ summary, sessionId, mode }: QuizSummaryCardPro
               ))}
             </div>
 
-            <p className="mt-5 max-w-[34ch] text-[14px] leading-[1.6] text-white/55">{interpretationText(summary)}</p>
+            <p className="mt-5 max-w-[34ch] text-[14px] leading-[1.6] text-white/55 min-[1440px]:max-w-[42ch] min-[1440px]:text-[15px]">
+              {interpretationText(summary)}
+            </p>
           </section>
 
-          <section className="relative overflow-hidden rounded-[18px]">
-            <div className="group relative flex cursor-pointer items-center justify-between gap-4 px-4 py-[14px] transition-colors hover:bg-white/[0.05]">
+          <section className="relative overflow-hidden rounded-[18px] 2xl:rounded-[22px]">
+            <div className="group relative flex cursor-pointer items-center justify-between gap-4 px-4 py-[14px] transition-colors hover:bg-white/[0.05] 2xl:px-5 2xl:py-[18px] min-[2200px]:px-6 min-[2200px]:py-5">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-300/90" />
                 <span className="text-[12px] font-medium tracking-[0.04em] text-white/42">Mocna strona</span>
@@ -244,7 +246,7 @@ export function QuizSummaryCard({ summary, sessionId, mode }: QuizSummaryCardPro
               </span>
             </div>
             <div className="relative h-px bg-white/[0.08]" />
-            <div className="group relative flex cursor-pointer items-center justify-between gap-4 px-4 py-[14px] transition-colors hover:bg-white/[0.05]">
+            <div className="group relative flex cursor-pointer items-center justify-between gap-4 px-4 py-[14px] transition-colors hover:bg-white/[0.05] 2xl:px-5 2xl:py-[18px] min-[2200px]:px-6 min-[2200px]:py-5">
               <div className="flex min-w-0 items-center gap-2">
                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300/90" />
                 <span className="text-[12px] font-medium tracking-[0.04em] text-white/42">Do poprawy</span>
@@ -256,7 +258,7 @@ export function QuizSummaryCard({ summary, sessionId, mode }: QuizSummaryCardPro
             </div>
           </section>
 
-          <section className="space-y-3.5 pt-2">
+          <section className="space-y-3.5 pt-2 2xl:space-y-4 2xl:pt-4 min-[2200px]:pt-5">
             <PrimaryAction href={newSessionHref} label="Nowa sesja" />
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 pt-0.5">
               <TextAction href={reviewHref} label="Przejrzyj pytania" />
@@ -270,7 +272,7 @@ export function QuizSummaryCard({ summary, sessionId, mode }: QuizSummaryCardPro
         </div>
       </div>
 
-      <div className="xl:mx-auto xl:max-w-[1120px]">
+      <div className="xl:mx-auto xl:max-w-[1120px] min-[1440px]:max-w-[1240px] 2xl:max-w-[1380px] min-[2200px]:max-w-[1540px]">
         <QuizPremiumUpsell visible={showPremiumUpsell} summary={summary} />
       </div>
     </section>

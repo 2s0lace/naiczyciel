@@ -9,12 +9,22 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 type QuizSessionBootstrapProps = {
   mode: string;
   setId?: string;
+  count?: string;
+  modes?: string;
+  focus?: string;
+  focusSource?: string;
+  focusRaw?: string;
 };
 
 type StartSessionResponse = {
   sessionId?: string;
   mode?: string;
   setId?: string;
+  modes?: string[];
+  questionCount?: number;
+  focusLabel?: string;
+  focusSource?: string;
+  focusRaw?: string;
   error?: string;
   details?: string;
 };
@@ -64,27 +74,115 @@ function normalizeSetId(value: string | undefined): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function buildSessionContextKey(mode: string, setId: string | undefined): string {
-  return setId ? `set:${setId}` : `mode:${mode}`;
+function parseCount(value: string | undefined): number | undefined {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    return undefined;
+  }
+
+  return Math.max(5, Math.min(10, Math.round(parsed)));
 }
 
-function buildSessionHref(sessionId: string, mode: string, setId: string | undefined): string {
+function normalizeModes(value: string | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
+}
+
+function normalizeFocus(value: string | undefined): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function normalizeFocusSource(value: string | undefined): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "grammar" || normalized === "vocabulary" || normalized === "skill" ? normalized : undefined;
+}
+
+function buildSessionContextKey(
+  mode: string,
+  setId: string | undefined,
+  count: number | undefined,
+  modes: string[],
+  focus: string | undefined,
+  focusSource: string | undefined,
+) {
+  const modeKey = modes.length > 0 ? modes.join(",") : mode;
+  const countKey = count ?? 10;
+  const focusKey = focus ? `:focus:${focus.toLowerCase()}` : "";
+  const focusSourceKey = focusSource ? `:focus-source:${focusSource}` : "";
+  return setId ? `set:${setId}:count:${countKey}${focusSourceKey}${focusKey}` : `mode:${modeKey}:count:${countKey}${focusSourceKey}${focusKey}`;
+}
+
+function buildSessionHref(
+  sessionId: string,
+  mode: string,
+  setId: string | undefined,
+  count: number | undefined,
+  modes: string[],
+  focus: string | undefined,
+  focusSource: string | undefined,
+  focusRaw: string | undefined,
+) {
   const query = new URLSearchParams({ mode });
 
   if (setId) {
     query.set("set", setId);
   }
 
+  if (typeof count === "number") {
+    query.set("count", String(count));
+  }
+
+  if (!setId && modes.length > 1) {
+    query.set("modes", modes.join(","));
+  }
+
+  if (focus) {
+    query.set("focus", focus);
+  }
+
+  if (focusSource) {
+    query.set("focusSource", focusSource);
+  }
+
+  if (focusRaw) {
+    query.set("focusRaw", focusRaw);
+  }
+
   return `/e8/quiz/${encodeURIComponent(sessionId)}?${query.toString()}`;
 }
 
-export function QuizSessionBootstrap({ mode, setId }: QuizSessionBootstrapProps) {
+export function QuizSessionBootstrap({ mode, setId, count, modes, focus, focusSource, focusRaw }: QuizSessionBootstrapProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(true);
   const startedRef = useRef(false);
   const normalizedSetId = useMemo(() => normalizeSetId(setId), [setId]);
-  const sessionContextKey = useMemo(() => buildSessionContextKey(mode, normalizedSetId), [mode, normalizedSetId]);
+  const requestedCount = useMemo(() => parseCount(count), [count]);
+  const effectiveCount = requestedCount ?? 10;
+  const normalizedModes = useMemo(() => normalizeModes(modes), [modes]);
+  const normalizedFocus = useMemo(() => normalizeFocus(focus), [focus]);
+  const normalizedFocusSource = useMemo(() => normalizeFocusSource(focusSource), [focusSource]);
+  const normalizedFocusRaw = useMemo(() => normalizeFocus(focusRaw), [focusRaw]);
+  const sessionContextKey = useMemo(
+    () => buildSessionContextKey(mode, normalizedSetId, requestedCount, normalizedModes, normalizedFocusRaw ?? normalizedFocus, normalizedFocusSource),
+    [mode, normalizedFocus, normalizedFocusRaw, normalizedFocusSource, normalizedModes, normalizedSetId, requestedCount],
+  );
 
   const getAuthHeaders = useCallback(async () => {
     try {
@@ -116,12 +214,26 @@ export function QuizSessionBootstrap({ mode, setId }: QuizSessionBootstrapProps)
       const authHeaders = await getAuthHeaders();
       const params = new URLSearchParams({ mode });
 
-      if (!normalizedSetId) {
-        params.set("count", "10");
+      if (typeof requestedCount === "number") {
+        params.set("count", String(requestedCount));
       }
 
       if (normalizedSetId) {
         params.set("set", normalizedSetId);
+      } else if (normalizedModes.length > 1) {
+        params.set("modes", normalizedModes.join(","));
+      }
+
+      if (normalizedFocus) {
+        params.set("focus", normalizedFocus);
+      }
+
+      if (normalizedFocusSource) {
+        params.set("focusSource", normalizedFocusSource);
+      }
+
+      if (normalizedFocusRaw) {
+        params.set("focusRaw", normalizedFocusRaw);
       }
 
       const response = await fetch(
@@ -148,12 +260,23 @@ export function QuizSessionBootstrap({ mode, setId }: QuizSessionBootstrapProps)
         return false;
       }
 
-      router.replace(buildSessionHref(activeSessionId, mode, normalizedSetId));
+      router.replace(buildSessionHref(activeSessionId, mode, normalizedSetId, requestedCount, normalizedModes, normalizedFocus, normalizedFocusSource, normalizedFocusRaw));
       return true;
     } catch {
       return false;
     }
-  }, [getAuthHeaders, mode, normalizedSetId, router, sessionContextKey]);
+  }, [
+    getAuthHeaders,
+    mode,
+    normalizedFocus,
+    normalizedFocusRaw,
+    normalizedFocusSource,
+    normalizedModes,
+    normalizedSetId,
+    requestedCount,
+    router,
+    sessionContextKey,
+  ]);
 
   const startSession = useCallback(async () => {
     setIsStarting(true);
@@ -182,7 +305,11 @@ export function QuizSessionBootstrap({ mode, setId }: QuizSessionBootstrapProps)
               }
             : {
                 mode,
-                questionCount: 10,
+                questionCount: effectiveCount,
+                modes: normalizedModes,
+                focusLabel: normalizedFocus,
+                focusSource: normalizedFocusSource,
+                focusRaw: normalizedFocusRaw,
               },
         ),
       });
@@ -195,12 +322,21 @@ export function QuizSessionBootstrap({ mode, setId }: QuizSessionBootstrapProps)
 
       const nextMode = typeof data.mode === "string" && data.mode.length > 0 ? data.mode : mode;
       const nextSetId = normalizeSetId(data.setId);
-      router.replace(buildSessionHref(data.sessionId, nextMode, nextSetId));
+      const nextModes =
+        Array.isArray(data.modes) && data.modes.length > 0
+          ? data.modes.map((entry) => entry.trim().toLowerCase()).filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index)
+          : normalizedModes;
+      const nextCount =
+        typeof data.questionCount === "number" && Number.isFinite(data.questionCount) ? Math.max(5, Math.min(10, Math.round(data.questionCount))) : effectiveCount;
+      const nextFocus = normalizeFocus(data.focusLabel) ?? normalizedFocus;
+      const nextFocusSource = normalizeFocusSource(data.focusSource) ?? normalizedFocusSource;
+      const nextFocusRaw = normalizeFocus(data.focusRaw) ?? normalizedFocusRaw;
+      router.replace(buildSessionHref(data.sessionId, nextMode, nextSetId, nextCount, nextModes, nextFocus, nextFocusSource, nextFocusRaw));
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : "Wystąpił nieznany błąd.");
       setIsStarting(false);
     }
-  }, [getAuthHeaders, mode, normalizedSetId, router, tryResumeSession]);
+  }, [effectiveCount, getAuthHeaders, mode, normalizedFocus, normalizedFocusRaw, normalizedFocusSource, normalizedModes, normalizedSetId, router, tryResumeSession]);
 
   useEffect(() => {
     if (startedRef.current) {

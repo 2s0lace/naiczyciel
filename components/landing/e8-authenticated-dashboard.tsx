@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Dumbbell,
   ListChecks,
+  Settings2,
   Sparkles,
   ThumbsUp,
   type LucideIcon,
@@ -22,6 +23,7 @@ import DashboardOnboarding, {
 import MobileHeader from "@/components/landing/mobile-header";
 import { SocialLinks } from "@/components/layout/social-links";
 import type { DashboardPayload, DashboardSession, DashboardStats } from "@/lib/quiz/dashboard-types";
+import { QUIZ_ACTIVE_SESSION_STORAGE_KEY, type ActiveQuizSessionMap } from "@/lib/quiz/storage-keys";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
@@ -91,8 +93,10 @@ const CARD_ACCENT_ASSETS: Partial<Record<AccentPreset, string>> = {
 
 const MODE_LABEL: Record<string, string> = {
   reactions: "Reakcje",
-  vocabulary: "Slownictwo",
+  vocabulary: "Słownictwo",
   grammar: "Gramatyka",
+  reading_mc: "Czytanie",
+  gap_fill_text: "Uzupełnianie tekstu",
 };
 
 const DASHBOARD_ONBOARDING_STEPS: DashboardOnboardingStep[] = [
@@ -134,6 +138,9 @@ function normalizeMode(mode: string): string {
 function formatMode(mode: string): string {
   const raw = mode.trim();
   const normalized = normalizeMode(raw);
+  if (normalized === "mixed" || normalized.startsWith("mixed:")) {
+    return "Sesja mieszana";
+  }
   const mapped = MODE_LABEL[normalized];
 
   if (mapped) {
@@ -195,6 +202,45 @@ function formatDurationLabel(value: number | null): string | null {
   return `${formatted} min`;
 }
 
+function readActiveSessions(): ActiveQuizSessionMap {
+  if (typeof window === "undefined") {
+    return {};
+  }
+
+  try {
+    const raw = window.localStorage.getItem(QUIZ_ACTIVE_SESSION_STORAGE_KEY);
+
+    if (!raw) {
+      return {};
+    }
+
+    const parsed = JSON.parse(raw) as ActiveQuizSessionMap;
+    return typeof parsed === "object" && parsed ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeActiveSessions(value: ActiveQuizSessionMap) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(QUIZ_ACTIVE_SESSION_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function clearActiveSessionMarker(sessionId: string) {
+  const current = readActiveSessions();
+  const next = Object.fromEntries(
+    Object.entries(current).filter(([, value]) => value?.sessionId !== sessionId),
+  );
+  writeActiveSessions(next);
+}
+
 function sessionHref(session: DashboardSession): string {
   const id = encodeURIComponent(session.id);
   const params = new URLSearchParams({
@@ -237,7 +283,7 @@ type ProgressStatsLayout = {
 const SESSION_HISTORY_LIMIT = 3;
 const INTELLIGENT_SET_UNLOCK_SESSIONS = 10;
 const INTELLIGENT_SET_QUESTION_COUNT = 5;
-const START_SET_ROTATION_STORAGE_KEY = "e8_dashboard_start_set_rotation_v1";
+const SESSION_COUNT_OPTIONS = [5, 7, 10] as const;
 const SENTENCE_SPLIT_PATTERN = /(?<=[.!?])\s+/;
 
 const TUTORIAL_HERO_STATES: HeroIntroCopy[] = [
@@ -492,6 +538,7 @@ export default function E8AuthenticatedDashboard({
   const [data, setData] = useState<DashboardPayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [cancellingSessionId, setCancellingSessionId] = useState<string | null>(null);
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [onboardingVisible, setOnboardingVisible] = useState(shouldRunOnboarding);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
@@ -500,7 +547,9 @@ export default function E8AuthenticatedDashboard({
   const [aiSummaryRefreshLockedUntil, setAiSummaryRefreshLockedUntil] = useState<string | null>(null);
   const [aiSummaryNotice, setAiSummaryNotice] = useState<string | null>(null);
   const [aiSummaryExpandedMobile, setAiSummaryExpandedMobile] = useState(false);
-  const [startSetRotationIndex, setStartSetRotationIndex] = useState(0);
+  const [isSessionSettingsOpen, setIsSessionSettingsOpen] = useState(false);
+  const [sessionQuestionCount, setSessionQuestionCount] = useState<number>(10);
+  const [sessionModeFilters, setSessionModeFilters] = useState<string[]>([]);
   const [isSessionHistoryOpen, setIsSessionHistoryOpen] = useState(false);
   const [progressViewTab, setProgressViewTab] = useState<"stats" | "chart">("stats");
   const [isCompactViewport, setIsCompactViewport] = useState(false);
@@ -618,15 +667,22 @@ export default function E8AuthenticatedDashboard({
   const stats = data?.stats;
   const recentSessions = useMemo(() => data?.recentSessions ?? [], [data?.recentSessions]);
   const visibleSets = useMemo(() => data?.visibleSets ?? [], [data?.visibleSets]);
-  const weakestMode = stats?.weakestMode ?? null;
+  const availableSessionModes = useMemo(
+    () =>
+      visibleSets
+        .map((setItem) => normalizeMode(setItem.mode))
+        .filter((mode, index, list) => mode.length > 0 && list.indexOf(mode) === index),
+    [visibleSets],
+  );
+  const weakestCategory = stats?.weakestCategory ?? null;
 
   const recommendedSet = useMemo(() => {
     if (visibleSets.length === 0) {
       return null;
     }
 
-    if (weakestMode) {
-      const exact = visibleSets.find((setItem) => normalizeMode(setItem.mode) === normalizeMode(weakestMode));
+    if (weakestCategory) {
+      const exact = visibleSets.find((setItem) => normalizeMode(setItem.mode) === normalizeMode(weakestCategory));
 
       if (exact) {
         return exact;
@@ -634,7 +690,19 @@ export default function E8AuthenticatedDashboard({
     }
 
     return visibleSets[0] ?? null;
-  }, [visibleSets, weakestMode]);
+  }, [visibleSets, weakestCategory]);
+
+  useEffect(() => {
+    setSessionModeFilters((current) => {
+      const sanitized = current.filter((mode) => availableSessionModes.includes(mode));
+
+      if (sanitized.length > 0) {
+        return sanitized;
+      }
+
+      return availableSessionModes;
+    });
+  }, [availableSessionModes]);
 
   const statTiles = useMemo(() => {
     const completedForTrend = recentSessions.filter(
@@ -747,70 +815,17 @@ export default function E8AuthenticatedDashboard({
     [recentSessions],
   );
 
-  const rotatingStartSets = useMemo(() => {
-    const next: typeof visibleSets = [];
-    const seen = new Set<string>();
+  const resolvedSessionModes = sessionModeFilters.length > 0 ? sessionModeFilters : availableSessionModes;
+  const startModeValue = resolvedSessionModes.length === 1 ? resolvedSessionModes[0] : "auto";
+  const startHrefParams = new URLSearchParams({
+    mode: startModeValue,
+    count: String(sessionQuestionCount),
+  });
 
-    const pushUnique = (setItem: (typeof visibleSets)[number] | null) => {
-      if (!setItem || seen.has(setItem.id)) {
-        return;
-      }
-
-      seen.add(setItem.id);
-      next.push(setItem);
-    };
-
-    pushUnique(recommendedSet);
-
-    for (const setItem of visibleSets) {
-      pushUnique(setItem);
-
-      if (next.length >= 2) {
-        break;
-      }
-    }
-
-    return next;
-  }, [recommendedSet, visibleSets]);
-
-  useEffect(() => {
-    if (rotatingStartSets.length <= 1) {
-      setStartSetRotationIndex(0);
-      return;
-    }
-
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const raw = window.localStorage.getItem(START_SET_ROTATION_STORAGE_KEY);
-    const parsed = Number.parseInt(raw ?? "0", 10);
-    const nextIndex = Number.isFinite(parsed) && parsed >= 0 ? parsed % rotatingStartSets.length : 0;
-    setStartSetRotationIndex(nextIndex);
-  }, [rotatingStartSets]);
-
-  const activeStartSet =
-    rotatingStartSets[rotatingStartSets.length > 0 ? startSetRotationIndex % rotatingStartSets.length : 0] ??
-    recommendedSet ??
-    visibleSets[0] ??
-    null;
-
-  const handleStartSessionClick = useCallback(() => {
-    if (rotatingStartSets.length <= 1 || typeof window === "undefined") {
-      return;
-    }
-
-    const nextIndex = (startSetRotationIndex + 1) % rotatingStartSets.length;
-    setStartSetRotationIndex(nextIndex);
-    window.localStorage.setItem(START_SET_ROTATION_STORAGE_KEY, String(nextIndex));
-  }, [rotatingStartSets.length, startSetRotationIndex]);
-
-  const primaryMode = activeStartSet?.mode ?? "reactions";
-  const primarySetId = activeStartSet?.id ?? null;
-  const startHrefParams = new URLSearchParams({ mode: primaryMode });
-  if (primarySetId) {
-    startHrefParams.set("set", primarySetId);
+  if (resolvedSessionModes.length > 1) {
+    startHrefParams.set("modes", resolvedSessionModes.join(","));
   }
+
   const startHref = `/e8/quiz?${startHrefParams.toString()}`;
   const resumeSessionHref = inProgressSession ? sessionHref(inProgressSession) : null;
   const primarySessionHref = resumeSessionHref ?? startHref;
@@ -856,6 +871,26 @@ export default function E8AuthenticatedDashboard({
       mediaQuery.removeEventListener("change", syncViewport);
     };
   }, []);
+
+  const toggleSessionModeFilter = useCallback(
+    (mode: string) => {
+      setSessionModeFilters((current) => {
+        const normalized = normalizeMode(mode);
+
+        if (!normalized) {
+          return current;
+        }
+
+        if (current.includes(normalized)) {
+          const next = current.filter((entry) => entry !== normalized);
+          return next.length > 0 ? next : current;
+        }
+
+        return [...current, normalized];
+      });
+    },
+    [],
+  );
 
   const loadAiSummary = useCallback(async (forceRefresh = false) => {
     if (!hasAiSummaryAccess) {
@@ -914,10 +949,10 @@ export default function E8AuthenticatedDashboard({
   }, [data, hasAiSummaryAccess, loadAiSummary]);
 
   const heroIntro = useMemo(() => resolveHeroIntroCopy(stats?.sessionsCompleted), [stats?.sessionsCompleted]);
-  const strongestModeLabel = stats?.strongestMode ? formatMode(stats.strongestMode) : "Po sesji";
-  const weakestModeLabel = stats?.weakestMode ? formatMode(stats.weakestMode) : "Po sesji";
-  const hasStrongestMode = Boolean(stats?.strongestMode);
-  const hasWeakestMode = Boolean(stats?.weakestMode);
+  const strongestModeLabel = stats?.strongestCategory ? formatMode(stats.strongestCategory) : "Po sesji";
+  const weakestModeLabel = stats?.weakestCategory ? formatMode(stats.weakestCategory) : "Po sesji";
+  const hasStrongestMode = Boolean(stats?.strongestCategory);
+  const hasWeakestMode = Boolean(stats?.weakestCategory);
   const tutorialActive = onboardingVisible;
   const tutorialStateIndex = 0;
   const displayHeroIntro = tutorialActive ? TUTORIAL_HERO_STATES[tutorialStateIndex] : heroIntro;
@@ -1076,9 +1111,9 @@ export default function E8AuthenticatedDashboard({
     Math.round((intelligentSetSessionsProgress / INTELLIGENT_SET_UNLOCK_SESSIONS) * 100),
   );
   const isIntelligentSetUnlocked = intelligentSetSessionsRemaining === 0;
-  const intelligentSetTargetLabel = displayHasWeakestMode ? displayWeakestModeLabel : "obszar do poprawy";
+  const intelligentSetTargetLabel = recommendedSet ? formatMode(recommendedSet.mode) : "obszar do poprawy";
   const intelligentSetHref = recommendedSet
-    ? `/e8/quiz?mode=${encodeURIComponent(recommendedSet.mode)}&set=${encodeURIComponent(recommendedSet.id)}`
+    ? `/e8/quiz?mode=${encodeURIComponent(recommendedSet.mode)}&count=${INTELLIGENT_SET_QUESTION_COUNT}`
     : startHref;
   const displayActivityText = tutorialActive
     ? TUTORIAL_ACTIVITY_STATES[tutorialStateIndex]
@@ -1126,6 +1161,62 @@ export default function E8AuthenticatedDashboard({
     void markOnboardingAsCompleted();
   };
 
+  const handleCancelSession = useCallback(
+    async (sessionId: string) => {
+      if (!sessionId || cancellingSessionId === sessionId) {
+        return;
+      }
+
+      setCancellingSessionId(sessionId);
+
+      try {
+        const response = await fetch(`/api/e8/quiz/session/${sessionId}/cancel`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        const payload = (await response.json().catch(() => ({}))) as {
+          error?: string;
+          details?: string;
+          completedAt?: string | null;
+        };
+
+        if (!response.ok) {
+          throw new Error(payload.error || payload.details || "Nie udalo sie przerwac sesji.");
+        }
+
+        clearActiveSessionMarker(sessionId);
+        setLoadError(null);
+        setData((current) => {
+          if (!current) {
+            return current;
+          }
+
+          return {
+            ...current,
+            recentSessions: current.recentSessions.map((session) =>
+              session.id === sessionId
+                ? {
+                    ...session,
+                    status: "cancelled",
+                    completedAt: payload.completedAt ?? session.completedAt ?? new Date().toISOString(),
+                  }
+                : session,
+            ),
+          };
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Nie udalo sie przerwac sesji.";
+        setLoadError(message);
+      } finally {
+        setCancellingSessionId((current) => (current === sessionId ? null : current));
+      }
+    },
+    [accessToken, cancellingSessionId],
+  );
+
   return (
     <main className="viewport-shell max-w-full touch-pan-y overflow-x-hidden bg-[#050510] [background-image:radial-gradient(circle,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:24px_24px] text-white selection:bg-indigo-500/30">
       <MobileHeader />
@@ -1163,16 +1254,110 @@ export default function E8AuthenticatedDashboard({
               <p className="mt-2 text-[clamp(13px,2vw,15px)] leading-snug text-indigo-100/88" style={{ fontFamily: "var(--font-figtree)", fontWeight: 600 }}>
                 {tutorialActive ? displayHeroIntro.line1 : heroProgressSubline}
               </p>
-              <div className="relative mt-6 flex w-full flex-col gap-3 sm:flex-row sm:items-center">
-                <Link
-                  href={primarySessionHref}
-                  onClick={resumeSessionHref ? undefined : handleStartSessionClick}
-                  data-tour="dashboard-start-cta"
-                  className="dashboard-btn-hover inline-flex h-12 w-full items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 px-5 text-sm font-semibold text-white shadow-[0_16px_30px_-18px_rgba(79,70,229,0.98)] transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.99] sm:flex-1"
-                >
-                  {primarySessionCtaLabel}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+              <div className="relative mt-6 flex w-full flex-col gap-3">
+                <div className="flex w-full items-center gap-2 sm:gap-3">
+                  <Link
+                    href={primarySessionHref}
+                    data-tour="dashboard-start-cta"
+                    className="dashboard-btn-hover inline-flex h-12 min-w-0 flex-1 items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 px-5 text-sm font-semibold text-white shadow-[0_16px_30px_-18px_rgba(79,70,229,0.98)] transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.99]"
+                  >
+                    {primarySessionCtaLabel}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  {resumeSessionHref ? (
+                    <button
+                      type="button"
+                      onClick={() => inProgressSession ? void handleCancelSession(inProgressSession.id) : undefined}
+                      disabled={!inProgressSession || cancellingSessionId === inProgressSession.id}
+                      className="inline-flex h-12 shrink-0 items-center justify-center rounded-xl border border-white/14 bg-white/[0.05] px-4 text-sm font-semibold text-indigo-100/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[background-color,border-color,color,transform] duration-150 hover:border-white/22 hover:bg-white/[0.08] hover:text-white active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {inProgressSession && cancellingSessionId === inProgressSession.id ? "Przerywanie..." : "Przerwij sesje"}
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIsSessionSettingsOpen((current) => !current)}
+                      className={cn(
+                        "inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/14 bg-white/[0.05] text-indigo-100/88 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-[background-color,border-color,color,transform] duration-150 hover:border-white/22 hover:bg-white/[0.08] hover:text-white active:scale-[0.98]",
+                        isSessionSettingsOpen && "border-indigo-300/35 bg-indigo-500/12 text-white",
+                      )}
+                      aria-label="Konfiguruj sesję"
+                      aria-expanded={isSessionSettingsOpen}
+                    >
+                      <Settings2 className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+
+                <AnimatePresence initial={false}>
+                  {!resumeSessionHref && isSessionSettingsOpen ? (
+                    <motion.div
+                      initial={{ opacity: 0, y: -8, height: 0 }}
+                      animate={{ opacity: 1, y: 0, height: "auto" }}
+                      exit={{ opacity: 0, y: -6, height: 0 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="max-w-[52rem] rounded-2xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.07),rgba(255,255,255,0.03))] p-4 shadow-[0_18px_34px_-28px_rgba(0,0,0,0.9)]">
+                    <div className="grid gap-4 md:grid-cols-[auto_minmax(0,1fr)] md:items-start md:gap-5">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold tracking-[0.16em] text-indigo-100/58 uppercase">Liczba pytań</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {SESSION_COUNT_OPTIONS.map((option) => {
+                            const isActive = sessionQuestionCount === option;
+
+                            return (
+                              <button
+                                key={option}
+                                type="button"
+                                onClick={() => setSessionQuestionCount(option)}
+                                className={cn(
+                                  "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors duration-150",
+                                  isActive
+                                    ? "border-indigo-300/40 bg-indigo-500/18 text-white"
+                                    : "border-white/10 bg-white/[0.03] text-indigo-100/70 hover:border-white/18 hover:text-white",
+                                )}
+                              >
+                                {option}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-semibold tracking-[0.16em] text-indigo-100/58 uppercase">Typy quizów</p>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {availableSessionModes.map((modeOption) => {
+                            const isActive = resolvedSessionModes.includes(modeOption);
+
+                            return (
+                              <button
+                                key={modeOption}
+                                type="button"
+                                onClick={() => toggleSessionModeFilter(modeOption)}
+                                className={cn(
+                                  "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors duration-150",
+                                  isActive
+                                    ? "border-emerald-300/40 bg-emerald-500/16 text-white"
+                                    : "border-white/10 bg-white/[0.03] text-indigo-100/70 hover:border-white/18 hover:text-white",
+                                )}
+                              >
+                                {formatMode(modeOption)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      <p className="hidden text-xs leading-relaxed text-indigo-100/62">
+                        Losowa sesja priorytetowo dobiera nierozwiązane pytania i dopiero potem uzupełnia brakujące miejsca kolejnymi z bazy.
+                      </p>
+                    </div>
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </div>
 
               <div
@@ -1257,10 +1442,10 @@ export default function E8AuthenticatedDashboard({
                           aria-expanded={isSessionHistoryOpen}
                           className="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-[13px] font-semibold tracking-[0.04em] text-indigo-100/66 transition-colors duration-150 hover:text-indigo-100/90"
                         >
-                          <span>{"Historia sesji"}</span>
-                          <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isSessionHistoryOpen && "rotate-180")} />
-                        </button>
-                      </div>
+                      <span>{"Historia sesji"}</span>
+                      <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isSessionHistoryOpen && "rotate-180")} />
+                    </button>
+                  </div>
 
                       <AnimatePresence initial={false}>
                         {isSessionHistoryOpen ? (
@@ -1293,9 +1478,25 @@ export default function E8AuthenticatedDashboard({
                                         <span className="text-indigo-100/84">
                                           {formatSessionDate(session)}
                                         </span>
-                                        <span className="shrink-0 text-indigo-100/62">
-                                          {summary || (session.status === "in_progress" ? "W toku" : "Zakonczona")}
-                                        </span>
+                                        <div className="flex shrink-0 items-center gap-3">
+                                          <span className="text-indigo-100/62">
+                                            {summary || (session.status === "in_progress"
+                                              ? "W toku"
+                                              : session.status === "cancelled"
+                                                ? "Przerwana"
+                                                : "Zakonczona")}
+                                          </span>
+                                          {session.status === "in_progress" ? (
+                                            <button
+                                              type="button"
+                                              onClick={() => void handleCancelSession(session.id)}
+                                              disabled={cancellingSessionId === session.id}
+                                              className="inline-flex items-center rounded-md border border-white/12 px-2 py-1 text-[11px] font-semibold tracking-[0.04em] text-indigo-100/80 transition-colors duration-150 hover:border-white/18 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                            >
+                                              {cancellingSessionId === session.id ? "Przerywanie..." : "Przerwij sesje"}
+                                            </button>
+                                          ) : null}
+                                        </div>
                                       </li>
                                     );
                                   })}
@@ -1315,12 +1516,7 @@ export default function E8AuthenticatedDashboard({
                   <div className="inline-flex items-center gap-2">
                     <SectionIcon icon={Sparkles} tone="violet" />
                     <div>
-                      <div className="inline-flex items-center gap-1.5">
-                        <p className="text-[11px] font-semibold tracking-[0.182em] text-indigo-100/60 uppercase">AI podsumowanie</p>
-                        <span className="inline-flex items-center rounded-full border border-teal-200/40 bg-teal-300/16 px-2 py-[3px] text-[11px] font-semibold tracking-[0.08em] text-teal-100 shadow-[0_0_18px_-6px_rgba(45,212,191,0.85),0_0_26px_-14px_rgba(168,85,247,0.65)]">
-                          AI
-                        </span>
-                      </div>
+                      <p className="text-[11px] font-semibold tracking-[0.182em] text-indigo-100/60 uppercase">AI podsumowanie</p>
                       <p className="text-xs text-indigo-100/62">5 ostatnich sesji</p>
                     </div>
                   </div>
@@ -1333,7 +1529,7 @@ export default function E8AuthenticatedDashboard({
                   />
                   <span
                     aria-hidden
-                    className="pointer-events-none absolute left-1/2 top-0 h-12 w-[72%] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(ellipse_at_top,rgba(0,212,255,0.06),rgba(0,212,255,0)_72%)] blur-2xl"
+                    className="pointer-events-none absolute left-1/2 top-0 h-12 w-[72%] -translate-x-1/2 -translate-y-1/2 bg-[radial-gradient(ellipse_at_top,rgba(0,212,255,0.06),rgba(0,212,255,0)_72%)] blur-2xl md:hidden"
                   />
                   <span
                     aria-hidden
@@ -1465,7 +1661,6 @@ export default function E8AuthenticatedDashboard({
                     <p className="text-[clamp(13px,2vw,15px)] text-indigo-100/78">Po pierwszej sesji pojawia sie tu statystyki.</p>
                     <Link
                       href={primarySessionHref}
-                      onClick={resumeSessionHref ? undefined : handleStartSessionClick}
                       className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-indigo-100/88 transition-colors hover:text-white"
                     >
                       {primaryStatsCtaLabel}
@@ -1643,7 +1838,7 @@ export default function E8AuthenticatedDashboard({
                             displayHasStrongestMode ? "text-emerald-100/72" : "text-emerald-100/52",
                           )}
                         >
-                          Mocna strona
+                          Najlepsza kategoria
                         </p>
                         <p className={cn("mt-1 text-lg font-semibold", displayHasStrongestMode ? "text-emerald-50/90" : "text-white/80")}>{showSkeleton ? <SkeletonWave className="h-7 w-24 rounded-lg" />  : displayStrongestModeLabel}</p>
                       </div>
@@ -1660,7 +1855,7 @@ export default function E8AuthenticatedDashboard({
                             displayHasWeakestMode ? "text-amber-100/72" : "text-amber-100/52",
                           )}
                         >
-                          Do poprawy
+                          Najslabsza kategoria
                         </p>
                         <p className={cn("mt-1 text-lg font-semibold", displayHasWeakestMode ? "text-amber-50/90" : "text-white/80")}>{showSkeleton ? <SkeletonWave className="h-7 w-24 rounded-lg" />  : displayWeakestModeLabel}</p>
                       </div>
@@ -1701,14 +1896,13 @@ export default function E8AuthenticatedDashboard({
                   ) : (
                     <div className="mt-3">
                       <p className="text-[clamp(13px,2vw,15px)] text-indigo-100/86">
-                        {`Masz ${INTELLIGENT_SET_QUESTION_COUNT} pyta\u0144 celowanych w:`}
+                        {`Trenuj teraz kategori\u0119 \u00b7 ${INTELLIGENT_SET_QUESTION_COUNT} pyta\u0144`}
                       </p>
                       <p className="mt-1 text-[clamp(14px,2.2vw,16px)] font-semibold text-white/92">
                         {intelligentSetTargetLabel}
                       </p>
                       <Link
                         href={intelligentSetHref}
-                        onClick={handleStartSessionClick}
                         className="dashboard-btn-hover mt-6 inline-flex h-11 w-full items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-500 px-5 text-sm font-semibold text-white shadow-[0_14px_26px_-16px_rgba(16,185,129,0.9)] transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.99]"
                       >
                         {"Zacznij zestaw"}

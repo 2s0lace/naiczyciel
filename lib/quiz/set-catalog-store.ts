@@ -1,7 +1,7 @@
 import "server-only";
 
 import { applySetCatalogSnapshot, getSetCatalogSnapshot, type SetCatalogSnapshot } from "@/lib/quiz/set-catalog";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient, getSupabaseServerClient, getSupabaseUserClient } from "@/lib/supabase/server";
 
 const SET_ACCESS_STATE_ROW_ID = "e8";
 
@@ -23,19 +23,46 @@ function shouldUseServiceRoleForAdminWrites() {
   return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
-function createSetCatalogClient(accessToken?: string | null) {
-  if (shouldUseServiceRoleForAdminWrites()) {
-    return getSupabaseServerClient();
+function createSetCatalogReadClient(accessToken?: string | null) {
+  if (accessToken && accessToken.trim().length > 0) {
+    return getSupabaseUserClient(accessToken);
   }
 
-  return getSupabaseServerClient(accessToken);
+  return getSupabaseServerClient();
 }
 
-export async function loadSetCatalogFromDatabase(accessToken?: string | null): Promise<{ loaded: boolean; details?: string }> {
-  let supabase: ReturnType<typeof getSupabaseServerClient>;
+function createSetCatalogWriteClient(accessToken?: string | null) {
+  if (shouldUseServiceRoleForAdminWrites()) {
+    return getSupabaseAdminClient();
+  }
+
+  if (accessToken && accessToken.trim().length > 0) {
+    return getSupabaseUserClient(accessToken);
+  }
+
+  return getSupabaseServerClient();
+}
+
+export async function loadSetCatalogFromDatabase(params?: {
+  accessToken?: string | null;
+  allowBootstrap?: boolean;
+}): Promise<{ loaded: boolean; details?: string }> {
+  return loadSetCatalogState({
+    accessToken: params?.accessToken ?? null,
+    allowBootstrap: params?.allowBootstrap === true,
+  });
+}
+
+export async function loadSetCatalogState(params?: {
+  accessToken?: string | null;
+  allowBootstrap?: boolean;
+}): Promise<{ loaded: boolean; details?: string }> {
+  const accessToken = params?.accessToken ?? null;
+  const allowBootstrap = params?.allowBootstrap === true;
+  let supabase: ReturnType<typeof createSetCatalogReadClient>;
 
   try {
-    supabase = createSetCatalogClient(accessToken);
+    supabase = createSetCatalogReadClient(accessToken);
   } catch {
     return { loaded: false };
   }
@@ -49,14 +76,14 @@ export async function loadSetCatalogFromDatabase(accessToken?: string | null): P
   if (result.error) {
     return {
       loaded: false,
-      details: result.error.message,
+      details: "Nie udalo sie odczytac konfiguracji setow z bazy.",
     };
   }
 
   const row = asRecord(result.data) as SetCatalogStateRow | null;
 
   if (!row) {
-    if (!shouldUseServiceRoleForAdminWrites() && (!accessToken || accessToken.trim().length === 0)) {
+    if (!allowBootstrap || !accessToken || !accessToken.trim()) {
       return { loaded: false };
     }
 
@@ -79,10 +106,10 @@ export async function saveSetCatalogToDatabase(
   snapshot = getSetCatalogSnapshot(),
   accessToken?: string | null,
 ): Promise<{ saved: boolean; details?: string }> {
-  let supabase: ReturnType<typeof getSupabaseServerClient>;
+  let supabase: ReturnType<typeof createSetCatalogWriteClient>;
 
   try {
-    supabase = createSetCatalogClient(accessToken);
+    supabase = createSetCatalogWriteClient(accessToken);
   } catch {
     return { saved: false };
   }
@@ -104,7 +131,7 @@ export async function saveSetCatalogToDatabase(
   if (result.error) {
     return {
       saved: false,
-      details: result.error.message,
+      details: "Nie udalo sie zapisac konfiguracji setow w bazie.",
     };
   }
 

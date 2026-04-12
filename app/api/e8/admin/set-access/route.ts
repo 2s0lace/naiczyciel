@@ -89,7 +89,7 @@ function persistenceError(details?: string) {
   return NextResponse.json(
     {
       error: "Nie udalo sie zsynchronizowac setow z baza danych.",
-      details: details ?? "Brak szczegolow bledu.",
+      details: details ?? "Sprobuj ponownie za chwile.",
     },
     { status: 500 },
   );
@@ -102,14 +102,16 @@ export async function GET(request: Request) {
     return auth.response;
   }
 
-  const loaded = await loadSetCatalogFromDatabase(auth.accessToken);
+  const loaded = await loadSetCatalogFromDatabase({
+    accessToken: auth.accessToken,
+    allowBootstrap: true,
+  });
 
   return NextResponse.json({
     tiers: ACCESS_TIERS,
     sets: getSetSlots(),
     config: getSetAccessConfig(),
     storage: loaded.loaded ? "supabase" : "memory",
-    details: loaded.details,
   });
 }
 
@@ -120,7 +122,10 @@ export async function PUT(request: Request) {
     return auth.response;
   }
 
-  const loaded = await loadSetCatalogFromDatabase(auth.accessToken);
+  const loaded = await loadSetCatalogFromDatabase({
+    accessToken: auth.accessToken,
+    allowBootstrap: true,
+  });
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const nextConfig = updateSetAccessConfig(body.config ?? body);
   const persisted = await saveSetCatalogToDatabase(undefined, auth.accessToken);
@@ -144,7 +149,10 @@ export async function POST(request: Request) {
     return auth.response;
   }
 
-  const loaded = await loadSetCatalogFromDatabase(auth.accessToken);
+  const loaded = await loadSetCatalogFromDatabase({
+    accessToken: auth.accessToken,
+    allowBootstrap: true,
+  });
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
 
   try {
@@ -197,7 +205,10 @@ export async function DELETE(request: Request) {
     return auth.response;
   }
 
-  const loaded = await loadSetCatalogFromDatabase(auth.accessToken);
+  const loaded = await loadSetCatalogFromDatabase({
+    accessToken: auth.accessToken,
+    allowBootstrap: true,
+  });
   const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
   const setId = typeof body.id === "string" ? body.id : typeof body.setId === "string" ? body.setId : "";
 

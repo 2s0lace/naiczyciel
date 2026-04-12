@@ -1,0 +1,428 @@
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of C:\Users\menep\Desktop\package-lock.json as the root directory.
+ To silence this warning, set `outputFileTracingRoot` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/output#caveats for more information.
+ Detected additional lockfiles: 
+   * C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\package-lock.json
+
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/8969331.9b215f03.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+⨯ ./components/landing/hero-section.tsx
+Error:   x Expected ';', '}' or <eof>
+    ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\hero-section.tsx:12:1]
+  9 | };
+ 10 | 
+ 11 | export default function HeroSection({ activeTab, visitedTabs }: HeroSectionProps) {
+ 12 |         Krótkie zestawy, wyjaśnienia błędów i analiza tego, co warto jeszcze powtórzyć.
+    :         ^^^|^^^ ^^^^^^^
+    :            `-- This is the expression part of an expression statement
+ 13 |       </p>
+ 14 | 
+ 14 |       <Link
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/hero-section.tsx
+./app/e8/page.tsx
+[browser] ./components/landing/hero-section.tsx
+Error:   x Expected ';', '}' or <eof>
+    ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\hero-section.tsx:12:1]
+  9 | };
+ 10 | 
+ 11 | export default function HeroSection({ activeTab, visitedTabs }: HeroSectionProps) {
+ 12 |         Krótkie zestawy, wyjaśnienia błędów i analiza tego, co warto jeszcze powtórzyć.
+    :         ^^^|^^^ ^^^^^^^
+    :            `-- This is the expression part of an expression statement
+ 13 |       </p>
+ 14 | 
+ 14 |       <Link
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/hero-section.tsx
+./app/e8/page.tsx 
+[browser] ./components/landing/hero-section.tsx
+Error:   x Expected ';', '}' or <eof>
+    ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\hero-section.tsx:12:1]
+  9 | };
+ 10 | 
+ 11 | export default function HeroSection({ activeTab, visitedTabs }: HeroSectionProps) {
+ 12 |         Krótkie zestawy, wyjaśnienia błędów i analiza tego, co warto jeszcze powtórzyć.
+    :         ^^^|^^^ ^^^^^^^
+    :            `-- This is the expression part of an expression statement
+ 13 |       </p>
+ 14 | 
+ 14 |       <Link
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/hero-section.tsx
+./app/e8/page.tsx 
+[browser] ./components/landing/hero-section.tsx
+Error:   x Expected ';', '}' or <eof>
+    ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\hero-section.tsx:12:1]
+  9 | };
+ 10 | 
+ 11 | export default function HeroSection({ activeTab, visitedTabs }: HeroSectionProps) {
+ 12 |         Krótkie zestawy, wyjaśnienia błędów i analiza tego, co warto jeszcze powtórzyć.
+    :         ^^^|^^^ ^^^^^^^
+    :            `-- This is the expression part of an expression statement
+ 13 |       </p>
+ 14 | 
+ 14 |       <Link
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/hero-section.tsx
+./app/e8/page.tsx 
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/paper-cut-design-element (2).889d22d2.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/torn-paper-vector-vintage-sticker-with-design-space.8279e6de.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/8969331.9b215f03.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/torn-paper-vector-vintage-sticker-with-design-space.8279e6de.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] @supabase/gotrue-js: Lock "lock:sb-owyqpitxqxvxlrfszoyc-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+[browser] @supabase/gotrue-js: Lock "lock:sb-owyqpitxqxvxlrfszoyc-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+[browser] @supabase/gotrue-js: Lock "lock:sb-owyqpitxqxvxlrfszoyc-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+[browser] @supabase/gotrue-js: Lock "lock:sb-owyqpitxqxvxlrfszoyc-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+[browser] @supabase/gotrue-js: Lock "lock:sb-owyqpitxqxvxlrfszoyc-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+[browser] @supabase/gotrue-js: Lock "lock:sb-owyqpitxqxvxlrfszoyc-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+[browser] @supabase/gotrue-js: Lock "lock:sb-owyqpitxqxvxlrfszoyc-auth-token" was not released within 5000ms. This may indicate an orphaned lock from a component unmount (e.g., React Strict Mode). Forcefully acquiring the lock to recover.
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+⨯ ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:131:1]
+ 128 |                   </div>
+ 129 |                 </RevealOnView>
+ 130 |     
+ 131 | ,->             </RevealOnView>
+ 132 | |   
+ 133 | `->             {/* 4 RODZAJE (Mobile Only) */}
+ 134 |                 <RevealOnView className="md:hidden lg:hidden" delay={190} threshold={0.16}>
+ 135 |                   <div className="max-w-[15rem] md:max-w-[17rem]">
+ 136 |                     <p
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx
+[browser] ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:131:1]
+ 128 |                   </div>
+ 129 |                 </RevealOnView>
+ 130 |     
+ 131 | ,->             </RevealOnView>
+ 132 | |   
+ 133 | `->             {/* 4 RODZAJE (Mobile Only) */}
+ 134 |                 <RevealOnView className="md:hidden lg:hidden" delay={190} threshold={0.16}>
+ 135 |                   <div className="max-w-[15rem] md:max-w-[17rem]">
+ 136 |                     <p
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx 
+⨯ ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:131:1]
+ 128 |                   </div>
+ 129 |                 </RevealOnView>
+ 130 |     
+ 131 | ,->             </RevealOnView>
+ 132 | |   
+ 133 | `->             {/* 4 RODZAJE (Mobile Only) */}
+ 134 |                 <RevealOnView className="md:hidden lg:hidden" delay={190} threshold={0.16}>
+ 135 |                   <div className="max-w-[15rem] md:max-w-[17rem]">
+ 136 |                     <p
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx
+[browser] ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:131:1]
+ 128 |                   </div>
+ 129 |                 </RevealOnView>
+ 130 |     
+ 131 | ,->             </RevealOnView>
+ 132 | |   
+ 133 | `->             {/* 4 RODZAJE (Mobile Only) */}
+ 134 |                 <RevealOnView className="md:hidden lg:hidden" delay={190} threshold={0.16}>
+ 135 |                   <div className="max-w-[15rem] md:max-w-[17rem]">
+ 136 |                     <p
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx 
+[browser] ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:131:1]
+ 128 |                   </div>
+ 129 |                 </RevealOnView>
+ 130 |     
+ 131 | ,->             </RevealOnView>
+ 132 | |   
+ 133 | `->             {/* 4 RODZAJE (Mobile Only) */}
+ 134 |                 <RevealOnView className="md:hidden lg:hidden" delay={190} threshold={0.16}>
+ 135 |                   <div className="max-w-[15rem] md:max-w-[17rem]">
+ 136 |                     <p
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx 
+[browser] ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:131:1]
+ 128 |                   </div>
+ 129 |                 </RevealOnView>
+ 130 |     
+ 131 | ,->             </RevealOnView>
+ 132 | |   
+ 133 | `->             {/* 4 RODZAJE (Mobile Only) */}
+ 134 |                 <RevealOnView className="md:hidden lg:hidden" delay={190} threshold={0.16}>
+ 135 |                   <div className="max-w-[15rem] md:max-w-[17rem]">
+ 136 |                     <p
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx 
+⨯ ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:148:1]
+ 145 |                   </div>
+ 146 |                 </RevealOnView>
+ 147 |               </div>
+ 148 | ,->       </section>
+ 149 | `->     </>
+ 150 |       );
+ 151 |     }
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx
+[browser] ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:131:1]
+ 128 |                   </div>
+ 129 |                 </RevealOnView>
+ 130 |     
+ 131 | ,->             </RevealOnView>
+ 132 | |   
+ 133 | `->             {/* 4 RODZAJE (Mobile Only) */}
+ 134 |                 <RevealOnView className="md:hidden lg:hidden" delay={190} threshold={0.16}>
+ 135 |                   <div className="max-w-[15rem] md:max-w-[17rem]">
+ 136 |                     <p
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx 
+[browser] ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:148:1]
+ 145 |                   </div>
+ 146 |                 </RevealOnView>
+ 147 |               </div>
+ 148 | ,->       </section>
+ 149 | `->     </>
+ 150 |       );
+ 151 |     }
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx 
+[browser] ./components/landing/e8-numbers-bento.tsx
+Error:   x Expected '</', got 'jsx text'
+     ,-[C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\e8-numbers-bento.tsx:148:1]
+ 145 |                   </div>
+ 146 |                 </RevealOnView>
+ 147 |               </div>
+ 148 | ,->       </section>
+ 149 | `->     </>
+ 150 |       );
+ 151 |     }
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx 
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[browser] Uncaught ReferenceError: showLoginToast is not defined
+    at PricingSection (components\landing\pricing-section.tsx:368:177)
+    at PublicE8Landing (app\e8\page.tsx:105:13)
+    at E8Landing (app\e8\page.tsx:217:10)
+  366 | ...
+  367 | ...
+> 368 | ...n-180 ease-[cubic-bezier(0.22,1,0.36,1)] ${showLoginToast ? "translate-y-0 opacity-100...
+      |                                               ^
+  369 | ...
+  370 | ...
+  371 | ...
+⚠ Fast Refresh had to perform a full reload due to a runtime error.
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] ./components/landing/task-donut-chart.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\task-donut-chart.tsx
+    1: Nie można odnaleźć określonego pliku. (os error 2)
+
+Import trace for requested module:
+./components/landing/task-donut-chart.tsx
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx 
+⨯ ./components/landing/task-donut-chart.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\task-donut-chart.tsx
+    1: Nie można odnaleźć określonego pliku. (os error 2)
+
+Import trace for requested module:
+./components/landing/task-donut-chart.tsx
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx
+[browser] ./components/landing/task-donut-chart.tsx
+Error: 
+
+Caused by:
+    0: Failed to read source code from C:\Users\menep\Desktop\personalia\kodzenie\naiczyciel\components\landing\task-donut-chart.tsx
+    1: Nie można odnaleźć określonego pliku. (os error 2)
+
+Import trace for requested module:
+./components/landing/task-donut-chart.tsx
+./components/landing/e8-numbers-bento.tsx
+./app/e8/page.tsx 
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/torn-paper-vector-vintage-sticker-with-design-space.8279e6de.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/torn-paper-vector-vintage-sticker-with-design-space.8279e6de.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/_next/static/media/buycta.0521430a.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/torn-paper-vector-vintage-sticker-with-design-space.8279e6de.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading

@@ -1,27 +1,21 @@
 import { NextResponse } from "next/server";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
 import {
+  fetchAdaptiveQuestions,
   clampQuestionCount,
   fetchQuestionsForExerciseIds,
   fetchQuestionsForMode,
   fetchSessionAnswers,
 } from "@/lib/quiz/repository";
 import { getSetSlots, getSetsForTier, type E8SetDefinition } from "@/lib/quiz/set-catalog";
+import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
 import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
 import type { QuizMode } from "@/lib/quiz/types";
-import { getLocalSessionPayload, isLocalSessionId } from "@/lib/quiz/local-store";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getLocalSessionPayload, getOwnedLocalSession, isLocalSessionId } from "@/lib/quiz/local-store";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 type RouteContext = {
   params: Promise<{ sessionId: string }>;
-};
-
-type SessionLookupRow = {
-  id?: string;
-  status?: string;
-  mode?: string;
-  set_id?: string | null;
-  requested_count?: number | null;
 };
 
 type ExerciseAuditRow = {
@@ -37,6 +31,40 @@ function normalizeSetId(value: string | null): string | null {
 
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeMode(value: string | null | undefined): string {
+  return typeof value === "string" ? value.trim().toLowerCase() : "";
+}
+
+function normalizeModeList(raw: string[]): string[] {
+  return raw
+    .map((value) => normalizeMode(value))
+    .filter((value, index, list) => value.length > 0 && list.indexOf(value) === index);
+}
+
+function parseModesFromValue(value: string | null | undefined): string[] {
+  const normalized = normalizeMode(value);
+
+  if (!normalized || normalized === "auto" || normalized === "mixed") {
+    return [];
+  }
+
+  if (normalized.startsWith("mixed:")) {
+    return normalizeModeList(normalized.slice("mixed:".length).split(","));
+  }
+
+  return [normalized];
+}
+
+function serializeModeValue(modes: string[]): string {
+  const normalized = normalizeModeList(modes);
+
+  if (normalized.length <= 1) {
+    return normalized[0] ?? "auto";
+  }
+
+  return `mixed:${normalized.join(",")}`;
 }
 
 function asFiniteNumber(value: unknown): number | null {
@@ -67,7 +95,7 @@ function normalizeIds(raw: string[], count: number): string[] {
 }
 
 async function buildSetParseFailureDetails(params: {
-  supabase: ReturnType<typeof getSupabaseServerClient>;
+  supabase: ReturnType<typeof getSupabaseUserClient>;
   setItem: E8SetDefinition;
   expectedCount: number;
   parsedCount: number;
@@ -131,38 +159,6 @@ async function buildSetParseFailureDetails(params: {
   return details.join(" ");
 }
 
-async function loadSessionRow(
-  supabase: ReturnType<typeof getSupabaseServerClient>,
-  sessionId: string,
-): Promise<{ row: SessionLookupRow | null; error: string | null }> {
-  const selectVariants = [
-    "id, status, set_id, mode, requested_count",
-    "id, status, set_id, mode",
-    "id, status, set_id",
-    "id, status, mode, requested_count",
-    "id, status, mode",
-    "id, status",
-  ] as const;
-
-  let lastError: string | null = null;
-
-  for (const select of selectVariants) {
-    const result = await supabase
-      .from("quiz_sessions")
-      .select(select)
-      .eq("id", sessionId)
-      .maybeSingle();
-
-    if (!result.error) {
-      return { row: (result.data as SessionLookupRow | null) ?? null, error: null };
-    }
-
-    lastError = result.error.message;
-  }
-
-  return { row: null, error: lastError ?? "Nie udalo sie pobrac sesji." };
-}
-
 export async function GET(request: Request, context: RouteContext) {
   try {
     const { sessionId } = await context.params;
@@ -171,14 +167,25 @@ export async function GET(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Brak sessionId." }, { status: 400 });
     }
 
+    const access = await resolveAccessTierFromRequest(request);
+
+    if (!access.userId || !access.accessToken) {
+      return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
+    }
+
+    await loadSetCatalogFromDatabase({
+      accessToken: access.accessToken,
+      allowBootstrap: false,
+    });
+
     if (isLocalSessionId(sessionId)) {
-      const localPayload = getLocalSessionPayload(sessionId);
+      const localSession = getOwnedLocalSession(sessionId, access.userId);
+      const localPayload = localSession ? getLocalSessionPayload(sessionId) : null;
 
       if (!localPayload) {
         return NextResponse.json(
           {
             error: "Sesja lokalna nie istnieje.",
-            details: "Podgląd pytania wygasł albo nie został poprawnie utworzony.",
           },
           { status: 404 },
         );
@@ -192,42 +199,22 @@ export async function GET(request: Request, context: RouteContext) {
     const requestedCountParam = url.searchParams.get("count");
     const requestedCount = requestedCountParam !== null ? Number(requestedCountParam) : Number.NaN;
     const requestedSetId = normalizeSetId(url.searchParams.get("set"));
+    const requestedModes = normalizeModeList((url.searchParams.get("modes") ?? "").split(","));
+    const requestedFocusLabel = url.searchParams.get("focus")?.trim() || null;
+    const requestedFocusSource = url.searchParams.get("focusSource")?.trim().toLowerCase() || null;
+    const requestedFocusRaw = url.searchParams.get("focusRaw")?.trim() || null;
+    const supabase = getSupabaseUserClient(access.accessToken);
 
-    const access = await resolveAccessTierFromRequest(request);
-    await loadSetCatalogFromDatabase();
-
-    let supabase: ReturnType<typeof getSupabaseServerClient>;
+    let sessionLookup;
 
     try {
-      supabase = getSupabaseServerClient();
+      sessionLookup = await requireOwnedSession(supabase, sessionId, access.userId);
     } catch {
-      return NextResponse.json(
-        {
-          error: "Brak polaczenia z baza danych.",
-          details: "Tryb lokalny/mock jest wylaczony.",
-        },
-        { status: 500 },
-      );
-    }
-
-    const sessionLookup = await loadSessionRow(supabase, sessionId);
-
-    if (sessionLookup.error) {
-      return NextResponse.json(
-        {
-          error: "Nie udalo sie pobrac sesji.",
-          details: sessionLookup.error,
-        },
-        { status: 500 },
-      );
-    }
-
-    if (!sessionLookup.row?.id) {
       return NextResponse.json({ error: "Sesja nie istnieje." }, { status: 404 });
     }
 
     const sessionSetId = normalizeSetId(
-      typeof sessionLookup.row.set_id === "string" ? sessionLookup.row.set_id : null,
+      typeof sessionLookup.set_id === "string" ? sessionLookup.set_id : null,
     );
 
     const effectiveSetId = requestedSetId ?? sessionSetId;
@@ -242,23 +229,28 @@ export async function GET(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           error: "Wybrany zestaw nie jest dostepny.",
-          details: "Set nie jest przypisany do Twojego dostepu lub nie istnieje.",
         },
         { status: 400 },
       );
     }
 
-    const sessionMode = typeof sessionLookup.row.mode === "string" ? sessionLookup.row.mode : null;
+    const sessionMode = typeof sessionLookup.mode === "string" ? sessionLookup.mode : null;
     const modeHint = (explicitSelectedSet?.mode ?? sessionMode ?? requestedMode) as QuizMode;
+    const tierModes = normalizeModeList(tierSets.map((setItem) => setItem.mode));
+    const sessionDerivedModes = parseModesFromValue(sessionMode).filter((mode) => tierModes.includes(mode));
+    const effectiveModes = explicitSelectedSet
+      ? [normalizeMode(explicitSelectedSet.mode)]
+      : requestedModes.length > 0
+        ? requestedModes.filter((mode) => tierModes.includes(mode))
+        : sessionDerivedModes.length > 0
+          ? sessionDerivedModes
+          : normalizeMode(requestedMode) !== "auto"
+            ? [normalizeMode(requestedMode)]
+            : tierModes;
 
-    const autoAssignedSet =
-      !explicitSelectedSet && tierSets.length > 0
-        ? tierSets.find((setItem) => setItem.mode.trim().toLowerCase() === modeHint.trim().toLowerCase()) ?? tierSets[0] ?? null
-        : null;
-
-    const selectedSet = explicitSelectedSet ?? autoAssignedSet;
-    const mode = (selectedSet?.mode ?? modeHint) as QuizMode;
-    const sessionRequestedCount = asFiniteNumber(sessionLookup.row.requested_count);
+    const selectedSet = explicitSelectedSet ?? null;
+    const mode = (selectedSet?.mode ?? serializeModeValue(effectiveModes) ?? modeHint) as QuizMode;
+    const sessionRequestedCount = asFiniteNumber(sessionLookup.requested_count);
     const requestedCountResolved = clampQuestionCount(
       Number.isFinite(requestedCount) ? requestedCount : sessionRequestedCount ?? 10,
     );
@@ -283,11 +275,17 @@ export async function GET(request: Request, context: RouteContext) {
             includeDraft: includeDraftQuestions,
             shuffleSeed: (selectedSet?.questionIds?.length ?? 0) > effectiveCount ? sessionId : undefined,
           })
-        : fetchQuestionsForMode({
+        : fetchAdaptiveQuestions({
             supabase,
-            mode,
+            userId: access.userId,
+            modes: effectiveModes.length > 0 ? effectiveModes : [normalizeMode(modeHint)],
             count: effectiveCount,
             includeDraft: includeDraftQuestions,
+            excludeSessionId: sessionId,
+            shuffleSeed: sessionId,
+            focusLabel: requestedFocusLabel,
+            focusSource: requestedFocusSource,
+            focusRaw: requestedFocusRaw,
           }),
       fetchSessionAnswers({
         supabase,
@@ -322,10 +320,11 @@ export async function GET(request: Request, context: RouteContext) {
           })
         : `Za malo poprawnych pytan w bazie dla trybu ${mode} (${questions.length}/${effectiveCount}).`;
 
+      console.error("[quiz-session] question parse failed", details);
+
       return NextResponse.json(
         {
           error: "Nie udalo sie sparsowac przyporzadkowanego testu z bazy danych.",
-          details,
         },
         { status: 422 },
       );
@@ -335,17 +334,20 @@ export async function GET(request: Request, context: RouteContext) {
       sessionId,
       mode,
       setId: selectedSet?.id,
-      status: typeof sessionLookup.row.status === "string" ? sessionLookup.row.status : "in_progress",
+      modes: effectiveModes,
+      focusLabel: requestedFocusLabel,
+      focusSource: requestedFocusSource,
+      focusRaw: requestedFocusRaw,
+      status: typeof sessionLookup.status === "string" ? sessionLookup.status : "in_progress",
       questions,
       answers,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[quiz-session] unexpected error", error);
 
     return NextResponse.json(
       {
         error: "Wystapil blad podczas pobierania quizu.",
-        details: message,
       },
       { status: 500 },
     );

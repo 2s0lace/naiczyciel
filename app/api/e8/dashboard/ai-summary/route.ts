@@ -7,7 +7,7 @@ import {
 } from "@/lib/ai/rate-limit";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
 import { getOpenAIServerClient } from "@/lib/openai/server";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 type SessionRow = {
   id: string;
@@ -159,14 +159,8 @@ function formatMode(mode: string): string {
   return normalized.length > 0 ? normalized : "Reakcje";
 }
 
-async function fetchRecentSessions(userId: string): Promise<SessionRow[]> {
-  let supabase: ReturnType<typeof getSupabaseServerClient>;
-
-  try {
-    supabase = getSupabaseServerClient();
-  } catch {
-    return [];
-  }
+async function fetchRecentSessions(accessToken: string, userId: string): Promise<SessionRow[]> {
+  const supabase = getSupabaseUserClient(accessToken);
 
   for (const userColumn of USER_COLUMN_CANDIDATES) {
     let columnChecked = false;
@@ -272,7 +266,11 @@ export async function GET(request: Request) {
     }
   }
 
-  const sessions = await fetchRecentSessions(access.userId);
+  if (!access.accessToken) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const sessions = await fetchRecentSessions(access.accessToken, access.userId);
 
   if (sessions.length === 0) {
     return NextResponse.json({

@@ -20,8 +20,6 @@ export type SetCatalogSnapshot = {
   config: SetAccessConfig;
 };
 
-export const BUILTIN_MOCK_SET_IDS = ["set_mock_reading_mc", "set_mock_gap_fill_text"] as const;
-
 // Internal catalog for randomized quiz start.
 export const E8_SET_SLOTS: E8SetDefinition[] = [
   {
@@ -45,20 +43,6 @@ export const E8_SET_SLOTS: E8SetDefinition[] = [
     subtitle: "Najczestsze struktury z egzaminu.",
     questionCount: 10,
   },
-  {
-    id: "set_mock_reading_mc",
-    mode: "reading_mc",
-    title: "Mock reading_mc",
-    subtitle: "Mockowy zestaw czytania z 2 pytaniami.",
-    questionCount: 2,
-  },
-  {
-    id: "set_mock_gap_fill_text",
-    mode: "gap_fill_text",
-    title: "Mock gap_fill_text",
-    subtitle: "Mockowy zestaw uzupelniania tekstu z 2 lukami.",
-    questionCount: 2,
-  },
 ];
 
 const DEFAULT_UNREGISTERED_COUNT = 1;
@@ -69,10 +53,6 @@ type GlobalWithSetAccessConfig = typeof globalThis & {
   __naiczycielSetAccessConfig?: SetAccessConfig;
   __naiczycielSetSlots?: E8SetDefinition[];
 };
-
-function isBuiltinMockSetId(setId: string): setId is (typeof BUILTIN_MOCK_SET_IDS)[number] {
-  return (BUILTIN_MOCK_SET_IDS as readonly string[]).includes(setId);
-}
 
 function nowIso() {
   return new Date().toISOString();
@@ -120,6 +100,10 @@ function normalizeQuestionIds(raw: unknown): string[] {
   return next;
 }
 
+function isMockSetId(value: string): boolean {
+  return value.trim().toLowerCase().startsWith("set_mock_");
+}
+
 function pickRandom(items: string[]): string {
   if (items.length === 0) {
     return FALLBACK_MODE;
@@ -133,23 +117,9 @@ function uniqueModes(items: string[]): string[] {
   return items.filter((mode, index, list) => mode.length > 0 && list.indexOf(mode) === index);
 }
 
-function mergeBuiltinMockSlots(slots: E8SetDefinition[]): E8SetDefinition[] {
-  const next = cloneSetSlots(slots);
-  const existingIds = new Set(next.map((slot) => slot.id));
-  const builtinMocks = E8_SET_SLOTS.filter((slot) => isBuiltinMockSetId(slot.id));
-
-  for (const mockSlot of builtinMocks) {
-    if (!existingIds.has(mockSlot.id)) {
-      next.push(cloneSetSlots([mockSlot])[0]);
-    }
-  }
-
-  return next;
-}
-
 function ensureRuntimeSetSlots(root: GlobalWithSetAccessConfig): E8SetDefinition[] {
   if (!Array.isArray(root.__naiczycielSetSlots)) {
-    root.__naiczycielSetSlots = mergeBuiltinMockSlots(cloneSetSlots(E8_SET_SLOTS));
+    root.__naiczycielSetSlots = cloneSetSlots(E8_SET_SLOTS);
   }
 
   return root.__naiczycielSetSlots;
@@ -157,7 +127,7 @@ function ensureRuntimeSetSlots(root: GlobalWithSetAccessConfig): E8SetDefinition
 
 function setRuntimeSetSlots(nextSlots: E8SetDefinition[]) {
   const root = globalThis as GlobalWithSetAccessConfig;
-  root.__naiczycielSetSlots = mergeBuiltinMockSlots(nextSlots);
+  root.__naiczycielSetSlots = cloneSetSlots(nextSlots);
 }
 
 export function getSetSlots(): E8SetDefinition[] {
@@ -177,7 +147,7 @@ function sanitizeSetSlots(raw: unknown, options?: { allowEmpty?: boolean }): E8S
     const record = asRecord(entry);
     const id = typeof record?.id === "string" ? record.id.trim() : "";
 
-    if (!id || seen.has(id)) {
+    if (!id || seen.has(id) || isMockSetId(id)) {
       continue;
     }
 
@@ -214,7 +184,7 @@ export function applySetCatalogSnapshot(raw: {
   config?: unknown;
 }): SetCatalogSnapshot {
   const root = globalThis as GlobalWithSetAccessConfig;
-  const nextSets = mergeBuiltinMockSlots(sanitizeSetSlots(raw.sets, { allowEmpty: Array.isArray(raw.sets) }));
+  const nextSets = sanitizeSetSlots(raw.sets, { allowEmpty: Array.isArray(raw.sets) });
   setRuntimeSetSlots(nextSets);
   root.__naiczycielSetAccessConfig = getDefaultSetAccessConfig();
 
@@ -243,28 +213,15 @@ function sanitizeTierSetIds(raw: unknown): string[] {
     .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index && validSetIds.has(entry));
 }
 
-function appendMissingSetIds(ids: string[], requiredIds: readonly string[]): string[] {
-  const next = [...ids];
-
-  for (const setId of requiredIds) {
-    if (!next.includes(setId)) {
-      next.push(setId);
-    }
-  }
-
-  return next;
-}
-
 export function getDefaultSetAccessConfig(): SetAccessConfig {
   const allSetIds = getDefaultSetIds(getSetSlots().length);
-  const mockSetIds = BUILTIN_MOCK_SET_IDS.filter((setId) => allSetIds.includes(setId));
 
   return {
     tiers: {
-      unregistered: appendMissingSetIds(getDefaultSetIds(DEFAULT_UNREGISTERED_COUNT), mockSetIds),
-      registered: appendMissingSetIds(getDefaultSetIds(DEFAULT_REGISTERED_COUNT), mockSetIds),
-      premium: appendMissingSetIds(allSetIds, mockSetIds),
-      premium_plus: appendMissingSetIds(allSetIds, mockSetIds),
+      unregistered: getDefaultSetIds(DEFAULT_UNREGISTERED_COUNT),
+      registered: getDefaultSetIds(DEFAULT_REGISTERED_COUNT),
+      premium: allSetIds,
+      premium_plus: allSetIds,
     },
     updated_at: nowIso(),
   };
@@ -300,13 +257,6 @@ export function updateSetAccessConfig(raw: unknown): SetAccessConfig {
     }
 
     nextTiers[tier] = sanitizeTierSetIds(tierRecord[tier]);
-  }
-
-  const allSetIds = new Set(getSetSlots().map((item) => item.id));
-  const builtInMockIds = BUILTIN_MOCK_SET_IDS.filter((setId) => allSetIds.has(setId));
-
-  for (const tier of ACCESS_TIERS) {
-    nextTiers[tier] = appendMissingSetIds(nextTiers[tier], builtInMockIds);
   }
 
   const next = {

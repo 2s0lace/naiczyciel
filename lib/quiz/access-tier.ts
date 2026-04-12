@@ -1,5 +1,5 @@
-﻿import { isAdminEmail } from "@/lib/auth/role";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { isAdminEmail } from "@/lib/auth/role";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 import type { AccessTier } from "@/lib/quiz/set-catalog";
 
 function getBearerToken(request: Request): string | null {
@@ -76,7 +76,7 @@ function resolveTierFromSignals(params: {
 }
 
 async function readProfileLikeRecord(params: {
-  supabase: ReturnType<typeof getSupabaseServerClient>;
+  supabase: ReturnType<typeof getSupabaseUserClient>;
   userId: string;
   email: string;
 }): Promise<Record<string, unknown> | null> {
@@ -123,6 +123,7 @@ export async function resolveAccessTierFromRequest(request: Request): Promise<{
   tier: AccessTier;
   userId: string | null;
   role: string | null;
+  accessToken: string | null;
 }> {
   const accessToken = getBearerToken(request);
 
@@ -131,41 +132,44 @@ export async function resolveAccessTierFromRequest(request: Request): Promise<{
       tier: "unregistered",
       userId: null,
       role: null,
+      accessToken: null,
     };
   }
 
-  let supabase: ReturnType<typeof getSupabaseServerClient>;
+  let supabase: ReturnType<typeof getSupabaseUserClient>;
 
   try {
-    supabase = getSupabaseServerClient();
+    supabase = getSupabaseUserClient(accessToken);
   } catch {
     return {
-      tier: "registered",
+      tier: "unregistered",
       userId: null,
       role: null,
+      accessToken,
     };
   }
 
-  const { data, error } = await supabase.auth.getUser(accessToken);
+  const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {
     return {
       tier: "unregistered",
       userId: null,
       role: null,
+      accessToken,
     };
   }
 
   const email = asText(data.user.email);
   const adminByEmail = isAdminEmail(email);
-
-  const metadataRole = normalizeRole(data.user.app_metadata?.role) || normalizeRole(data.user.user_metadata?.role);
+  const metadataRole = normalizeRole(data.user.app_metadata?.role);
 
   if (adminByEmail || metadataRole === "admin") {
     return {
       tier: "premium_plus",
       userId: data.user.id,
       role: "admin",
+      accessToken,
     };
   }
 
@@ -198,6 +202,6 @@ export async function resolveAccessTierFromRequest(request: Request): Promise<{
     }),
     userId: data.user.id,
     role: resolvedRole,
+    accessToken,
   };
 }
-

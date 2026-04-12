@@ -1,83 +1,24 @@
 import { NextResponse } from "next/server";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
-import { buildSummary, clampQuestionCount, fetchQuestionsForExerciseIds, fetchQuestionsForMode, fetchSessionAnswers } from "@/lib/quiz/repository";
-import { getSetSlots, getSetsForTier } from "@/lib/quiz/set-catalog";
-import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
-import type { QuizSummary } from "@/lib/quiz/types";
+import { buildSummary, fetchSessionAnswers } from "@/lib/quiz/repository";
 import {
   completeLocalSession,
-  getLocalSessionPayload,
+  getOwnedLocalSession,
   isLocalSessionId,
 } from "@/lib/quiz/local-store";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
+import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
+import { loadQuestionsForOwnedSession } from "@/lib/quiz/session-questions";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 type RouteContext = {
   params: Promise<{ sessionId: string }>;
 };
 
 type CompleteBody = {
-  summary?: QuizSummary;
   mode?: string;
   setId?: string;
 };
-
-type SessionLookupRow = {
-  id?: string;
-  set_id?: string | null;
-  requested_count?: number | null;
-  mode?: string | null;
-};
-
-async function loadSessionRow(
-  supabase: ReturnType<typeof getSupabaseServerClient>,
-  sessionId: string,
-): Promise<{ row: SessionLookupRow | null; error: string | null }> {
-  const selectVariants = [
-    "id, set_id, requested_count, mode",
-    "id, requested_count, mode",
-    "id, mode",
-    "id, requested_count",
-    "id",
-  ] as const;
-
-  let lastError: string | null = null;
-
-  for (const select of selectVariants) {
-    const result = await supabase
-      .from("quiz_sessions")
-      .select(select)
-      .eq("id", sessionId)
-      .maybeSingle();
-
-    if (!result.error) {
-      return {
-        row: (result.data as SessionLookupRow | null) ?? null,
-        error: null,
-      };
-    }
-
-    lastError = result.error.message;
-  }
-
-  return {
-    row: null,
-    error: lastError ?? "Nie udalo sie pobrac sesji.",
-  };
-}
-
-function normalizeSetId(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-function asFiniteNumber(value: unknown): number | null {
-  const numeric = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(numeric) ? numeric : null;
-}
 
 export async function POST(request: Request, context: RouteContext) {
   try {
@@ -89,105 +30,72 @@ export async function POST(request: Request, context: RouteContext) {
 
     const body = (await request.json().catch(() => ({}))) as CompleteBody;
     const fallbackMode = typeof body.mode === "string" ? body.mode : "reactions";
-    const requestedSetId = normalizeSetId(body.setId);
     const access = await resolveAccessTierFromRequest(request);
-    await loadSetCatalogFromDatabase();
-    const allowedSetMap = new Map(getSetsForTier(access.tier).map((setItem) => [setItem.id, setItem]));
-    const allSetMap = access.role === "admin" ? new Map(getSetSlots().map((setItem) => [setItem.id, setItem])) : null;
+
+    if (!access.userId || !access.accessToken) {
+      return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
+    }
+
+    await loadSetCatalogFromDatabase({
+      accessToken: access.accessToken,
+      allowBootstrap: false,
+    });
 
     if (isLocalSessionId(sessionId)) {
-      const { summary } = completeLocalSession({
-        sessionId,
-        mode: fallbackMode,
-        summary: body.summary,
-      });
+      const localSession = getOwnedLocalSession(sessionId, access.userId);
 
-      return NextResponse.json({
-        ok: true,
-        sessionId,
-        summary,
-        storage: "local",
-      });
-    }
-
-    let supabase: ReturnType<typeof getSupabaseServerClient> | null = null;
-
-    try {
-      supabase = getSupabaseServerClient();
-    } catch {
-      const { summary } = completeLocalSession({
-        sessionId,
-        mode: fallbackMode,
-        summary: body.summary,
-      });
-
-      return NextResponse.json({
-        ok: true,
-        sessionId,
-        summary,
-        storage: "local",
-      });
-    }
-
-    const sessionResult = await loadSessionRow(supabase, sessionId);
-
-    if (sessionResult.error || !sessionResult.row?.id) {
-      const localPayload = getLocalSessionPayload(sessionId);
-
-      if (localPayload) {
-        const { summary } = completeLocalSession({
-          sessionId,
-          mode: localPayload.mode,
-          summary: body.summary,
-        });
-
-        return NextResponse.json({
-          ok: true,
-          sessionId,
-          summary,
-          storage: "local",
-        });
+      if (!localSession) {
+        return NextResponse.json(
+          {
+            error: "Nie znaleziono sesji do zakonczenia.",
+          },
+          { status: 404 },
+        );
       }
 
+      const { summary } = completeLocalSession({
+        sessionId,
+        mode: fallbackMode,
+        userId: access.userId,
+      });
+
+      return NextResponse.json({
+        ok: true,
+        sessionId,
+        summary,
+        storage: "local",
+      });
+    }
+
+    const supabase = getSupabaseUserClient(access.accessToken);
+
+    let sessionRow;
+
+    try {
+      sessionRow = await requireOwnedSession(supabase, sessionId, access.userId);
+    } catch {
       return NextResponse.json(
         {
           error: "Nie znaleziono sesji do zakonczenia.",
-          details: sessionResult.error,
         },
         { status: 404 },
       );
     }
 
-    const sessionRow = sessionResult.row;
-    const effectiveSetId = requestedSetId ?? normalizeSetId(sessionRow?.set_id);
-    const selectedSet = effectiveSetId
-      ? allowedSetMap.get(effectiveSetId) ?? allSetMap?.get(effectiveSetId) ?? null
-      : null;
-    const resolvedMode = selectedSet?.mode ?? (typeof sessionRow?.mode === "string" ? sessionRow.mode : fallbackMode);
-    const requestedCount = clampQuestionCount(asFiniteNumber(sessionRow?.requested_count) ?? 10);
-
     const [questions, answers] = await Promise.all([
-      selectedSet?.questionIds && selectedSet.questionIds.length > 0
-        ? fetchQuestionsForExerciseIds({
-            supabase,
-            exerciseIds: selectedSet.questionIds,
-            count: Math.min(requestedCount, selectedSet.questionIds.length),
-            shuffleSeed: selectedSet.questionIds.length > requestedCount ? sessionId : undefined,
-          })
-        : fetchQuestionsForMode({
-            supabase,
-            mode: resolvedMode,
-            count: requestedCount,
-          }),
+      loadQuestionsForOwnedSession({
+        supabase,
+        session: sessionRow,
+        tier: access.tier,
+        role: access.role,
+      }),
       fetchSessionAnswers({
         supabase,
         sessionId,
       }),
     ]);
 
-    const computedSummary = buildSummary({ questions, answers });
-    const summary = body.summary ?? computedSummary;
-
+    const summary = buildSummary({ questions, answers });
     const finishedAt = new Date().toISOString();
     const completedPatch: Record<string, string | number> = {
       status: "completed",
@@ -195,36 +103,42 @@ export async function POST(request: Request, context: RouteContext) {
       total_questions: summary.totalQuestions,
       correct_answers: summary.correctAnswers,
       score_percent: summary.scorePercent,
+      user_id: access.userId,
     };
-
-    if (access.userId) {
-      completedPatch.user_id = access.userId;
-    }
 
     const primaryUpdate = await supabase
       .from("quiz_sessions")
       .update(completedPatch)
-      .eq("id", sessionId);
+      .eq("id", sessionId)
+      .eq("user_id", access.userId);
 
     if (primaryUpdate.error) {
       const fallbackPatch: Record<string, string> = {
         status: "completed",
         completed_at: finishedAt,
+        user_id: access.userId,
       };
 
-      if (access.userId) {
-        fallbackPatch.user_id = access.userId;
-      }
-
-      await supabase
+      const fallbackUpdate = await supabase
         .from("quiz_sessions")
         .update(fallbackPatch)
-        .eq("id", sessionId);
+        .eq("id", sessionId)
+        .eq("user_id", access.userId);
+
+      if (fallbackUpdate.error) {
+        console.error("[quiz-complete] session update failed", primaryUpdate.error, fallbackUpdate.error);
+        return NextResponse.json(
+          {
+            error: "Nie udalo sie zakonczyc sesji.",
+          },
+          { status: 500 },
+        );
+      }
     }
 
     const statsPayload = {
       session_id: sessionId,
-      mode: resolvedMode,
+      mode: typeof sessionRow.mode === "string" ? sessionRow.mode : fallbackMode,
       total_questions: summary.totalQuestions,
       correct_answers: summary.correctAnswers,
       score_percent: summary.scorePercent,
@@ -241,10 +155,10 @@ export async function POST(request: Request, context: RouteContext) {
         .insert(statsPayload);
 
       if (fallbackInsert.error) {
+        console.error("[quiz-complete] stats write failed", upsertStats.error, fallbackInsert.error);
         return NextResponse.json(
           {
             error: "Nie udalo sie zapisac statystyk sesji.",
-            details: fallbackInsert.error.message,
           },
           { status: 500 },
         );
@@ -258,12 +172,11 @@ export async function POST(request: Request, context: RouteContext) {
       storage: "supabase",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[quiz-complete] unexpected error", error);
 
     return NextResponse.json(
       {
         error: "Nie udalo sie zakonczyc sesji.",
-        details: message,
       },
       { status: 500 },
     );

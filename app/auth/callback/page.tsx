@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
+import { ParallaxGridLayer } from "@/components/landing/parallax-grid-layer";
 import { clearRoleCookie, setRoleCookie } from "@/lib/auth/role";
 import { hasConfiguredDisplayName } from "@/lib/auth/display-name";
 import { resolveRoleForSession } from "@/lib/auth/client-role";
@@ -103,8 +104,9 @@ export default function AuthCallbackPage() {
   }, [router]);
 
   return (
-    <main className="min-h-screen bg-[#050510] px-5 py-10 text-white md:px-6 lg:px-8">
-      <div className="mx-auto flex min-h-[70vh] w-full max-w-5xl items-center justify-center">
+    <main className="relative min-h-screen bg-[#050510] px-5 py-10 text-white md:px-6 lg:px-8">
+      <ParallaxGridLayer />
+      <div className="relative z-10 mx-auto flex min-h-[70vh] w-full max-w-5xl items-center justify-center">
         <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center shadow-[0_20px_44px_-34px_rgba(0,0,0,0.95)] sm:p-7">
           {errorMessage ? (
             <div className="space-y-4">

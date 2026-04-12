@@ -7,7 +7,7 @@ import {
   getSetsForTier,
   type AccessTier,
 } from "@/lib/quiz/set-catalog";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
 
 type GenericRecord = Record<string, unknown>;
@@ -177,6 +177,10 @@ function asSessionStatus(value: unknown): DashboardSessionStatus {
     return "in_progress";
   }
 
+  if (text === "cancelled") {
+    return "cancelled";
+  }
+
   return "unknown";
 }
 
@@ -233,7 +237,7 @@ function buildSession(row: GenericRecord): DashboardSession | null {
   };
 }
 
-async function fetchAnswerAnalytics(sessionIds: string[]): Promise<AnswerAnalytics> {
+async function fetchAnswerAnalytics(accessToken: string, sessionIds: string[]): Promise<AnswerAnalytics> {
   const normalizedIds = sessionIds.filter((id, index, list) => id.length > 0 && list.indexOf(id) === index);
 
   if (normalizedIds.length === 0) {
@@ -243,16 +247,7 @@ async function fetchAnswerAnalytics(sessionIds: string[]): Promise<AnswerAnalyti
     };
   }
 
-  let supabase: ReturnType<typeof getSupabaseServerClient>;
-
-  try {
-    supabase = getSupabaseServerClient();
-  } catch {
-    return {
-      durationOverrides: new Map(),
-      answers: [],
-    };
-  }
+  const supabase = getSupabaseUserClient(accessToken);
 
   const result = await supabase
     .from("quiz_session_answers")
@@ -343,7 +338,7 @@ async function fetchAnswerAnalytics(sessionIds: string[]): Promise<AnswerAnalyti
   };
 }
 
-async function fetchTagPerformance(answerRows: SessionAnswerMetric[]): Promise<TagAggregate[]> {
+async function fetchTagPerformance(accessToken: string, answerRows: SessionAnswerMetric[]): Promise<TagAggregate[]> {
   const questionIds = answerRows
     .map((entry) => entry.questionId)
     .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
@@ -352,13 +347,7 @@ async function fetchTagPerformance(answerRows: SessionAnswerMetric[]): Promise<T
     return [];
   }
 
-  let supabase: ReturnType<typeof getSupabaseServerClient>;
-
-  try {
-    supabase = getSupabaseServerClient();
-  } catch {
-    return [];
-  }
+  const supabase = getSupabaseUserClient(accessToken);
 
   const result = await supabase
     .from("quiz_exercises")
@@ -565,21 +554,19 @@ function createEmptyPayload(tier: AccessTier, role: string | null): DashboardPay
       solvedQuestions: 0,
       averageScorePercent: null,
       averageDurationMinutes: null,
+      strongestCategory: null,
+      weakestCategory: null,
       strongestMode: null,
       weakestMode: null,
+      weakestTargetSource: null,
+      weakestTargetRaw: null,
       lastScorePercent: null,
     },
   };
 }
 
-async function fetchRowsForUser(userId: string): Promise<GenericRecord[]> {
-  let supabase: ReturnType<typeof getSupabaseServerClient>;
-
-  try {
-    supabase = getSupabaseServerClient();
-  } catch {
-    return [];
-  }
+async function fetchRowsForUser(accessToken: string, userId: string): Promise<GenericRecord[]> {
+  const supabase = getSupabaseUserClient(accessToken);
 
   for (const userColumn of USER_COLUMN_CANDIDATES) {
     let columnChecked = false;
@@ -615,20 +602,14 @@ async function fetchRowsForUser(userId: string): Promise<GenericRecord[]> {
   return [];
 }
 
-async function fetchSessionStats(sessionIds: string[]): Promise<Map<string, SessionStatsRow>> {
+async function fetchSessionStats(accessToken: string, sessionIds: string[]): Promise<Map<string, SessionStatsRow>> {
   const normalizedIds = sessionIds.filter((id, index, list) => id.length > 0 && list.indexOf(id) === index);
 
   if (normalizedIds.length === 0) {
     return new Map();
   }
 
-  let supabase: ReturnType<typeof getSupabaseServerClient>;
-
-  try {
-    supabase = getSupabaseServerClient();
-  } catch {
-    return new Map();
-  }
+  const supabase = getSupabaseUserClient(accessToken);
 
   const result = await supabase
     .from("quiz_result_stats")
@@ -891,8 +872,12 @@ function buildPayload(params: {
       solvedQuestions,
       averageScorePercent: average(scores),
       averageDurationMinutes: average(durations),
+      strongestCategory: fallbackStrongestMode ?? null,
+      weakestCategory: fallbackWeakestMode ?? null,
       strongestMode: strongestMetric ?? null,
       weakestMode: weakestMetric ?? null,
+      weakestTargetSource: weakestTag?.source ?? null,
+      weakestTargetRaw: weakestTag?.raw ?? null,
       lastScorePercent: lastCompleted ? scoreFromSession(lastCompleted) : null,
     },
   };
@@ -900,18 +885,18 @@ function buildPayload(params: {
 
 export async function GET(request: Request) {
   const access = await resolveAccessTierFromRequest(request);
-  await loadSetCatalogFromDatabase();
+  await loadSetCatalogFromDatabase({ allowBootstrap: false });
 
-  if (!access.userId) {
+  if (!access.userId || !access.accessToken) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const rows = await fetchRowsForUser(access.userId);
+    const rows = await fetchRowsForUser(access.accessToken, access.userId);
     const sessionIds = rows
       .map((row) => asText(row.id))
       .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
-    const sessionStats = await fetchSessionStats(sessionIds);
+    const sessionStats = await fetchSessionStats(access.accessToken, sessionIds);
     const hydratedRows = mergeRowsWithSessionStats(rows, sessionStats);
     const sortedSessionIds = hydratedRows
       .map((row) => buildSession(row))
@@ -927,10 +912,10 @@ export async function GET(request: Request) {
       .map((session) => session.id)
       .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index)
       .slice(0, RECENT_ACTIVITY_LIMIT);
-    const answerAnalytics = await fetchAnswerAnalytics(sortedSessionIds);
+    const answerAnalytics = await fetchAnswerAnalytics(access.accessToken, sortedSessionIds);
     const answerDerivedStats = deriveSessionStatsFromAnswers(answerAnalytics.answers);
     const fullyHydratedRows = mergeRowsWithDerivedAnswerStats(hydratedRows, answerDerivedStats);
-    const tagPerformance = await fetchTagPerformance(answerAnalytics.answers);
+    const tagPerformance = await fetchTagPerformance(access.accessToken, answerAnalytics.answers);
     const payload = buildPayload({
       tier: access.tier,
       role: access.role,
@@ -941,15 +926,12 @@ export async function GET(request: Request) {
 
     return NextResponse.json(payload);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[e8-dashboard] unexpected error", error);
 
     const fallback = createEmptyPayload(access.tier, access.role);
 
     return NextResponse.json(
-      {
-        ...fallback,
-        details: message,
-      },
+      fallback,
       { status: 200 },
     );
   }

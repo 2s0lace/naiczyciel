@@ -6,19 +6,15 @@ import {
   enforceAiRateLimit,
 } from "@/lib/ai/rate-limit";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
+import { buildSummary, fetchSessionAnswers } from "@/lib/quiz/repository";
+import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
+import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
+import { loadQuestionsForOwnedSession } from "@/lib/quiz/session-questions";
 import { getOpenAIServerClient } from "@/lib/openai/server";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 type RouteContext = {
   params: Promise<{ sessionId: string }>;
-};
-
-type FeedbackBody = {
-  mode?: unknown;
-  correctAnswers?: unknown;
-  totalQuestions?: unknown;
-  scorePercent?: unknown;
-  strongestArea?: unknown;
-  weakestArea?: unknown;
 };
 
 type SanitizedPayload = {
@@ -29,14 +25,6 @@ type SanitizedPayload = {
   strongestArea: string;
   weakestArea: string;
 };
-
-const ALLOWED_MODES = new Set([
-  "reactions",
-  "grammar",
-  "vocabulary",
-  "reading_mc",
-  "gap_fill_text",
-]);
 
 const AREA_CANONICAL: Record<string, string> = {
   "codzienne reakcje": "Codzienne reakcje",
@@ -69,68 +57,6 @@ function sanitizeArea(value: unknown): string {
   return AREA_CANONICAL[normalized] ?? "brak";
 }
 
-function parseInteger(value: unknown): number | null {
-  const n = typeof value === "number" ? value : Number(value);
-
-  if (!Number.isInteger(n)) {
-    return null;
-  }
-
-  return n;
-}
-
-function sanitizeMode(value: unknown): string | null {
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const normalized = normalizeToken(value);
-
-  if (!ALLOWED_MODES.has(normalized)) {
-    return null;
-  }
-
-  return normalized;
-}
-
-function validatePayload(body: FeedbackBody): { ok: true; payload: SanitizedPayload } | { ok: false; message: string } {
-  const mode = sanitizeMode(body.mode);
-
-  if (!mode) {
-    return { ok: false, message: "Nieprawidlowy tryb quizu." };
-  }
-
-  const totalQuestions = parseInteger(body.totalQuestions);
-  const correctAnswers = parseInteger(body.correctAnswers);
-  const scorePercentInput = parseInteger(body.scorePercent);
-
-  if (totalQuestions === null || totalQuestions < 1 || totalQuestions > 100) {
-    return { ok: false, message: "Nieprawidlowa liczba pytan." };
-  }
-
-  if (correctAnswers === null || correctAnswers < 0 || correctAnswers > totalQuestions) {
-    return { ok: false, message: "Nieprawidlowa liczba poprawnych odpowiedzi." };
-  }
-
-  if (scorePercentInput === null || scorePercentInput < 0 || scorePercentInput > 100) {
-    return { ok: false, message: "Nieprawidlowy wynik procentowy." };
-  }
-
-  const computedPercent = Math.round((correctAnswers / totalQuestions) * 100);
-
-  return {
-    ok: true,
-    payload: {
-      mode,
-      correctAnswers,
-      totalQuestions,
-      scorePercent: computedPercent,
-      strongestArea: sanitizeArea(body.strongestArea),
-      weakestArea: sanitizeArea(body.weakestArea),
-    },
-  };
-}
-
 function buildPrompt(payload: SanitizedPayload) {
   const sessionDetails = [
     `Tryb: ${payload.mode}`,
@@ -140,57 +66,57 @@ function buildPrompt(payload: SanitizedPayload) {
   ].join(" | ");
 
   return [
-    "Twórz krótką informację zwrotną dla ucznia po rozwiązaniu zestawu z angielskiego.",
+    "Tworz krotka informacje zwrotna dla ucznia po rozwiazaniu zestawu z angielskiego.",
     "",
     "Cel:",
-    "Feedback ma być pomocny, prosty, konkretny i wspierający. Ma brzmieć jak dobra wskazówka od nauczyciela, a nie jak automatyczny raport albo coachingowy slogan.",
+    "Feedback ma byc pomocny, prosty, konkretny i wspierajacy. Ma brzmiec jak dobra wskazowka od nauczyciela, a nie jak automatyczny raport albo coachingowy slogan.",
     "",
     "Dane o tej sesji:",
     sessionDetails,
     "",
     "Zasady:",
     "- pisz po polsku",
-    "- ton: spokojny, życzliwy, konkretny",
+    "- ton: spokojny, zyczliwy, konkretny",
     "- nie zawstydzaj ucznia",
-    "- nie używaj słów typu: „niestety”, „tylko”, „słabo”, „porażka”",
+    "- nie uzywaj slow typu: „niestety”, „tylko”, „slabo”, „porazka”",
     "- nie oceniaj ucznia jako osoby",
-    "- oceniaj wyłącznie wynik i obszar do poprawy",
-    "- nie używaj pustych sformułowań typu „działające schematy”, „musisz się bardziej postarać”, „więcej zyskasz”",
-    "- nie pisz ogólników, jeśli nie ma konkretu",
-    "- pokaż 1 mocną stronę, nawet małą",
-    "- wskaż 1 główny problem",
-    "- zaproponuj 1 prosty następny krok",
-    "- maksymalnie 4 krótkie sekcje",
-    "- każda sekcja ma mieć 1–2 zdania",
-    "- język ma być zrozumiały dla ucznia szkoły podstawowej",
+    "- oceniaj wylacznie wynik i obszar do poprawy",
+    "- nie uzywaj pustych sformulowan typu „dzialajace schematy”, „musisz sie bardziej postarac”, „wiecej zyskasz”",
+    "- nie pisz ogolnikow, jesli nie ma konkretu",
+    "- pokaz 1 mocna strone, nawet mala",
+    "- wskaz 1 glowny problem",
+    "- zaproponuj 1 prosty nastepny krok",
+    "- maksymalnie 4 krotkie sekcje",
+    "- kazda sekcja ma miec 1-2 zdania",
+    "- jezyk ma byc zrozumialy dla ucznia szkoly podstawowej",
     "",
     "Struktura:",
-    "1. Ocena ogólna",
-    "2. Co już działa",
-    "3. Nad czym popracować",
-    "4. Co zrobić teraz",
+    "1. Ocena ogolna",
+    "2. Co juz dziala",
+    "3. Nad czym popracowac",
+    "4. Co zrobic teraz",
     "",
     "Dodatkowe wytyczne:",
-    "- jeśli wynik jest niski, zachowaj wspierający ton i pokaż, że da się poprawić jeden konkretny obszar",
-    "- jeśli wynik jest średni, pokaż, co już działa i co da największy progres",
-    "- jeśli wynik jest wysoki, pochwal konkretnie i wskaż mały kolejny krok",
-    "- jeśli z danych wynika konkretny typ błędu, nazwij go prostym językiem",
-    "- jeśli brak szczegółowych danych o błędach, nie zmyślaj — napisz ostrożnie i ogólnie, ale nadal konkretnie",
+    "- jesli wynik jest niski, zachowaj wspierajacy ton i pokaz, ze da sie poprawic jeden konkretny obszar",
+    "- jesli wynik jest sredni, pokaz, co juz dziala i co da najwiekszy progres",
+    "- jesli wynik jest wysoki, pochwal konkretnie i wskaz maly kolejny krok",
+    "- jesli z danych wynika konkretny typ bledu, nazwij go prostym jezykiem",
+    "- jesli brak szczegolowych danych o bledach, nie zmyslaj — napisz ostroznie i ogolnie, ale nadal konkretnie",
     "",
     "Styl:",
-    "- krótkie zdania",
-    "- naturalny język",
+    "- krotkie zdania",
+    "- naturalny jezyk",
     "- zero mentorsko-korporacyjnego tonu",
-    "- feedback ma pomagać uczniowi zrozumieć: „co było nie tak?” i „co zrobić dalej?”",
+    "- feedback ma pomagac uczniowi zrozumiec: „co bylo nie tak?” i „co zrobic dalej?”",
     "",
-    "Jeśli to możliwe, odwołaj się do konkretnego typu błędu, np.:",
+    "Jesli to mozliwe, odwola sie do konkretnego typu bledu, np.:",
     "- pomylenie czasu",
     "- niezrozumienie sensu pytania",
-    "- wybranie odpowiedzi po jednym słowie z tekstu",
-    "- pominięcie słowa przeczącego",
+    "- wybranie odpowiedzi po jednym slowie z tekstu",
+    "- pominiecie slowa przeczacego",
     "- zbyt szybkie zgadywanie bez sprawdzenia kontekstu",
     "",
-    "Na końcu wygeneruj tylko gotowy feedback dla ucznia, bez komentarzy technicznych i bez wyjaśniania zasad.",
+    "Na koncu wygeneruj tylko gotowy feedback dla ucznia, bez komentarzy technicznych i bez wyjasniania zasad.",
   ].join("\n");
 }
 
@@ -206,48 +132,80 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Brak sessionId." }, { status: 400 });
     }
 
-    const body = (await request.json().catch(() => ({}))) as FeedbackBody;
-    const validated = validatePayload(body);
+    const access = await resolveAccessTierFromRequest(request);
 
-    if (!validated.ok) {
-      return NextResponse.json({ error: validated.message }, { status: 400 });
+    if (!access.userId || !access.accessToken) {
+      return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
+    }
+
+    const rateLimit = await enforceAiRateLimit({
+      request,
+      action: AI_GENERATION_RATE_LIMIT_ACTION,
+      userId: access.userId,
+      role: access.role,
+    });
+
+    if (!rateLimit.allowed) {
+      return NextResponse.json(buildRateLimitErrorPayload(rateLimit), {
+        status: 429,
+        headers: {
+          "Retry-After": String(rateLimit.retryAfterSeconds),
+        },
+      });
     }
 
     if (!process.env.OPENAI_API_KEY) {
-      return NextResponse.json({
-        error: "Brak konfiguracji OpenAI API.",
-        details: "Skontaktuj sie z administratorem.",
-      }, { status: 503 });
+      return NextResponse.json(
+        {
+          error: "Brak konfiguracji OpenAI API.",
+        },
+        { status: 503 },
+      );
     }
 
-    let access: Awaited<ReturnType<typeof resolveAccessTierFromRequest>> = {
-      tier: "unregistered",
-      userId: null,
-      role: null,
-    };
+    await loadSetCatalogFromDatabase({
+      accessToken: access.accessToken,
+      allowBootstrap: false,
+    });
+
+    const supabase = getSupabaseUserClient(access.accessToken);
+
+    let sessionRow;
 
     try {
-      access = await resolveAccessTierFromRequest(request);
-      const rateLimit = await enforceAiRateLimit({
-        request,
-        action: AI_GENERATION_RATE_LIMIT_ACTION,
-        userId: access.userId,
-        role: access.role,
-      });
-
-      if (!rateLimit.allowed) {
-        return NextResponse.json(buildRateLimitErrorPayload(rateLimit), {
-          status: 429,
-          headers: {
-            "Retry-After": String(rateLimit.retryAfterSeconds),
-          },
-        });
-      }
-    } catch (rateLimitError) {
-      console.error("[quiz-feedback] rate limit check failed, continuing without limiter", rateLimitError);
+      sessionRow = await requireOwnedSession(supabase, sessionId, access.userId);
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Sesja nie istnieje albo nie nalezy do uzytkownika.",
+        },
+        { status: 404 },
+      );
     }
 
-    const prompt = buildPrompt(validated.payload);
+    const [questions, answers] = await Promise.all([
+      loadQuestionsForOwnedSession({
+        supabase,
+        session: sessionRow,
+        tier: access.tier,
+        role: access.role,
+      }),
+      fetchSessionAnswers({
+        supabase,
+        sessionId,
+      }),
+    ]);
+
+    const summary = buildSummary({ questions, answers });
+    const payload: SanitizedPayload = {
+      mode: typeof sessionRow.mode === "string" ? sessionRow.mode : "reactions",
+      correctAnswers: summary.correctAnswers,
+      totalQuestions: summary.totalQuestions,
+      scorePercent: summary.scorePercent,
+      strongestArea: sanitizeArea(summary.strongestArea),
+      weakestArea: sanitizeArea(summary.weakestArea),
+    };
+    const prompt = buildPrompt(payload);
     const openai = getOpenAIServerClient();
 
     const timeoutController = new AbortController();
@@ -277,7 +235,6 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           error: "Brak odpowiedzi od AI.",
-          details: "Sprobuj ponownie za chwile.",
         },
         { status: 502 },
       );
@@ -295,7 +252,6 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           error: "Przekroczono czas oczekiwania.",
-          details: "Sprobuj ponownie za chwile.",
         },
         { status: 504 },
       );
@@ -306,7 +262,6 @@ export async function POST(request: Request, context: RouteContext) {
         return NextResponse.json(
           {
             error: "Przekroczono limit zapytan AI.",
-            details: "Sprobuj ponownie za chwile.",
           },
           { status: 429 },
         );
@@ -315,21 +270,18 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json(
         {
           error: "Usluga AI jest chwilowo niedostepna.",
-          details: "Sprobuj ponownie za chwile.",
         },
         { status: 502 },
       );
     }
 
+    console.error("[quiz-feedback] unexpected error", error);
+
     return NextResponse.json(
       {
         error: "Nie udalo sie wygenerowac feedbacku AI.",
-        details: "Sprobuj ponownie za chwile.",
       },
       { status: 500 },
     );
   }
 }
-
-
-

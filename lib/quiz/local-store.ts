@@ -4,6 +4,7 @@ import type { QuizAnswerSnapshot, QuizQuestion, QuizSummary } from "@/lib/quiz/t
 
 type LocalSession = {
   id: string;
+  ownerUserId?: string | null;
   mode: string;
   status: "in_progress" | "completed";
   questionCount: number;
@@ -48,6 +49,7 @@ export function createLocalSession(params: {
   mode: string;
   questionCount: number;
   sessionId?: string;
+  ownerUserId?: string | null;
 }) {
   const mode = params.mode || "reactions";
   const questionCount = clampQuestionCount(params.questionCount);
@@ -55,6 +57,7 @@ export function createLocalSession(params: {
 
   const session: LocalSession = {
     id,
+    ownerUserId: params.ownerUserId ?? null,
     mode,
     status: "in_progress",
     questionCount,
@@ -71,6 +74,7 @@ export function createLocalSessionFromQuestions(params: {
   mode: string;
   questions: QuizQuestion[];
   sessionId?: string;
+  ownerUserId?: string | null;
 }) {
   const mode = params.mode || "reactions";
   const id = params.sessionId ?? newLocalSessionId();
@@ -81,6 +85,7 @@ export function createLocalSessionFromQuestions(params: {
 
   const session: LocalSession = {
     id,
+    ownerUserId: params.ownerUserId ?? null,
     mode,
     status: "in_progress",
     questionCount: uniqueQuestions.length,
@@ -107,6 +112,20 @@ function ensureLocalSession(sessionId: string) {
   });
 }
 
+export function getOwnedLocalSession(sessionId: string, userId: string) {
+  const session = getLocalSession(sessionId);
+
+  if (!session) {
+    return null;
+  }
+
+  if (!session.ownerUserId || session.ownerUserId !== userId) {
+    return null;
+  }
+
+  return session;
+}
+
 export function getLocalSessionPayload(sessionId: string) {
   const session = getLocalSession(sessionId);
 
@@ -127,14 +146,40 @@ export function saveLocalAnswer(params: {
   sessionId: string;
   questionId: string;
   optionId: string;
-  isCorrect: boolean;
+  userId?: string | null;
 }) {
   const session = ensureLocalSession(params.sessionId);
+
+  if (params.userId && session.ownerUserId && session.ownerUserId !== params.userId) {
+    throw new Error("SESSION_NOT_FOUND");
+  }
+
+  const selectedQuestion = session.questions.find((question) => {
+    if (question.type === "single_question") {
+      return question.id === params.questionId;
+    }
+
+    return question.questions.some((item) => item.id === params.questionId);
+  });
+
+  if (!selectedQuestion) {
+    throw new Error("INVALID_QUESTION");
+  }
+
+  const options =
+    selectedQuestion.type === "single_question"
+      ? selectedQuestion.options
+      : selectedQuestion.questions.find((item) => item.id === params.questionId)?.options ?? [];
+  const selectedOption = options.find((option) => option.id === params.optionId);
+
+  if (!selectedOption) {
+    throw new Error("INVALID_OPTION");
+  }
 
   session.answers[params.questionId] = {
     questionId: params.questionId,
     selectedOptionId: params.optionId,
-    isCorrect: params.isCorrect,
+    isCorrect: selectedOption.isCorrect,
   };
 
   getStore().set(session.id, session);
@@ -145,9 +190,13 @@ export function saveLocalAnswer(params: {
 export function completeLocalSession(params: {
   sessionId: string;
   mode?: string;
-  summary?: QuizSummary;
+  userId?: string | null;
 }) {
   const session = ensureLocalSession(params.sessionId);
+
+  if (params.userId && session.ownerUserId && session.ownerUserId !== params.userId) {
+    throw new Error("SESSION_NOT_FOUND");
+  }
 
   if (params.mode) {
     session.mode = params.mode;
@@ -159,17 +208,15 @@ export function completeLocalSession(params: {
     answers,
   });
 
-  const summary = params.summary ?? computedSummary;
-
   session.status = "completed";
   session.completedAt = new Date().toISOString();
-  session.summary = summary;
+  session.summary = computedSummary;
 
   getStore().set(session.id, session);
 
   return {
     session,
-    summary,
+    summary: computedSummary,
   };
 }
 

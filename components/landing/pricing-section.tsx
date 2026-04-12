@@ -1,12 +1,12 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { BrainCircuit, CalendarDays, Check, Layers3, Paperclip, PenLine, PencilRuler, Pin } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import buyCtaImage from "@/img/buycta.png";
 import calendarImage from "@/img/kalendarz.png";
 
-const LOGIN_TOAST_MS = 2600;
 const EXAM_MONTH_INDEX = 4;
 const EXAM_DAY = 13;
 const INK_SPLASH_MASK =
@@ -29,8 +29,7 @@ function getNextExamDate(baseDate: Date) {
 }
 
 export default function PricingSection() {
-  const [showLoginToast, setShowLoginToast] = useState(false);
-  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const router = useRouter();
   const today = useMemo(() => new Date(), []);
   const examDate = useMemo(() => getNextExamDate(today), [today]);
   const daysToExam = useMemo(
@@ -42,25 +41,8 @@ export default function PricingSection() {
     [examDate],
   );
 
-  const clearToastTimer = () => {
-    if (toastTimerRef.current) {
-      clearTimeout(toastTimerRef.current);
-      toastTimerRef.current = null;
-    }
-  };
-
-  useEffect(() => {
-    return () => clearToastTimer();
-  }, []);
-
   const handleSelectPlan = () => {
-    clearToastTimer();
-    setShowLoginToast(true);
-
-    toastTimerRef.current = setTimeout(() => {
-      setShowLoginToast(false);
-      toastTimerRef.current = null;
-    }, LOGIN_TOAST_MS);
+    router.push("/login");
   };
 
   return (
@@ -174,7 +156,7 @@ export default function PricingSection() {
             <span className="absolute h-[7px] w-[7px] rounded-full bg-[#111522]/52" />
             <span className="absolute -left-3 top-3 h-[4px] w-[4px] rounded-full bg-[#111522]/34" />
           </div>
-          <div className="relative top-[38px] z-[1] md:top-0">
+          <div className="relative top-[118px] z-[1] md:top-[80px]">
             <div
               className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,248,239,0.035)_0%,rgba(14,16,28,0.09)_18%,rgba(12,14,24,0.18)_58%,rgba(6,7,14,0.2)_100%)] opacity-[0.42]"
               style={{
@@ -220,7 +202,7 @@ export default function PricingSection() {
               </div>
               <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(0,0,0,0.16)_0%,rgba(0,0,0,0.22)_36%,rgba(0,0,0,0.18)_72%,rgba(0,0,0,0.26)_100%)]" />
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_14%,rgba(255,255,255,0.05),transparent_22%),radial-gradient(circle_at_84%_78%,rgba(0,0,0,0.1),transparent_28%)]" />
-              <div className="absolute inset-x-0 top-0 h-[33%] overflow-hidden md:inset-y-0 md:left-0 md:right-auto md:h-auto md:w-[24.8%]">
+              <div className="absolute inset-x-0 top-0 h-[33%] overflow-hidden min-[900px]:inset-y-0 min-[900px]:left-0 min-[900px]:right-auto min-[900px]:h-auto min-[900px]:w-[24.8%]">
                 <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(6,8,16,0.04)_0%,rgba(6,8,16,0.02)_64%,transparent_100%)]" />
                 <Image
                   src={calendarImage}
@@ -229,7 +211,7 @@ export default function PricingSection() {
                   fill
                   className="scale-[1.12] object-cover object-[center_58%] opacity-[0.96] blur-[0.6px] brightness-[0.56] saturate-[0.78]"
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,12,0.26)_0%,rgba(4,6,12,0.34)_42%,rgba(4,6,12,0.48)_100%)] md:bg-[linear-gradient(180deg,rgba(0,0,0,0.12)_0%,rgba(0,0,0,0.18)_42%,rgba(0,0,0,0.34)_100%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(4,6,12,0.26)_0%,rgba(4,6,12,0.34)_42%,rgba(4,6,12,0.48)_100%)] min-[900px]:bg-[linear-gradient(180deg,rgba(0,0,0,0.12)_0%,rgba(0,0,0,0.18)_42%,rgba(0,0,0,0.34)_100%)]" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(0,0,0,0.16),transparent_42%)]" />
               </div>
               <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.028)_0%,rgba(255,255,255,0.01)_20%,rgba(0,0,0,0.03)_64%,rgba(0,0,0,0.075)_100%)]" />
@@ -239,8 +221,8 @@ export default function PricingSection() {
 
               <div className="relative px-3 py-4 md:px-4 md:py-4">
                 <div className="relative flex flex-col px-6 pt-7 pb-5 text-white min-[900px]:hidden">
-  <div className="relative top-[18px] left-[5px] flex w-full max-w-[17.5rem] flex-col gap-6">
-    <div className="relative left-[10px] flex flex-col gap-3">
+                  <div className="relative top-[18px] left-[5px] flex w-full max-w-[17.5rem] flex-col gap-6">
+                    <div className="relative left-[10px] flex flex-col gap-3">
                       <p className="text-[10px] font-bold tracking-[0.18em] text-white/40 uppercase">Ile dni do egz?</p>
                       <div className="space-y-2">
                         <p className="text-[4.05rem] leading-none font-black tracking-[-0.105em] text-white/72">
@@ -251,16 +233,16 @@ export default function PricingSection() {
                     </div>
 
                     <div className="relative left-[-5px] flex flex-col gap-6">
-      <div className="relative top-[8px] flex flex-col gap-1">
-        <p className="text-[9px] font-bold tracking-[0.28em] text-white/34 uppercase">Twój plan</p>
-        <p className="text-[0.96rem] font-semibold text-[#C97A7A] line-through decoration-[#C97A7A]/70">
-          29 zł
-        </p>
-      </div>
+                      <div className="relative top-[8px] flex flex-col gap-1">
+                        <p className="text-[9px] font-bold tracking-[0.28em] text-white/34 uppercase">Twój plan</p>
+                        <p className="text-[0.96rem] font-semibold text-[#C97A7A] line-through decoration-[#C97A7A]/70">
+                          29 zł
+                        </p>
+                      </div>
 
-      <p className="whitespace-nowrap text-[4.55rem] leading-[0.76] font-black tracking-[-0.065em] text-white [text-shadow:0_12px_28px_rgba(0,0,0,0.34)]">
-        24 zł
-      </p>
+                      <p className="whitespace-nowrap text-[4.55rem] leading-[0.76] font-black tracking-[-0.065em] text-white [text-shadow:0_12px_28px_rgba(0,0,0,0.34)]">
+                        24 zł
+                      </p>
 
                       <ul className="space-y-3 text-[0.92rem] leading-[1.4] font-semibold text-white/76">
                         <li className="flex items-start gap-3">
@@ -278,11 +260,11 @@ export default function PricingSection() {
                       </ul>
                     </div>
 
-    <button
-      type="button"
-      onClick={handleSelectPlan}
-      className="group relative top-[-13px] left-[2px] mt-2 w-full overflow-hidden rounded-[1.05rem] border border-[#7476ff]/24 bg-[linear-gradient(90deg,rgba(112,110,255,0.96)_0%,rgba(98,93,246,0.94)_44%,rgba(78,72,220,0.96)_100%)] px-5 py-3.5 text-sm font-black tracking-[0.01em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_18px_-16px_rgba(72,67,210,0.4)] transition-[transform,filter,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:border-[#8385ff]/36 hover:brightness-[1.03] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/35 motion-reduce:transform-none"
-    >
+                    <button
+                      type="button"
+                      onClick={handleSelectPlan}
+                      className="group relative top-[-13px] left-[2px] mt-2 w-full overflow-hidden rounded-[1.05rem] border border-[#7476ff]/24 bg-[linear-gradient(90deg,rgba(112,110,255,0.96)_0%,rgba(98,93,246,0.94)_44%,rgba(78,72,220,0.96)_100%)] px-5 py-3.5 text-sm font-black tracking-[0.01em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_18px_-16px_rgba(72,67,210,0.4)] transition-[transform,filter,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:border-[#8385ff]/36 hover:brightness-[1.03] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/35 motion-reduce:transform-none"
+                    >
                       <span
                         aria-hidden
                         className="pointer-events-none absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-white/65 to-transparent"
@@ -294,9 +276,9 @@ export default function PricingSection() {
                       <span className="relative z-10">Zacznij za 24 zł</span>
                     </button>
 
-    <p className="relative top-[-28px] left-[2px] -mt-1 text-center text-[11.5px] leading-relaxed text-white/84">
-      Bezpieczna płatność • Aktywacja od razu
-    </p>
+                    <p className="relative top-[-28px] left-[2px] -mt-1 text-center text-[11.5px] leading-relaxed text-white/84">
+                      Bezpieczna płatność • Aktywacja od razu
+                    </p>
                   </div>
                 </div>
 
@@ -356,7 +338,7 @@ export default function PricingSection() {
                           <button
                             type="button"
                             onClick={handleSelectPlan}
-                            className="group relative w-full overflow-hidden rounded-[1.05rem] border border-[#7476ff]/24 bg-[linear-gradient(90deg,rgba(112,110,255,0.96)_0%,rgba(98,93,246,0.94)_44%,rgba(78,72,220,0.96)_100%)] px-5 py-3.5 text-sm font-black tracking-[0.01em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_18px_-16px_rgba(72,67,210,0.4)] transition-[transform,filter,border-color] duration-150 ease-out hover:-translate-y-0.5 hover:border-[#8385ff]/36 hover:brightness-[1.03] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/35 motion-reduce:transform-none md:max-w-[14.75rem] md:self-start"
+                            className="group relative w-full overflow-hidden rounded-[1.05rem] border border-[#7476ff]/24 bg-[linear-gradient(90deg,rgba(112,110,255,0.96)_0%,rgba(98,93,246,0.94)_44%,rgba(78,72,220,0.96)_100%)] px-5 py-3.5 text-sm font-black tracking-[0.01em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_8px_18px_-16px_rgba(72,67,210,0.4)] transition-all duration-200 ease-out hover:-translate-y-1 hover:brightness-110 hover:shadow-[0_20px_40px_-12px_rgba(46,41,189,0.45)] active:scale-[0.985] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-300/35 motion-reduce:transform-none md:max-w-[14.75rem] md:self-start"
                           >
                             <span
                               aria-hidden
@@ -382,17 +364,6 @@ export default function PricingSection() {
         </div>
       </section>
 
-      <div
-        className={`pointer-events-none fixed inset-x-0 bottom-4 z-50 flex justify-center px-4 transition-[opacity,transform] duration-180 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          showLoginToast ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
-        }`}
-        role="status"
-        aria-live="polite"
-      >
-        <div className="rounded-xl border border-indigo-200/30 bg-[#0a1020]/94 px-4 py-2.5 text-sm font-medium text-indigo-100 shadow-[0_14px_30px_-20px_rgba(0,0,0,0.9)] backdrop-blur">
-          Musisz się zalogować, aby kupić plan.
-        </div>
-      </div>
     </>
   );
 }

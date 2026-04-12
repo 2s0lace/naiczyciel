@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import AvatarPicker from "@/components/avatar/avatar-picker";
-import { setRoleCookie } from "@/lib/auth/role";
+import { sanitizeUserMetadata, setRoleCookie } from "@/lib/auth/role";
 import {
   isSafeDisplayNameCandidate,
   resolveDisplayNameFromMetadata,
@@ -105,11 +105,11 @@ export default function AvatarSelectionPage() {
     try {
       const supabase = getSupabaseBrowserClient();
       const { error } = await supabase.auth.updateUser({
-        data: {
+        data: sanitizeUserMetadata({
           ...(user.user_metadata ?? {}),
           avatar_key: avatarKey,
           display_name: nextDisplayName,
-        },
+        }),
       });
 
       if (error) {

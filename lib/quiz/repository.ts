@@ -32,6 +32,16 @@ type AnswerRow = {
 
 type ExerciseRow = Record<string, unknown>;
 
+type ExerciseCandidateRow = {
+  id?: string | number | null;
+  category?: string | null;
+  status?: string | null;
+  task_type?: string | null;
+  analytics?: unknown;
+  grammar?: unknown;
+  vocabulary?: unknown;
+};
+
 const QUESTION_SELECT = "id, mode, category, prompt, question, explanation, pattern_tip, warning_tip";
 const OPTION_SELECT = "id, question_id, label, text, option_text, content, is_correct";
 
@@ -468,6 +478,188 @@ function shuffleIds(ids: string[], seed?: string): string[] {
   }
 
   return next;
+}
+
+function normalizeModes(rawModes: string[]): string[] {
+  return rawModes
+    .map((value) => asText(value).toLowerCase())
+    .filter((value, index, list) => value.length > 0 && list.indexOf(value) === index);
+}
+
+function normalizeFocusLabel(value: unknown): string {
+  return asText(value)
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function isSupportedTaskType(value: unknown): boolean {
+  return value === "single_choice_short" || value === "reading_mc" || value === "gap_fill_text";
+}
+
+export async function fetchAdaptiveQuestions(params: {
+  supabase: SupabaseClient;
+  userId?: string | null;
+  modes: string[];
+  count: number;
+  includeDraft?: boolean;
+  excludeSessionId?: string;
+  shuffleSeed?: string;
+  focusLabel?: string | null;
+  focusSource?: string | null;
+  focusRaw?: string | null;
+}): Promise<QuizQuestion[]> {
+  const { supabase } = params;
+  const count = clampQuestionCount(params.count);
+  const includeDraft = params.includeDraft === true;
+  const normalizedModes = normalizeModes(params.modes);
+  const normalizedFocusLabel = normalizeFocusLabel(params.focusLabel);
+  const normalizedFocusRaw = normalizeFocusLabel(params.focusRaw);
+  const normalizedFocusSource =
+    params.focusSource === "grammar" || params.focusSource === "vocabulary" || params.focusSource === "skill"
+      ? params.focusSource
+      : null;
+
+  let exerciseQuery = includeDraft
+    ? supabase.from("quiz_exercises").select("id, category, status, task_type, analytics, grammar, vocabulary").in("status", ["active", "draft"])
+    : supabase.from("quiz_exercises").select("id, category, status, task_type, analytics, grammar, vocabulary").eq("status", "active");
+
+  if (normalizedModes.length > 0) {
+    exerciseQuery = exerciseQuery.in("category", normalizedModes);
+  }
+
+  const exerciseResult = await exerciseQuery.limit(5000);
+
+  if (exerciseResult.error || !Array.isArray(exerciseResult.data) || exerciseResult.data.length === 0) {
+    return [];
+  }
+
+  const baseCandidateRows = (exerciseResult.data as ExerciseCandidateRow[]).filter(
+    (row) => asId(row.id).length > 0 && isSupportedTaskType(row.task_type),
+  );
+
+  const focusMatchedRows = normalizedFocusLabel
+    ? baseCandidateRows.filter((row) => {
+        const analytics = parseJsonLike(row.analytics) as Record<string, unknown> | null;
+        const focusLabel = normalizeFocusLabel(analytics?.focus_label);
+
+        if (!focusLabel) {
+          return false;
+        }
+
+        return (
+          focusLabel === normalizedFocusLabel ||
+          focusLabel.includes(normalizedFocusLabel) ||
+          normalizedFocusLabel.includes(focusLabel)
+        );
+      })
+    : baseCandidateRows;
+
+  const sourceMatchedRows =
+    normalizedFocusRaw && normalizedFocusSource
+      ? baseCandidateRows.filter((row) => {
+          if (normalizedFocusSource === "skill") {
+            const analytics = parseJsonLike(row.analytics) as Record<string, unknown> | null;
+            return normalizeFocusLabel(analytics?.skill) === normalizedFocusRaw;
+          }
+
+          if (normalizedFocusSource === "vocabulary") {
+            const vocabulary = parseJsonLike(row.vocabulary) as Record<string, unknown> | null;
+            return normalizeFocusLabel(vocabulary?.topic) === normalizedFocusRaw;
+          }
+
+          const grammar = parseJsonLike(row.grammar) as Record<string, unknown> | null;
+          const structures = Array.isArray(grammar?.structures) ? grammar?.structures : [];
+          return structures.some((item) => normalizeFocusLabel(item) === normalizedFocusRaw);
+        })
+      : [];
+
+  const sourceMatchedIds = sourceMatchedRows.map((row) => asId(row.id));
+  const focusMatchedIds = focusMatchedRows
+    .map((row) => asId(row.id))
+    .filter((id) => !sourceMatchedIds.includes(id));
+  const baseFallbackIds = baseCandidateRows
+    .map((row) => asId(row.id))
+    .filter((id) => !sourceMatchedIds.includes(id) && !focusMatchedIds.includes(id));
+  const allCandidateIds = [...sourceMatchedIds, ...focusMatchedIds, ...baseFallbackIds];
+
+  if (allCandidateIds.length === 0) {
+    return [];
+  }
+
+  let answeredQuestionIds = new Set<string>();
+  let solvedQuestionIds = new Set<string>();
+
+  if (params.userId) {
+    const sessionResult = await supabase.from("quiz_sessions").select("id").eq("user_id", params.userId).limit(5000);
+
+    if (!sessionResult.error && Array.isArray(sessionResult.data) && sessionResult.data.length > 0) {
+      const historicalSessionIds = sessionResult.data
+        .map((row) => asRecord(row))
+        .map((row) => asId(row?.id))
+        .filter((id) => id.length > 0 && id !== params.excludeSessionId);
+
+      if (historicalSessionIds.length > 0) {
+        const answersResult = await supabase
+          .from("quiz_session_answers")
+          .select("question_id, is_correct")
+          .in("session_id", historicalSessionIds)
+          .limit(10000);
+
+        if (!answersResult.error && Array.isArray(answersResult.data)) {
+          answeredQuestionIds = new Set(
+            answersResult.data
+              .map((row) => asRecord(row))
+              .map((row) => {
+                const questionId = asId(row?.question_id);
+                return questionId.includes("::") ? questionId.split("::")[0] ?? questionId : questionId;
+              })
+              .filter((id) => id.length > 0),
+          );
+
+          solvedQuestionIds = new Set(
+            answersResult.data
+              .map((row) => asRecord(row))
+              .filter((row) => row?.is_correct === true)
+              .map((row) => {
+                const questionId = asId(row?.question_id);
+                return questionId.includes("::") ? questionId.split("::")[0] ?? questionId : questionId;
+              })
+              .filter((id) => id.length > 0),
+          );
+        }
+      }
+    }
+  }
+
+  const seedBase = params.shuffleSeed ?? params.excludeSessionId ?? "adaptive-session";
+  const sourceUnseenIds = sourceMatchedIds.filter((id) => !answeredQuestionIds.has(id));
+  const sourceUnresolvedIds = sourceMatchedIds.filter((id) => answeredQuestionIds.has(id) && !solvedQuestionIds.has(id));
+  const sourceResolvedIds = sourceMatchedIds.filter((id) => solvedQuestionIds.has(id));
+  const focusUnseenIds = focusMatchedIds.filter((id) => !answeredQuestionIds.has(id));
+  const focusUnresolvedIds = focusMatchedIds.filter((id) => answeredQuestionIds.has(id) && !solvedQuestionIds.has(id));
+  const focusResolvedIds = focusMatchedIds.filter((id) => solvedQuestionIds.has(id));
+  const baseUnseenIds = baseFallbackIds.filter((id) => !answeredQuestionIds.has(id));
+  const baseUnresolvedIds = baseFallbackIds.filter((id) => answeredQuestionIds.has(id) && !solvedQuestionIds.has(id));
+  const baseResolvedIds = baseFallbackIds.filter((id) => solvedQuestionIds.has(id));
+  const prioritizedIds = [
+    ...shuffleIds(sourceUnseenIds, `${seedBase}:source-unseen`),
+    ...shuffleIds(focusUnseenIds, `${seedBase}:focus-unseen`),
+    ...shuffleIds(baseUnseenIds, `${seedBase}:base-unseen`),
+    ...shuffleIds(sourceUnresolvedIds, `${seedBase}:source-unresolved`),
+    ...shuffleIds(focusUnresolvedIds, `${seedBase}:focus-unresolved`),
+    ...shuffleIds(baseUnresolvedIds, `${seedBase}:base-unresolved`),
+    ...shuffleIds(sourceResolvedIds, `${seedBase}:source-resolved`),
+    ...shuffleIds(focusResolvedIds, `${seedBase}:focus-resolved`),
+    ...shuffleIds(baseResolvedIds, `${seedBase}:base-resolved`),
+  ];
+
+  return fetchQuestionsForExerciseIds({
+    supabase,
+    exerciseIds: prioritizedIds,
+    count,
+    includeDraft,
+  });
 }
 
 export async function fetchQuestionsForExerciseIds(params: {

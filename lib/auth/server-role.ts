@@ -1,5 +1,5 @@
-﻿import { isAdminEmail, resolveUserRole } from "@/lib/auth/role";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { isAdminEmail, resolveUserRole } from "@/lib/auth/role";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 function getBearerToken(request: Request): string | null {
   const header = request.headers.get("authorization");
@@ -23,15 +23,15 @@ export async function resolveRoleFromRequest(request: Request): Promise<{
     return { role: "user", userId: null, accessToken: null };
   }
 
-  let supabase: ReturnType<typeof getSupabaseServerClient>;
+  let supabase: ReturnType<typeof getSupabaseUserClient>;
 
   try {
-    supabase = getSupabaseServerClient();
+    supabase = getSupabaseUserClient(accessToken);
   } catch {
     return { role: "user", userId: null, accessToken };
   }
 
-  const { data, error } = await supabase.auth.getUser(accessToken);
+  const { data, error } = await supabase.auth.getUser();
 
   if (error || !data.user) {
     return { role: "user", userId: null, accessToken };

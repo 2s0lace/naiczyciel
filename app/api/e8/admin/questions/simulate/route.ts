@@ -4,7 +4,7 @@ import { buildQuizQuestionsFromExercises, toSimulationMode } from "@/lib/quiz/ad
 import { getAdminExercisesByIds } from "@/lib/quiz/admin-store";
 import { createLocalSessionFromQuestions } from "@/lib/quiz/local-store";
 import { type UniversalExerciseRecord, validateExerciseRecord } from "@/lib/quiz/admin-exercise";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient, getSupabaseUserClient } from "@/lib/supabase/server";
 
 type AdminSource = "supabase" | "local" | "mixed";
 type SupabaseExerciseRow = Record<string, unknown>;
@@ -66,10 +66,14 @@ function shouldUseServiceRoleForAdmin() {
 
 function createAdminSupabaseClient(accessToken: string | null) {
   if (shouldUseServiceRoleForAdmin()) {
-    return getSupabaseServerClient();
+    return getSupabaseAdminClient();
   }
 
-  return getSupabaseServerClient(accessToken);
+  if (!accessToken) {
+    throw new Error("Brak tokenu dostepu dla admina.");
+  }
+
+  return getSupabaseUserClient(accessToken);
 }
 
 function toExerciseCandidate(row: SupabaseExerciseRow): Record<string, unknown> {
@@ -147,7 +151,7 @@ async function requireAdmin(request: Request) {
     };
   }
 
-  return { ok: true as const, accessToken: auth.accessToken };
+  return { ok: true as const, accessToken: auth.accessToken, userId: auth.userId };
 }
 
 function parseSelectedIds(body: Record<string, unknown>): string[] {
@@ -243,6 +247,7 @@ export async function POST(request: Request) {
   const session = createLocalSessionFromQuestions({
     mode,
     questions: simulation.questions,
+    ownerUserId: authGuard.ok ? authGuard.userId : null,
   });
 
   return NextResponse.json({

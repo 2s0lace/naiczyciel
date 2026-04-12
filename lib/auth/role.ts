@@ -1,7 +1,14 @@
 ﻿import type { SupabaseClient, User } from "@supabase/supabase-js";
 
 const ROLE_TABLES = ["profiles", "users"] as const;
-const STATIC_ADMIN_EMAILS = new Set(["mamese123@proton.me", "patryk1tk@gmail.com"]);
+const RESERVED_METADATA_KEYS = new Set([
+  "role",
+  "tier",
+  "is_admin",
+  "access_level",
+  "plan",
+  "subscription_role",
+]);
 
 function getEnvAdminEmails(): Set<string> {
   const raw = process.env.ADMIN_EMAIL_ALLOWLIST;
@@ -29,15 +36,17 @@ function isAllowlistedAdminEmail(email: string | null | undefined): boolean {
     return false;
   }
 
-  if (STATIC_ADMIN_EMAILS.has(normalized)) {
-    return true;
-  }
-
   return getEnvAdminEmails().has(normalized);
 }
 
 export function isAdminEmail(email: string | null | undefined): boolean {
   return isAllowlistedAdminEmail(email);
+}
+
+export function sanitizeUserMetadata(input: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(input).filter(([key]) => !RESERVED_METADATA_KEYS.has(key)),
+  );
 }
 
 type RoleLookupParams = {
@@ -101,7 +110,7 @@ export async function getRoleFromSupabaseTables({ supabase, userId, email }: Rol
   return null;
 }
 
-export function getUserRole(user: User | null | undefined): string {
+export function getUserRole(user: User | null | undefined): "admin" | "user" {
   if (!user) {
     return "user";
   }
@@ -111,9 +120,12 @@ export function getUserRole(user: User | null | undefined): string {
   }
 
   const appRole = normalizeRoleValue(user.app_metadata?.role);
-  const userRole = normalizeRoleValue(user.user_metadata?.role);
 
-  return appRole ?? userRole ?? "user";
+  if (appRole === "admin") {
+    return "admin";
+  }
+
+  return "user";
 }
 
 export async function resolveUserRole(params: {
@@ -139,19 +151,21 @@ export async function resolveUserRole(params: {
   return roleFromTable ?? getUserRole(user);
 }
 
+const ROLE_UI_HINT_KEY = "role_ui_hint";
+
 export function setRoleCookie(role: string) {
-  if (typeof document === "undefined") {
+  if (typeof window === "undefined") {
     return;
   }
 
-  document.cookie = `role=${encodeURIComponent(role)}; Path=/; Max-Age=604800; SameSite=Lax`;
+  window.sessionStorage.setItem(ROLE_UI_HINT_KEY, role);
 }
 
 export function clearRoleCookie() {
-  if (typeof document === "undefined") {
+  if (typeof window === "undefined") {
     return;
   }
 
-  document.cookie = "role=; Path=/; Max-Age=0; SameSite=Lax";
+  window.sessionStorage.removeItem(ROLE_UI_HINT_KEY);
 }
 

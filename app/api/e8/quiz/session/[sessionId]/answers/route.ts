@@ -1,7 +1,9 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
-import { isLocalSessionId, saveLocalAnswer } from "@/lib/quiz/local-store";
-import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getOwnedLocalSession, isLocalSessionId, saveLocalAnswer } from "@/lib/quiz/local-store";
+import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
+import { loadQuestionsForOwnedSession, resolveQuestionSelection } from "@/lib/quiz/session-questions";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 type RouteContext = {
   params: Promise<{ sessionId: string }>;
@@ -10,7 +12,6 @@ type RouteContext = {
 type SaveAnswerBody = {
   questionId?: string;
   optionId?: string;
-  isCorrect?: boolean;
 };
 
 export async function POST(request: Request, context: RouteContext) {
@@ -22,20 +23,41 @@ export async function POST(request: Request, context: RouteContext) {
     const optionId = typeof body.optionId === "string" ? body.optionId : "";
 
     if (!sessionId || !questionId || !optionId) {
-      return NextResponse.json({ error: "Nieprawidłowe dane odpowiedzi." }, { status: 400 });
+      return NextResponse.json({ error: "Nieprawidlowe dane odpowiedzi." }, { status: 400 });
     }
 
-    const isCorrect = Boolean(body.isCorrect);
     const answeredAt = new Date().toISOString();
     const access = await resolveAccessTierFromRequest(request);
 
+    if (!access.userId || !access.accessToken) {
+      return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
+    }
+
     if (isLocalSessionId(sessionId)) {
-      saveLocalAnswer({
-        sessionId,
-        questionId,
-        optionId,
-        isCorrect,
-      });
+      const localSession = getOwnedLocalSession(sessionId, access.userId);
+
+      if (!localSession) {
+        return NextResponse.json({ error: "Sesja nie istnieje." }, { status: 404 });
+      }
+
+      try {
+        saveLocalAnswer({
+          sessionId,
+          questionId,
+          optionId,
+          userId: access.userId,
+        });
+      } catch (error) {
+        if (error instanceof Error && (error.message === "INVALID_QUESTION" || error.message === "INVALID_OPTION")) {
+          return NextResponse.json({ error: "Nieprawidlowe pytanie lub odpowiedz." }, { status: 400 });
+        }
+
+        if (error instanceof Error && error.message === "SESSION_NOT_FOUND") {
+          return NextResponse.json({ error: "Sesja nie istnieje." }, { status: 404 });
+        }
+
+        throw error;
+      }
 
       return NextResponse.json({
         ok: true,
@@ -45,24 +67,30 @@ export async function POST(request: Request, context: RouteContext) {
       });
     }
 
-    let supabase: ReturnType<typeof getSupabaseServerClient> | null = null;
+    const supabase = getSupabaseUserClient(access.accessToken);
+
+    let session;
 
     try {
-      supabase = getSupabaseServerClient();
+      session = await requireOwnedSession(supabase, sessionId, access.userId);
     } catch {
-      saveLocalAnswer({
-        sessionId,
-        questionId,
-        optionId,
-        isCorrect,
-      });
+      return NextResponse.json({ error: "Sesja nie istnieje." }, { status: 404 });
+    }
 
-      return NextResponse.json({
-        ok: true,
-        questionId,
-        savedAt: answeredAt,
-        storage: "local",
-      });
+    const questions = await loadQuestionsForOwnedSession({
+      supabase,
+      session,
+      tier: access.tier,
+      role: access.role,
+    });
+    const selectedAnswer = resolveQuestionSelection({
+      questions,
+      questionId,
+      optionId,
+    });
+
+    if (!selectedAnswer) {
+      return NextResponse.json({ error: "Nieprawidlowe pytanie lub odpowiedz." }, { status: 400 });
     }
 
     const primaryUpsert = await supabase.from("quiz_session_answers").upsert(
@@ -70,7 +98,7 @@ export async function POST(request: Request, context: RouteContext) {
         session_id: sessionId,
         question_id: questionId,
         option_id: optionId,
-        is_correct: isCorrect,
+        is_correct: selectedAnswer.isCorrect,
         answered_at: answeredAt,
       },
       {
@@ -85,7 +113,7 @@ export async function POST(request: Request, context: RouteContext) {
               session_id: sessionId,
               question_id: questionId,
               selected_option_id: optionId,
-              is_correct: isCorrect,
+              is_correct: selectedAnswer.isCorrect,
               answered_at: answeredAt,
             },
             {
@@ -95,31 +123,29 @@ export async function POST(request: Request, context: RouteContext) {
         : null;
 
     if (primaryUpsert.error && fallbackUpsert?.error) {
-      saveLocalAnswer({
-        sessionId,
-        questionId,
-        optionId,
-        isCorrect,
-      });
-
-      return NextResponse.json({
-        ok: true,
-        questionId,
-        savedAt: answeredAt,
-        storage: "local",
-      });
+      console.error("[quiz-answer] upsert failed", primaryUpsert.error, fallbackUpsert.error);
+      return NextResponse.json(
+        {
+          error: "Nie udalo sie zapisac odpowiedzi.",
+        },
+        { status: 500 },
+      );
     }
 
-    const sessionPatch: Record<string, string> = { updated_at: answeredAt };
+    const sessionPatch: Record<string, string> = {
+      updated_at: answeredAt,
+      user_id: access.userId,
+    };
 
-    if (access.userId) {
-      sessionPatch.user_id = access.userId;
-    }
-
-    void supabase
+    const sessionUpdate = await supabase
       .from("quiz_sessions")
       .update(sessionPatch)
-      .eq("id", sessionId);
+      .eq("id", sessionId)
+      .eq("user_id", access.userId);
+
+    if (sessionUpdate.error) {
+      console.error("[quiz-answer] session update failed", sessionUpdate.error);
+    }
 
     return NextResponse.json({
       ok: true,
@@ -128,12 +154,11 @@ export async function POST(request: Request, context: RouteContext) {
       storage: "supabase",
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("[quiz-answer] unexpected error", error);
 
     return NextResponse.json(
       {
-        error: "Wystąpił błąd podczas zapisu odpowiedzi.",
-        details: message,
+        error: "Wystapil blad podczas zapisu odpowiedzi.",
       },
       { status: 500 },
     );

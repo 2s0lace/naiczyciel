@@ -2,7 +2,7 @@
 
 type QuizSessionPageProps = {
   params: Promise<{ sessionId: string }>;
-  searchParams: Promise<{ mode?: string; review?: string; set?: string }>;
+  searchParams: Promise<{ mode?: string; review?: string; set?: string; count?: string; modes?: string; focus?: string; focusSource?: string; focusRaw?: string }>;
 };
 
 export default async function QuizSessionPage({ params, searchParams }: QuizSessionPageProps) {
@@ -10,5 +10,17 @@ export default async function QuizSessionPage({ params, searchParams }: QuizSess
   const query = await searchParams;
   const isReviewMode = query.review === "1" || query.review === "true";
 
-  return <QuizScreen sessionId={sessionId} initialMode={query.mode ?? "reactions"} initialReviewMode={isReviewMode} initialSetId={query.set} />;
+  return (
+    <QuizScreen
+      sessionId={sessionId}
+      initialMode={query.mode ?? "reactions"}
+      initialReviewMode={isReviewMode}
+      initialSetId={query.set}
+      initialCount={query.count}
+      initialModes={query.modes}
+      initialFocus={query.focus}
+      initialFocusSource={query.focusSource}
+      initialFocusRaw={query.focusRaw}
+    />
+  );
 }

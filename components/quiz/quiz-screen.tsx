@@ -29,6 +29,11 @@ type QuizScreenProps = {
   initialMode: string;
   initialReviewMode?: boolean;
   initialSetId?: string;
+  initialCount?: string;
+  initialModes?: string;
+  initialFocus?: string;
+  initialFocusSource?: string;
+  initialFocusRaw?: string;
 };
 
 type SessionStatus = "idle" | "answered_correct" | "answered_incorrect" | "loading_next" | "finished";
@@ -476,11 +481,71 @@ function normalizeSetId(value: string | undefined): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function buildSessionContextKey(mode: string, setId: string | undefined): string {
-  return setId ? `set:${setId}` : `mode:${mode}`;
+function parseCount(value: string | undefined): number | undefined {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) {
+    return undefined;
+  }
+
+  return Math.max(5, Math.min(10, Math.round(parsed)));
 }
 
-export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, initialSetId }: QuizScreenProps) {
+function normalizeModes(value: string | undefined): string[] {
+  if (!value) {
+    return [];
+  }
+
+  return value
+    .split(",")
+    .map((entry) => entry.trim().toLowerCase())
+    .filter((entry, index, list) => entry.length > 0 && list.indexOf(entry) === index);
+}
+
+function normalizeFocus(value: string | undefined): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function normalizeFocusSource(value: string | undefined): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  return normalized === "grammar" || normalized === "vocabulary" || normalized === "skill" ? normalized : undefined;
+}
+
+function buildSessionContextKey(
+  mode: string,
+  setId: string | undefined,
+  count: number | undefined,
+  modes: string[],
+  focus: string | undefined,
+  focusSource: string | undefined,
+) {
+  const modeKey = modes.length > 0 ? modes.join(",") : mode;
+  const countKey = count ?? 10;
+  const focusKey = focus ? `:focus:${focus.toLowerCase()}` : "";
+  const focusSourceKey = focusSource ? `:focus-source:${focusSource}` : "";
+  return setId ? `set:${setId}:count:${countKey}${focusSourceKey}${focusKey}` : `mode:${modeKey}:count:${countKey}${focusSourceKey}${focusKey}`;
+}
+
+export function QuizScreen({
+  sessionId,
+  initialMode,
+  initialReviewMode = false,
+  initialSetId,
+  initialCount,
+  initialModes,
+  initialFocus,
+  initialFocusSource,
+  initialFocusRaw,
+}: QuizScreenProps) {
   const [mode, setMode] = useState(initialMode);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, LocalAnswerState>>({});
@@ -520,9 +585,14 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
 
   const progressStorageKey = useMemo(() => getProgressStorageKey(sessionId), [sessionId]);
   const normalizedSetId = useMemo(() => normalizeSetId(initialSetId), [initialSetId]);
+  const requestedCount = useMemo(() => parseCount(initialCount), [initialCount]);
+  const normalizedRequestedModes = useMemo(() => normalizeModes(initialModes), [initialModes]);
+  const normalizedFocus = useMemo(() => normalizeFocus(initialFocus), [initialFocus]);
+  const normalizedFocusSource = useMemo(() => normalizeFocusSource(initialFocusSource), [initialFocusSource]);
+  const normalizedFocusRaw = useMemo(() => normalizeFocus(initialFocusRaw), [initialFocusRaw]);
   const activeSessionStorageKey = useMemo(
-    () => buildSessionContextKey(mode, normalizedSetId),
-    [mode, normalizedSetId],
+    () => buildSessionContextKey(initialMode, normalizedSetId, requestedCount, normalizedRequestedModes, normalizedFocusRaw ?? normalizedFocus, normalizedFocusSource),
+    [initialMode, normalizedFocus, normalizedFocusRaw, normalizedFocusSource, normalizedRequestedModes, normalizedSetId, requestedCount],
   );
 
   const registerSoundInteraction = useCallback(() => {
@@ -958,12 +1028,26 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
 
       const query = new URLSearchParams({ mode: initialMode });
 
-      if (!normalizedSetId) {
-        query.set("count", "10");
+      if (typeof requestedCount === "number") {
+        query.set("count", String(requestedCount));
       }
 
       if (normalizedSetId) {
         query.set("set", normalizedSetId);
+      } else if (normalizedRequestedModes.length > 1) {
+        query.set("modes", normalizedRequestedModes.join(","));
+      }
+
+      if (normalizedFocus) {
+        query.set("focus", normalizedFocus);
+      }
+
+      if (normalizedFocusSource) {
+        query.set("focusSource", normalizedFocusSource);
+      }
+
+      if (normalizedFocusRaw) {
+        query.set("focusRaw", normalizedFocusRaw);
       }
 
       const response = await fetch(
@@ -1143,7 +1227,19 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     } finally {
       setIsLoading(false);
     }
-  }, [getAuthHeaders, initialMode, initialReviewMode, normalizedSetId, readPersistedProgress, sessionId]);
+  }, [
+    getAuthHeaders,
+    initialMode,
+    initialReviewMode,
+    normalizedRequestedModes,
+    normalizedFocus,
+    normalizedFocusRaw,
+    normalizedFocusSource,
+    normalizedSetId,
+    readPersistedProgress,
+    requestedCount,
+    sessionId,
+  ]);
 
   useEffect(() => {
     void hydrateSession();
@@ -1743,8 +1839,8 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     return (
       <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_50%_-12%,rgba(79,70,229,0.18),rgba(5,5,16,1)_46%)] text-white">
         <QuizHalftoneBackground variant="quiz" />
-        <div className="mx-auto w-full max-w-[1300px] px-4 pb-20 md:px-6 xl:px-8">
-          <div className="mx-auto max-w-md xl:max-w-[740px]">
+        <div className="mx-auto w-full max-w-[1300px] px-4 pb-20 md:px-6 xl:px-8 min-[1440px]:max-w-[1380px] min-[1440px]:px-10 2xl:max-w-[1520px] min-[2200px]:max-w-[1680px] min-[2200px]:px-12">
+          <div className="mx-auto max-w-md xl:max-w-[740px] min-[1440px]:max-w-[920px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1160px]">
             <QuizHeader modeLabel={toModeLabel(mode)} current={0} total={10} elapsedSeconds={elapsedSeconds} soundEnabled={soundEnabled} onToggleSound={toggleSound} />
             <div className="mt-5 animate-pulse space-y-3 xl:mt-5 xl:space-y-3.5">
               <div className="h-12 rounded-2xl bg-white/6" />
@@ -1763,12 +1859,13 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
     return (
       <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_50%_-12%,rgba(79,70,229,0.18),rgba(5,5,16,1)_46%)] text-white">
         <QuizHalftoneBackground variant="quiz" />
-        <div className="mx-auto w-full max-w-[1300px] px-4 pb-10 md:px-6 xl:px-8">
-          <div className="mx-auto max-w-md xl:max-w-[740px]">
+        <div className="mx-auto w-full max-w-[1300px] px-4 pb-10 md:px-6 xl:px-8 min-[1440px]:max-w-[1380px] min-[1440px]:px-10 2xl:max-w-[1520px] min-[2200px]:max-w-[1680px] min-[2200px]:px-12">
+          <div className="mx-auto max-w-md xl:max-w-[740px] min-[1440px]:max-w-[920px] 2xl:max-w-[1040px] min-[2200px]:max-w-[1160px]">
             <QuizHeader modeLabel={toModeLabel(mode)} current={0} total={0} elapsedSeconds={elapsedSeconds} soundEnabled={soundEnabled} onToggleSound={toggleSound} />
             <div className="mt-5 rounded-3xl border border-red-300/20 bg-red-500/10 p-5 xl:p-6">
               <h2 className="text-lg font-semibold text-white">{"Nie udało się załadować quizu"}</h2>
               <p className="mt-2 text-sm text-red-100/90 xl:text-[15px]">{"Spróbuj ponownie za chwilę lub uruchom inny zestaw."}</p>
+              {error ? <p className="mt-3 text-xs leading-relaxed text-red-100/75 xl:text-sm">{error}</p> : null}
               <button
                 type="button"
                 onClick={() => {
@@ -1800,7 +1897,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
             <Icon key={`results-icon-${index}`} className={`absolute ${className}`} strokeWidth={1.8} />
           ))}
         </div>
-        <div className="mx-auto w-full max-w-[1300px] px-4 pb-8 md:px-6 xl:px-8">
+        <div className="mx-auto w-full max-w-[1300px] px-4 pb-8 md:px-6 xl:px-8 min-[1440px]:max-w-[1380px] min-[1440px]:px-10 2xl:max-w-[1520px] min-[2200px]:max-w-[1680px] min-[2200px]:px-12">
           <ResultsHeader backHref="/e8" />
           <QuizSummaryCard summary={summary} sessionId={sessionId} mode={mode} />
         </div>
@@ -1820,37 +1917,37 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_50%_-12%,rgba(79,70,229,0.18),rgba(5,5,16,1)_46%)] text-white">
         <QuizHalftoneBackground variant="quiz" />
-      <div className="mx-auto w-full max-w-[1300px] px-4 pb-44 md:px-6 xl:px-8 xl:pb-16">
-        <div className="xl:mx-auto xl:max-w-[1120px]">
+      <div className="mx-auto w-full max-w-[1300px] px-4 pb-44 md:px-6 xl:px-8 xl:pb-16 min-[1440px]:max-w-[1380px] min-[1440px]:px-10 2xl:max-w-[1520px] min-[2200px]:max-w-[1680px] min-[2200px]:px-12">
+        <div className="xl:mx-auto xl:max-w-[1120px] min-[1440px]:max-w-[1240px] 2xl:max-w-[1380px] min-[2200px]:max-w-[1540px]">
           <QuizHeader modeLabel={toModeLabel(mode)} current={safeCurrent} total={totalQuestions} elapsedSeconds={reviewModeActive ? undefined : elapsedSeconds} soundEnabled={soundEnabled} onToggleSound={toggleSound} />
 
-          <div className="xl:mt-3 xl:grid xl:grid-cols-[minmax(0,720px)_minmax(340px,360px)] xl:items-start xl:justify-between xl:gap-5">
-            <div className="max-w-[740px]">
+          <div className="xl:mt-3 xl:grid xl:grid-cols-[minmax(0,720px)_minmax(340px,360px)] xl:items-start xl:justify-between xl:gap-5 min-[1440px]:mt-4 min-[1440px]:grid-cols-[minmax(0,790px)_minmax(380px,410px)] min-[1440px]:gap-8 2xl:grid-cols-[minmax(0,900px)_minmax(420px,440px)] 2xl:gap-10 min-[2200px]:grid-cols-[minmax(0,1020px)_minmax(460px,480px)] min-[2200px]:gap-12">
+            <div className="max-w-[740px] min-[1440px]:max-w-[790px] 2xl:max-w-[900px] min-[2200px]:max-w-[1020px]">
               <div className="xl:hidden">
                 <QuizQuestionNav statuses={questionStatuses} currentIndex={currentQuestionIndex} maxReachableIndex={reviewModeActive ? undefined : maxReachableIndex} onJump={handleJumpToQuestion} />
               </div>
 
-              <section data-onboarding-target="question-area" className="mt-2.5 rounded-2xl border border-indigo-300/18 bg-[radial-gradient(circle_at_50%_100%,rgba(99,102,241,0.2),rgba(12,15,36,0.95)_44%,rgba(6,8,18,0.98)_100%)] px-4 py-4 shadow-[0_24px_38px_-30px_rgba(99,102,241,0.58)] xl:mt-0 xl:px-5 xl:py-5">
+              <section data-onboarding-target="question-area" className="mt-2.5 rounded-2xl border border-indigo-300/18 bg-[radial-gradient(circle_at_50%_100%,rgba(99,102,241,0.2),rgba(12,15,36,0.95)_44%,rgba(6,8,18,0.98)_100%)] px-4 py-4 shadow-[0_24px_38px_-30px_rgba(99,102,241,0.58)] xl:mt-0 xl:px-5 xl:py-5 min-[1440px]:px-6 min-[1440px]:py-6 2xl:px-7 2xl:py-7 min-[2200px]:px-8 min-[2200px]:py-8">
                 {currentQuestion.type === "single_question" ? (
                   <QuestionCard category={currentQuestion.category} prompt={currentQuestion.prompt} />
                 ) : (
-                  <section className={`space-y-4 xl:space-y-4 ${currentQuestion.type === "gap_fill_text" ? "xl:max-w-[700px]" : "xl:max-w-[720px]"}`}>
+                  <section className={`space-y-4 xl:space-y-4 ${currentQuestion.type === "gap_fill_text" ? "xl:max-w-[700px] min-[1440px]:max-w-[760px] 2xl:max-w-[860px] min-[2200px]:max-w-[960px]" : "xl:max-w-[720px] min-[1440px]:max-w-[780px] 2xl:max-w-[880px] min-[2200px]:max-w-[980px]"}`}>
                     <div>
                       <p className="text-[10px] font-semibold tracking-[0.14em] text-indigo-100/58 uppercase xl:text-[11px]">{currentQuestion.category}</p>
                       {currentQuestion.title ? (
-                        <h1 className="mt-2 text-[1.08rem] leading-7 font-semibold tracking-[-0.01em] text-white xl:mt-2 xl:text-[1.22rem] xl:leading-8">
+                          <h1 className="mt-2 text-[1.08rem] leading-7 font-semibold tracking-[-0.01em] text-white xl:mt-2 xl:text-[1.22rem] xl:leading-8 min-[1440px]:text-[1.32rem]">
                           {toDisplayTaskTitle(currentQuestion.title, currentQuestion.type)}
                         </h1>
                       ) : null}
                       <div
                         className={`mt-3 text-white/92 ${
                           currentQuestion.type === "gap_fill_text"
-                            ? "rounded-[1.2rem] border border-white/[0.08] bg-white/[0.02] px-3.5 py-3.5 text-[0.98rem] leading-[1.72] xl:px-4 xl:py-3.5 xl:text-[1.04rem] xl:leading-8"
-                            : "border-l-2 border-l-indigo-300/40 pl-3.5 text-[1rem] leading-[1.72] xl:pl-4 xl:text-[1rem] xl:leading-7"
+                            ? "rounded-[1.2rem] border border-white/[0.08] bg-white/[0.02] px-3.5 py-3.5 text-[0.98rem] leading-[1.72] xl:px-4 xl:py-3.5 xl:text-[1.04rem] xl:leading-8 min-[1440px]:px-5 min-[1440px]:text-[1.08rem]"
+                            : "border-l-2 border-l-indigo-300/40 pl-3.5 text-[1rem] leading-[1.72] xl:pl-4 xl:text-[1rem] xl:leading-7 min-[1440px]:pl-5 min-[1440px]:text-[1.04rem]"
                         }`}
                       >
                         {currentQuestion.type === "gap_fill_text" ? (
-                          <div className="max-w-[62ch] whitespace-pre-line text-justify">
+                            <div className="max-w-[62ch] whitespace-pre-line text-justify min-[1440px]:max-w-[68ch]">
                             {renderGapFillPassage({
                               passage: currentDisplayedPassage ?? currentQuestion.passage,
                               chipStateById: new Map(
@@ -1881,13 +1978,13 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                           </div>
                         ) : (
                           <div className="grid">
-                            <div className="col-start-1 row-start-1 max-w-[62ch] whitespace-pre-line text-justify">
+                            <div className="col-start-1 row-start-1 max-w-[62ch] whitespace-pre-line text-justify min-[1440px]:max-w-[68ch]">
                               {currentDisplayedPassage ?? currentQuestion.passage}
                             </div>
                             {alternateDisplayedPassage ? (
                               <div
                                 aria-hidden="true"
-                                className="invisible col-start-1 row-start-1 max-w-[62ch] whitespace-pre-line text-justify"
+                                className="invisible col-start-1 row-start-1 max-w-[62ch] whitespace-pre-line text-justify min-[1440px]:max-w-[68ch]"
                               >
                                 {alternateDisplayedPassage}
                               </div>
@@ -1955,7 +2052,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                   onSelect={handleSelectOption}
                 />
               ) : (
-                <section className={`mt-3 space-y-2.5 xl:mt-5 ${currentQuestion.type === "gap_fill_text" ? "xl:max-w-[720px]" : ""}`}>
+                <section className={`mt-3 space-y-2.5 xl:mt-5 ${currentQuestion.type === "gap_fill_text" ? "xl:max-w-[720px] min-[1440px]:max-w-[780px] 2xl:max-w-[900px] min-[2200px]:max-w-[1020px]" : "min-[1440px]:max-w-[790px] 2xl:max-w-[900px] min-[2200px]:max-w-[1020px]"}`}>
                   {currentItems.map((item, index) => {
                     const savedAnswer = answers[item.id];
                     const selectedOptionIdForItem = savedAnswer?.selectedOptionId ?? draftSelections[item.id] ?? null;
@@ -1965,7 +2062,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                     return (
                       <div
                         key={item.id}
-                        className={`rounded-[1.35rem] border px-3 py-3 xl:px-4 xl:py-3.5 ${
+                        className={`rounded-[1.35rem] border px-3 py-3 xl:px-4 xl:py-3.5 2xl:px-5 2xl:py-4.5 min-[2200px]:px-6 min-[2200px]:py-5 ${
                           currentQuestion.type === "gap_fill_text"
                             ? savedAnswer
                               ? savedAnswer.isCorrect
@@ -1991,7 +2088,7 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
                               )}
                             </div>
                             {currentQuestion.type === "gap_fill_text" ? null : (
-                              <p className="text-[0.94rem] leading-6 font-semibold text-white xl:text-[1rem] xl:leading-7">
+                              <p className="text-[0.94rem] leading-6 font-semibold text-white xl:text-[1rem] xl:leading-7 2xl:text-[1.06rem] 2xl:leading-8 min-[2200px]:text-[1.1rem]">
                                 {`${index + 1}. ${item.prompt}`}
                               </p>
                             )}
@@ -2067,9 +2164,9 @@ export function QuizScreen({ sessionId, initialMode, initialReviewMode = false, 
               ) : null}
             </div>
 
-            <aside className="hidden xl:block xl:sticky xl:top-[104px]">
+            <aside className="hidden xl:block xl:sticky xl:top-[104px] min-[1440px]:top-[112px] min-[2200px]:top-[118px]">
               <div className="space-y-3">
-                <section className="rounded-2xl border border-white/12 bg-[linear-gradient(165deg,rgba(11,14,31,0.95),rgba(8,10,22,0.97))] p-5 shadow-[0_24px_38px_-30px_rgba(59,130,246,0.55)]">
+                <section className="rounded-2xl border border-white/12 bg-[linear-gradient(165deg,rgba(11,14,31,0.95),rgba(8,10,22,0.97))] p-5 shadow-[0_24px_38px_-30px_rgba(59,130,246,0.55)] 2xl:p-6 min-[2200px]:p-7">
                   <div className="mt-0">
                     <div className="mb-1.5 flex items-center justify-between text-[11px] text-indigo-100/72">
                       <span>{"Postęp"}</span>

@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import type { Session, User } from "@supabase/supabase-js";
 import { useEffect, useMemo, useState } from "react";
 import E8AuthenticatedDashboard from "@/components/landing/e8-authenticated-dashboard";
 import DemoPreview from "@/components/landing/demo-preview";
+
 import E8NumbersBento from "@/components/landing/e8-numbers-bento";
 import FeatureTabs from "@/components/landing/feature-tabs";
 import HeroSection from "@/components/landing/hero-section";
@@ -50,7 +51,7 @@ function PublicE8Landing({
           }}
         />
         <div
-          className="pointer-events-none absolute bottom-0 left-1/2 right-1/2 -z-10 h-28 -ml-[50vw] -mr-[50vw] bg-[linear-gradient(180deg,rgba(5,5,16,0)_0%,rgba(5,5,16,0.22)_38%,rgba(5,5,16,0.72)_78%,#050510_100%)]"
+          className="pointer-events-none absolute bottom-0 left-1/2 right-1/2 -z-10 h-28 -ml-[50vw] -mr-[50vw] bg-[linear-gradient(180deg,rgba(5,5,16,0)_0%,rgba(5,5,16,0.22)_38%,rgba(5,5,16,0.72)_78%,#050510_100%)] md:hidden"
           aria-hidden
         />
 
@@ -73,55 +74,43 @@ function PublicE8Landing({
         </div>
       </div>
 
-      <div className="relative -mt-24 overflow-visible md:mt-0">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-1/2 right-1/2 -z-20 -ml-[50vw] -mr-[50vw] overflow-hidden"
-        >
-          <div className="absolute inset-0 overflow-hidden">
-            <Image
-              src={tornPaperImage}
-              alt=""
-              aria-hidden
-              fill
-              className="scale-[6.4] translate-y-[0%] object-contain object-center opacity-[0.9] md:scale-[0.78] md:translate-y-[8%] md:object-[center_top] md:opacity-[0.88]"
-            />
-          </div>
-          <div
-            className="absolute inset-x-0 top-[-36px] h-[calc(50%+36px)] opacity-[0.96] md:hidden"
-            style={{
-              backgroundImage: `url(${whitePaperTextureBackground.src})`,
-              backgroundPosition: "center 76%",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "cover",
-              filter:
-                "saturate(0.58) contrast(0.74) blur(0.8px) drop-shadow(0 14px 18px rgba(0,0,0,0.12)) drop-shadow(0 28px 34px rgba(0,0,0,0.18))",
-            }}
+      <div className="relative mt-8 overflow-clip md:mt-12">
+        <div className="absolute inset-y-0 left-1/2 w-[1600px] -translate-x-1/2 translate-y-[145px] md:-translate-y-[5px] xl:translate-y-[45px] overflow-visible lg:w-[100vw] xl:w-[94vw] max-w-[84rem]">
+          <Image
+            src={tornPaperImage}
+            alt=""
+            aria-hidden
+            fill
+            className="object-cover object-center opacity-[0.95] drop-shadow-[0_12px_28px_rgba(0,0,0,0.36)] lg:object-fill lg:opacity-[0.9]"
           />
-          <div
-            className="absolute inset-x-0 top-0 hidden h-[50%] opacity-[0.96] md:block"
-            style={{
-              backgroundImage: `url(${whitePaperTextureBackground.src})`,
-              backgroundPosition: "center 99%",
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "cover",
-              filter:
-                "saturate(0.58) contrast(0.74) blur(0.8px) drop-shadow(0 14px 18px rgba(0,0,0,0.12)) drop-shadow(0 28px 34px rgba(0,0,0,0.18))",
-            }}
-          />
-          <div className="absolute inset-x-0 top-0 h-60 bg-[linear-gradient(180deg,#050510_0%,rgba(5,5,16,0.98)_16%,rgba(5,5,16,0.82)_38%,rgba(5,5,16,0.46)_66%,rgba(5,5,16,0.12)_86%,rgba(5,5,16,0)_100%)] md:h-36 lg:h-44" />
         </div>
 
-        <div className="relative z-10 mx-auto w-full max-w-md px-5 pb-32 md:max-w-4xl md:px-6 md:pb-36 lg:max-w-6xl lg:px-9 lg:pb-36 xl:max-w-[82rem] xl:px-10 2xl:max-w-[94rem] 2xl:px-12 min-[2200px]:max-w-[124rem] min-[2200px]:px-16">
-          <E8NumbersBento />
-          <PricingSection />
+        <div className="relative z-10 mx-auto w-full max-w-md px-5 pb-8 md:max-w-4xl md:px-6 md:pb-14 lg:max-w-6xl lg:px-9 lg:pb-14 xl:max-w-[82rem] xl:px-10 2xl:max-w-[94rem] 2xl:px-12 min-[2200px]:max-w-[124rem] min-[2200px]:px-16">
+          <div className="relative z-20 pb-[6rem] md:pb-0 lg:pb-0 xl:pb-[10rem]">
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 bottom-0 h-full lg:h-[calc(100%+30px)] left-1/2 right-1/2 -z-20 -ml-[50vw] -mr-[50vw] opacity-[0.96] translate-y-[30px] md:translate-y-0 lg:-translate-y-[30px]"
+              style={{
+                backgroundImage: `url(${whitePaperTextureBackground.src})`,
+                backgroundPosition: "center bottom",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "cover",
+                filter: "saturate(0.58) contrast(0.74) blur(0.8px) drop-shadow(0 14px 18px rgba(0,0,0,0.12)) drop-shadow(0 28px 34px rgba(0,0,0,0.18))"
+              }}
+            />
+            <div className="pointer-events-none absolute left-1/2 right-1/2 top-0 -z-10 h-60 -ml-[50vw] -mr-[50vw] bg-[linear-gradient(180deg,#050510_0%,rgba(5,5,16,0.98)_16%,rgba(5,5,16,0.82)_38%,rgba(5,5,16,0.46)_66%,rgba(5,5,16,0.12)_86%,rgba(5,5,16,0)_100%)] md:h-36 lg:h-44" />
+            <E8NumbersBento />
+          </div>
 
-          <section className="mx-auto mt-10 w-full max-w-[52rem] px-4 md:mt-12 md:px-5 2xl:mt-14 2xl:max-w-[62rem] min-[2200px]:max-w-[72rem]">
-            <h2 className="text-[0.78rem] font-medium tracking-[0.025em] text-white/42 md:text-[0.8rem]">Trening do E8 z angielskiego</h2>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-indigo-100/38">Na tej stronie możesz ćwiczyć angielski do egzaminu ósmoklasisty w krótkich quizach. Zestawy obejmują reakcje językowe, reading, słownictwo i gramatykę, a po zakończeniu od razu zobaczysz wynik i krótkie wyjaśnienia. To prosty sposób na regularne ćwiczenie typów zadań spotykanych na E8.</p>
-          </section>
+          <div className="relative z-10 -mt-[270px] md:-mt-[182px] lg:-mt-[182px] xl:-mt-[240px]">
+            <PricingSection />
+          </div>
         </div>
       </div>
+
+      <section className="relative z-10 mx-auto mt-4 w-full max-w-[52rem] px-5 pb-16 md:mt-8 md:px-6 md:pb-20 2xl:max-w-[62rem] min-[2200px]:max-w-[72rem]">
+        <h2 className="text-[0.8rem] font-medium tracking-[0.025em] text-white/42 md:text-[0.82rem]">Trening do E8 z angielskiego</h2>
+        <p className="mt-1.5 text-[12px] leading-relaxed text-indigo-100/40 md:text-[13px] md:leading-relaxed">Na tej stronie możesz ćwiczyć angielski do egzaminu ósmoklasisty w krótkich quizach. Zestawy obejmują reakcje językowe, reading, słownictwo i gramatykę, a po zakończeniu od razu zobaczysz wynik i krótkie wyjaśnienia. To prosty sposób na regularne ćwiczenie typów zadań spotykanych na E8.</p>
+      </section>
 
       <MarketingFooter />
     </main>

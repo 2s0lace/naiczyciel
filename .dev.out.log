@@ -546,3 +546,4 @@
  GET /e8 200 in 131ms (next.js: 1898µs, application-code: 129ms)
  GET /api/e8/set-access 200 in 1553ms (next.js: 17ms, application-code: 1537ms)
  GET /api/e8/set-access 200 in 1492ms (next.js: 1602µs, application-code: 1490ms)
+ GET /e8 200 in 28ms (next.js: 3ms, application-code: 25ms)

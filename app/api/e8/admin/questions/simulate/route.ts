@@ -1,10 +1,10 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { resolveRoleFromRequest } from "@/lib/auth/server-role";
 import { buildQuizQuestionsFromExercises, toSimulationMode } from "@/lib/quiz/admin-simulation";
 import { getAdminExercisesByIds } from "@/lib/quiz/admin-store";
 import { createLocalSessionFromQuestions } from "@/lib/quiz/local-store";
 import { type UniversalExerciseRecord, validateExerciseRecord } from "@/lib/quiz/admin-exercise";
-import { getSupabaseAdminClient, getSupabaseUserClient } from "@/lib/supabase/server";
+import { getSupabaseAdminClient, getSupabaseUserClient, getSupabaseServerClient } from "@/lib/supabase/server";
 
 type AdminSource = "supabase" | "local" | "mixed";
 type SupabaseExerciseRow = Record<string, unknown>;

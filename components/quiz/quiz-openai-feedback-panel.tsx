@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { Sparkles } from "lucide-react";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { isLocalSessionId } from "@/lib/quiz/local-store";
 import type { QuizSummary } from "@/lib/quiz/types";
 
 type QuizOpenAIFeedbackPanelProps = {
@@ -276,11 +278,27 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
       setError("");
 
       try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+
+        if (!isLocalSessionId(sessionId)) {
+          try {
+            const supabase = getSupabaseBrowserClient();
+            const { data } = await supabase.auth.getSession();
+            const accessToken = data.session?.access_token;
+
+            if (accessToken) {
+              headers.Authorization = `Bearer ${accessToken}`;
+            }
+          } catch {
+            // ignore; backend will return 401 if token truly required
+          }
+        }
+
         const response = await fetch(`/api/e8/quiz/session/${encodeURIComponent(sessionId)}/feedback`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers,
           body: JSON.stringify({ mode }),
         });
         const raw = await response.text();

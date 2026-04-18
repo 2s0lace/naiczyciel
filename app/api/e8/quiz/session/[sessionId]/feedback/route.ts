@@ -1,18 +1,22 @@
-import OpenAI from “openai”;
-import { NextResponse } from “next/server”;
+import OpenAI from "openai";
+import { NextResponse } from "next/server";
 import {
   AI_GENERATION_RATE_LIMIT_ACTION,
   buildRateLimitErrorPayload,
   enforceAiRateLimit,
-} from “@/lib/ai/rate-limit”;
-import { resolveAccessTierFromRequest } from “@/lib/quiz/access-tier”;
-import { buildSummary, fetchSessionAnswers } from “@/lib/quiz/repository”;
-import type { CategoryBreakdownItem } from “@/lib/quiz/types”;
-import { requireOwnedSession } from “@/lib/quiz/require-owned-session”;
-import { loadSetCatalogFromDatabase } from “@/lib/quiz/set-catalog-store”;
-import { loadQuestionsForOwnedSession } from “@/lib/quiz/session-questions”;
-import { getOpenAIServerClient } from “@/lib/openai/server”;
-import { getSupabaseUserClient } from “@/lib/supabase/server”;
+} from "@/lib/ai/rate-limit";
+import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
+import { buildSummary, fetchSessionAnswers } from "@/lib/quiz/repository";
+import {
+  buildCanonicalCategoryBreakdown,
+  fetchSessionCategoryStatsMap,
+} from "@/lib/quiz/session-category-stats";
+import type { CategoryBreakdownItem } from "@/lib/quiz/types";
+import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
+import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
+import { loadQuestionsForOwnedSession } from "@/lib/quiz/session-questions";
+import { getOpenAIServerClient } from "@/lib/openai/server";
+import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 type RouteContext = {
   params: Promise<{ sessionId: string }>;
@@ -38,40 +42,40 @@ function buildPrompt(payload: SanitizedPayload) {
   );
 
   return [
-    “Jestes nauczycielem jezyka angielskiego. Napisz krotki feedback po sesji quizowej.”,
-    “”,
-    “Dane sesji (JSON):”,
-    “```json”,
+    "Jestes nauczycielem jezyka angielskiego. Napisz krotki feedback po sesji quizowej.",
+    "",
+    "Dane sesji (JSON):",
+    "```json",
     dataBlock,
-    “```”,
-    “”,
-    “Zasady — przeczytaj uwazanie:”,
-    “- Pisz wylacznie na podstawie powyzszego JSON. Nie zgaduj. Nie wymyslaj.”,
-    “- Kategorie z has_data:true pojawily sie w tej sesji — mozesz je opisac.”,
-    “- Kategorie z percent:0 i has_data:true pojawily sie, ale wynik byl zerowy — opisz to wprost.”,
-    “- Jezeli zadna kategoria nie ma percent>=50, sekcje 'Mocna strona' pomin lub napisz ogolnie o probie.”,
-    “- Nie wymyslaj kategorii, ktore nie sa w JSON.”,
-    “- Ton: konkretny, spokojny, jak nauczyciel — nie robot, nie coach.”,
-    “- Krotkie zdania. Jezyk prosty.”,
-    “- ZAKAZ uzywania zwrotow: 'wyniki nie zostaly zarejestrowane', 'sugeruje trudnosci',”,
-    “  'pokazuje pewna zdolnosc', 'w tej kategorii', 'na podstawie danych', 'niestety', 'porazka'.”,
-    “”,
-    “Format odpowiedzi — uzyj DOKLADNIE tych naglowkow, w tej kolejnosci:”,
-    “”,
-    “Ocena ogólna:”,
-    “[1 zdanie o ogolnym wyniku]”,
-    “”,
-    “Mocna strona:”,
-    “[1 zdanie — TYLKO jesli jakakolwiek kategoria ma percent>=50, inaczej napisz 'Pierwsza sesja to dobry start.']”,
-    “”,
-    “Do poprawy:”,
-    “[1 zdanie o kategorii z najnizszym percent wsrod has_data:true]”,
-    “”,
-    “Na teraz:”,
-    “[1 konkretna akcja do wykonania w nastepnej sesji]”,
-    “”,
-    “Napisz sam feedback. Bez komentarzy, bez wyjasniania zasad.”,
-  ].join(“\n”);
+    "```",
+    "",
+    "Zasady - przeczytaj uwaznie:",
+    "- Pisz wylacznie na podstawie powyzszego JSON. Nie zgaduj. Nie wymyslaj.",
+    "- Kategorie z has_data:true pojawily sie w tej sesji - mozesz je opisac.",
+    "- Kategorie z percent:0 i has_data:true pojawily sie, ale wynik byl zerowy - opisz to wprost.",
+    "- Jezeli zadna kategoria nie ma percent>=50, sekcje 'Mocna strona' pomin lub napisz ogolnie o probie.",
+    "- Nie wymyslaj kategorii, ktore nie sa w JSON.",
+    "- Ton: konkretny, spokojny, jak nauczyciel - nie robot, nie coach.",
+    "- Krotkie zdania. Jezyk prosty.",
+    "- ZAKAZ uzywania zwrotow: 'wyniki nie zostaly zarejestrowane', 'sugeruje trudnosci',",
+    "  'pokazuje pewna zdolnosc', 'w tej kategorii', 'na podstawie danych', 'niestety', 'porazka'.",
+    "",
+    "Format odpowiedzi - uzyj DOKLADNIE tych naglowkow, w tej kolejnosci:",
+    "",
+    "Ocena ogolna:",
+    "[1 zdanie o ogolnym wyniku]",
+    "",
+    "Mocna strona:",
+    "[1 zdanie - TYLKO jesli jakakolwiek kategoria ma percent>=50, inaczej napisz 'Pierwsza sesja to dobry start.']",
+    "",
+    "Do poprawy:",
+    "[1 zdanie o kategorii z najnizszym percent wsrod has_data:true]",
+    "",
+    "Na teraz:",
+    "[1 konkretna akcja do wykonania w nastepnej sesji]",
+    "",
+    "Napisz sam feedback. Bez komentarzy, bez wyjasniania zasad.",
+  ].join("\n");
 }
 
 function extractResponseText(response: { output_text?: string }) {
@@ -151,16 +155,27 @@ export async function POST(request: Request, context: RouteContext) {
     ]);
 
     const summary = buildSummary({ questions, answers });
+    const storedCategoryBreakdown = await fetchSessionCategoryStatsMap({
+      supabase,
+      sessionIds: [sessionId],
+    });
+    const categoryBreakdown =
+      storedCategoryBreakdown.get(sessionId) ??
+      buildCanonicalCategoryBreakdown({
+        questions,
+        answers,
+      });
+
     const payload: SanitizedPayload = {
       mode: typeof sessionRow.mode === "string" ? sessionRow.mode : "reactions",
       correctAnswers: summary.correctAnswers,
       totalQuestions: summary.totalQuestions,
       scorePercent: summary.scorePercent,
-      categoryBreakdown: summary.categoryBreakdown,
+      categoryBreakdown,
     };
+
     const prompt = buildPrompt(payload);
     const openai = getOpenAIServerClient();
-
     const timeoutController = new AbortController();
     const timeoutId = setTimeout(() => timeoutController.abort(), 15000);
 

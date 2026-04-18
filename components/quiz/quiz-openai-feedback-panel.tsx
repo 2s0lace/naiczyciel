@@ -283,14 +283,16 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
           },
           body: JSON.stringify({ mode }),
         });
+        const raw = await response.text();
+        const parsed = raw.trim().length > 0 ? (JSON.parse(raw) as OpenAIFeedbackSuccess | OpenAIFeedbackError) : null;
 
         if (!response.ok) {
-          const fail = (await response.json().catch(() => ({}))) as OpenAIFeedbackError;
+          const fail = (parsed ?? {}) as OpenAIFeedbackError;
           const detail = typeof fail.details === "string" ? fail.details : fail.error;
           throw new Error(detail || "Nie udalo sie wygenerowac diagnozy.");
         }
 
-        const data = (await response.json()) as OpenAIFeedbackSuccess;
+        const data = (parsed ?? {}) as OpenAIFeedbackSuccess;
         const nextFeedback = typeof data.feedback === "string" ? data.feedback.trim() : "";
 
         if (!nextFeedback) {
@@ -419,6 +421,5 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
     </section>
   );
 }
-
 
 

@@ -12,6 +12,7 @@ import {
   fetchSessionCategoryStatsMap,
 } from "@/lib/quiz/session-category-stats";
 import type { CategoryBreakdownItem } from "@/lib/quiz/types";
+import { getAccessibleLocalSession, getLocalSessionPayload, isLocalSessionId } from "@/lib/quiz/local-store";
 import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
 import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
 import { loadQuestionsForOwnedSession } from "@/lib/quiz/session-questions";
@@ -99,6 +100,84 @@ export async function POST(request: Request, context: RouteContext) {
     }
 
     const access = await resolveAccessTierFromRequest(request);
+
+    if (isLocalSessionId(sessionId)) {
+      const localSession = getAccessibleLocalSession(sessionId, access.userId);
+      const localPayload = localSession ? getLocalSessionPayload(sessionId) : null;
+
+      if (!localPayload) {
+        return NextResponse.json(
+          {
+            error: "Lokalna sesja nie istnieje.",
+          },
+          { status: 404 },
+        );
+      }
+
+      const summary = buildSummary({
+        questions: localPayload.questions,
+        answers: localPayload.answers,
+      });
+      const payload: SanitizedPayload = {
+        mode: typeof localPayload.mode === "string" ? localPayload.mode : "reactions",
+        correctAnswers: summary.correctAnswers,
+        totalQuestions: summary.totalQuestions,
+        scorePercent: summary.scorePercent,
+        categoryBreakdown: buildCanonicalCategoryBreakdown({
+          questions: localPayload.questions,
+          answers: localPayload.answers,
+        }),
+      };
+
+      if (!process.env.OPENAI_API_KEY) {
+        return NextResponse.json(
+          {
+            error: "Brak konfiguracji OpenAI API.",
+          },
+          { status: 503 },
+        );
+      }
+
+      const prompt = buildPrompt(payload);
+      const openai = getOpenAIServerClient();
+      const timeoutController = new AbortController();
+      const timeoutId = setTimeout(() => timeoutController.abort(), 15000);
+
+      let response: { output_text?: string };
+
+      try {
+        response = await openai.responses.create(
+          {
+            model: "gpt-4o-mini",
+            input: prompt,
+            temperature: 0.2,
+            max_output_tokens: 300,
+          },
+          {
+            signal: timeoutController.signal,
+          },
+        );
+      } finally {
+        clearTimeout(timeoutId);
+      }
+
+      const feedback = extractResponseText(response);
+
+      if (!feedback) {
+        return NextResponse.json(
+          {
+            error: "Brak odpowiedzi od AI.",
+          },
+          { status: 502 },
+        );
+      }
+
+      return NextResponse.json({
+        ok: true,
+        feedback,
+        generatedAt: new Date().toISOString(),
+      });
+    }
 
     if (!access.userId || !access.accessToken) {
       return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });

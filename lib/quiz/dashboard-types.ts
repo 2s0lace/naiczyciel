@@ -1,4 +1,5 @@
 import type { AccessTier, E8SetDefinition } from "@/lib/quiz/set-catalog";
+import type { CategoryBreakdownItem } from "@/lib/quiz/types";
 
 export type DashboardSessionStatus = "in_progress" | "completed" | "cancelled" | "unknown";
 
@@ -14,6 +15,7 @@ export type DashboardSession = {
   completedAt: string | null;
   createdAt: string | null;
   durationMinutes: number | null;
+  categoryBreakdown?: CategoryBreakdownItem[];
 };
 
 export type DashboardStats = {

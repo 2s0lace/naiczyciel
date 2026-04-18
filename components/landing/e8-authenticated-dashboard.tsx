@@ -51,6 +51,10 @@ type DashboardPlanOffer = {
 type AiSummaryResponse = {
   ok?: boolean;
   summary?: string;
+  category_breakdown?: Array<{
+    label?: string;
+    percent?: number | null;
+  }>;
   sessionsUsed?: number;
   generatedAt?: string;
   refreshLockedUntil?: string | null;
@@ -542,6 +546,7 @@ export default function E8AuthenticatedDashboard({
   const [plansModalOpen, setPlansModalOpen] = useState(false);
   const [onboardingVisible, setOnboardingVisible] = useState(shouldRunOnboarding);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [aiSummaryCategoryBreakdown, setAiSummaryCategoryBreakdown] = useState<Array<{ label: string; percent: number | null }>>([]);
   const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
   const [aiSummaryError, setAiSummaryError] = useState<string | null>(null);
   const [aiSummaryRefreshLockedUntil, setAiSummaryRefreshLockedUntil] = useState<string | null>(null);
@@ -667,6 +672,15 @@ export default function E8AuthenticatedDashboard({
   const stats = data?.stats;
   const recentSessions = useMemo(() => data?.recentSessions ?? [], [data?.recentSessions]);
   const visibleSets = useMemo(() => data?.visibleSets ?? [], [data?.visibleSets]);
+  const hasRealDashboardData =
+    recentSessions.length > 0 ||
+    Boolean(
+      stats &&
+      (stats.sessionsStarted > 0 ||
+        stats.sessionsCompleted > 0 ||
+        stats.solvedQuestions > 0 ||
+        stats.lastScorePercent !== null),
+    );
   const availableSessionModes = useMemo(
     () =>
       visibleSets
@@ -895,6 +909,7 @@ export default function E8AuthenticatedDashboard({
   const loadAiSummary = useCallback(async (forceRefresh = false) => {
     if (!hasAiSummaryAccess) {
       setAiSummary(null);
+      setAiSummaryCategoryBreakdown([]);
       setAiSummaryError(null);
       setAiSummaryRefreshLockedUntil(null);
       setAiSummaryNotice(null);
@@ -915,19 +930,37 @@ export default function E8AuthenticatedDashboard({
         },
       });
 
-      const payload = (await response.json().catch(() => ({}))) as AiSummaryResponse;
+      const raw = await response.text();
+
+      console.log("AI SUMMARY RESPONSE", {
+        status: response.status,
+        body: raw,
+      });
+
+      const payload = JSON.parse(raw || "{}") as AiSummaryResponse;
 
       if (!response.ok) {
         throw new Error(payload.error || "Nie udalo sie pobrac podsumowania AI.");
       }
 
       setAiSummary(payload.summary ?? null);
+      setAiSummaryCategoryBreakdown(
+        Array.isArray(payload.category_breakdown)
+          ? payload.category_breakdown
+              .map((entry) => ({
+                label: typeof entry.label === "string" ? entry.label.trim() : "",
+                percent: typeof entry.percent === "number" && Number.isFinite(entry.percent) ? Math.round(entry.percent) : null,
+              }))
+              .filter((entry) => entry.label.length > 0)
+          : [],
+      );
       setAiSummaryRefreshLockedUntil(payload.refreshLockedUntil ?? null);
       setAiSummaryNotice(payload.notice ?? null);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Nie udalo sie pobrac podsumowania AI.";
       setAiSummaryError(message);
       setAiSummary(null);
+      setAiSummaryCategoryBreakdown([]);
       setAiSummaryRefreshLockedUntil(null);
       setAiSummaryNotice(null);
     } finally {
@@ -938,6 +971,7 @@ export default function E8AuthenticatedDashboard({
   useEffect(() => {
     if (!data || !hasAiSummaryAccess) {
       setAiSummary(null);
+      setAiSummaryCategoryBreakdown([]);
       setAiSummaryError(null);
       setAiSummaryRefreshLockedUntil(null);
       setAiSummaryNotice(null);
@@ -953,7 +987,7 @@ export default function E8AuthenticatedDashboard({
   const weakestModeLabel = stats?.weakestCategory ? formatMode(stats.weakestCategory) : "Po sesji";
   const hasStrongestMode = Boolean(stats?.strongestCategory);
   const hasWeakestMode = Boolean(stats?.weakestCategory);
-  const tutorialActive = onboardingVisible;
+  const tutorialActive = onboardingVisible && !hasRealDashboardData;
   const tutorialStateIndex = 0;
   const displayHeroIntro = tutorialActive ? TUTORIAL_HERO_STATES[tutorialStateIndex] : heroIntro;
   const heroProgressSubline = useMemo(() => {
@@ -1472,20 +1506,29 @@ export default function E8AuthenticatedDashboard({
                                         ? `${session.totalQuestions} pytan`
                                         : null;
                                     const summary = [scorePercentValue, durationValue, questionCountValue].filter(Boolean).join(" - ");
+                                    const categoryBreakdownSummary = (session.categoryBreakdown ?? [])
+                                      .filter((item) => item.has_data && item.percent !== null)
+                                      .map((item) => `${item.label}: ${item.percent}%`)
+                                      .join(" · ");
 
                                     return (
                                       <li key={session.id} className="flex items-start justify-between gap-3 border-b border-white/8 pb-2 text-sm last:border-b-0 last:pb-0">
                                         <span className="text-indigo-100/84">
                                           {formatSessionDate(session)}
                                         </span>
-                                        <div className="flex shrink-0 items-center gap-3">
-                                          <span className="text-indigo-100/62">
+                                        <div className="flex shrink-0 flex-col items-end gap-1">
+                                          <span className="text-right text-indigo-100/62">
                                             {summary || (session.status === "in_progress"
                                               ? "W toku"
                                               : session.status === "cancelled"
                                                 ? "Przerwana"
                                                 : "Zakonczona")}
                                           </span>
+                                          {categoryBreakdownSummary ? (
+                                            <span className="max-w-[260px] text-right text-[11px] text-indigo-100/48">
+                                              {categoryBreakdownSummary}
+                                            </span>
+                                          ) : null}
                                           {session.status === "in_progress" ? (
                                             <button
                                               type="button"
@@ -1522,7 +1565,8 @@ export default function E8AuthenticatedDashboard({
                   </div>
                 </div>
 
-                <div className="relative mt-4 overflow-hidden rounded-[22px] bg-[linear-gradient(180deg,rgba(12,18,34,0.3)_0%,rgba(10,16,30,0.2)_44%,rgba(8,13,24,0.12)_100%)] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),inset_0_-1px_0_rgba(255,255,255,0.015)]">
+                <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.35fr)_minmax(220px,0.65fr)]">
+                  <div className="relative overflow-hidden rounded-[22px] bg-[linear-gradient(180deg,rgba(12,18,34,0.3)_0%,rgba(10,16,30,0.2)_44%,rgba(8,13,24,0.12)_100%)] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),inset_0_-1px_0_rgba(255,255,255,0.015)]">
                   <span
                     aria-hidden
                     className="pointer-events-none absolute left-1/2 top-0 h-px w-[84%] -translate-x-1/2 bg-[linear-gradient(90deg,transparent_0%,rgba(125,211,252,0.02)_12%,rgba(0,212,255,0.12)_28%,rgba(0,212,255,0.24)_50%,rgba(0,212,255,0.12)_72%,rgba(125,211,252,0.02)_88%,transparent_100%)]"
@@ -1597,6 +1641,46 @@ export default function E8AuthenticatedDashboard({
                       </div>
                     )}
                   </div>
+                  </div>
+
+                  {hasAiSummaryAccess && !showSkeleton ? (
+                    <div className="relative overflow-hidden rounded-[22px] border border-white/8 bg-[linear-gradient(180deg,rgba(14,20,38,0.9)_0%,rgba(10,15,29,0.92)_100%)] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                      <span
+                        aria-hidden
+                        className="pointer-events-none absolute left-1/2 top-0 h-px w-[78%] -translate-x-1/2 bg-[linear-gradient(90deg,transparent_0%,rgba(16,185,129,0.03)_14%,rgba(16,185,129,0.16)_50%,rgba(16,185,129,0.03)_86%,transparent_100%)]"
+                      />
+                      <div className="relative z-10">
+                        <div className="mb-3">
+                          <p className="text-[11px] font-semibold tracking-[0.16em] text-indigo-100/58 uppercase">Statystyki kategorii</p>
+                          <p className="mt-1 text-xs text-indigo-100/48">Na podstawie ostatnich sesji</p>
+                        </div>
+
+                        {aiSummaryLoading ? (
+                          <div className="space-y-2">
+                            {[0, 1, 2, 3].map((idx) => (
+                              <SkeletonWave key={`ai-breakdown-${idx}`} className="h-8 w-full rounded-xl" />
+                            ))}
+                          </div>
+                        ) : aiSummaryCategoryBreakdown.length > 0 ? (
+                          <div className="space-y-2">
+                            {aiSummaryCategoryBreakdown.map((item) => (
+                              <div
+                                key={`${item.label}-${item.percent ?? "na"}`}
+                                className="flex items-center justify-between gap-3 rounded-xl border border-white/7 bg-white/[0.02] px-3 py-2 text-[12px]"
+                              >
+                                <span className="text-white/72">{item.label}</span>
+                                <span className="font-semibold text-white/86">
+                                  {item.percent !== null ? `${item.percent}%` : "brak danych"}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[13px] leading-relaxed text-indigo-100/60">Statystyki kategorii pojawia sie po kilku zakonczonych sesjach.</p>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
 
                 {hasAiSummaryAccess && aiSummaryRefreshText && !showSkeleton ? (

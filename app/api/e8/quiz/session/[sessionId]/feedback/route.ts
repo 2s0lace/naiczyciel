@@ -30,6 +30,14 @@ type SanitizedPayload = {
   categoryBreakdown: CategoryBreakdownItem[];
 };
 
+function isRateLimitInfrastructureUnavailable(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    message.includes("public.rate_limits") && message.includes("schema cache")
+  ) || message.includes("Missing SUPABASE_SERVICE_ROLE_KEY for admin client");
+}
+
 function buildPrompt(payload: SanitizedPayload) {
   const dataBlock = JSON.stringify(
     {
@@ -96,14 +104,26 @@ export async function POST(request: Request, context: RouteContext) {
       return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
     }
 
-    const rateLimit = await enforceAiRateLimit({
-      request,
-      action: AI_GENERATION_RATE_LIMIT_ACTION,
-      userId: access.userId,
-      role: access.role,
-    });
+    let rateLimit: Awaited<ReturnType<typeof enforceAiRateLimit>> | null = null;
 
-    if (!rateLimit.allowed) {
+    try {
+      rateLimit = await enforceAiRateLimit({
+        request,
+        action: AI_GENERATION_RATE_LIMIT_ACTION,
+        userId: access.userId,
+        role: access.role,
+      });
+    } catch (error) {
+      if (isRateLimitInfrastructureUnavailable(error)) {
+        console.error("[quiz-feedback] Rate limit unavailable, skipping enforcement", {
+          message: error instanceof Error ? error.message : String(error),
+        });
+      } else {
+        throw error;
+      }
+    }
+
+    if (rateLimit && !rateLimit.allowed) {
       return NextResponse.json(buildRateLimitErrorPayload(rateLimit), {
         status: 429,
         headers: {

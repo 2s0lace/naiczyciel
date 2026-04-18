@@ -156,10 +156,35 @@ export async function POST(request: Request, context: RouteContext) {
     const access = await resolveAccessTierFromRequest(request);
 
     if (isLocalSessionId(sessionId)) {
-      const localSession = getAccessibleLocalSession(sessionId, access.userId);
-      const localPayload = localSession ? getLocalSessionPayload(sessionId) : null;
+      // Parse the request body — for local sessions the client ships
+      // questions + answers directly (globalThis is unreliable on serverless).
+      const body = await request.json().catch(() => ({})) as {
+        mode?: string;
+        questions?: QuizQuestion[];
+        answers?: QuizAnswerSnapshot[];
+      };
 
-      if (!localPayload) {
+      // Body-supplied data takes priority; fall back to server-side store (localhost).
+      let localQuestions: QuizQuestion[] | null = null;
+      let localAnswers: QuizAnswerSnapshot[] | null = null;
+      let localMode: string = "reactions";
+
+      if (Array.isArray(body.questions) && Array.isArray(body.answers)) {
+        localQuestions = body.questions as QuizQuestion[];
+        localAnswers = body.answers as QuizAnswerSnapshot[];
+        localMode = typeof body.mode === "string" ? body.mode : "reactions";
+      } else {
+        const localSession = getAccessibleLocalSession(sessionId, access.userId);
+        const localPayload = localSession ? getLocalSessionPayload(sessionId) : null;
+
+        if (localPayload) {
+          localQuestions = localPayload.questions;
+          localAnswers = localPayload.answers;
+          localMode = typeof localPayload.mode === "string" ? localPayload.mode : "reactions";
+        }
+      }
+
+      if (!localQuestions || !localAnswers) {
         return NextResponse.json(
           {
             error: "Lokalna sesja nie istnieje.",
@@ -169,21 +194,21 @@ export async function POST(request: Request, context: RouteContext) {
       }
 
       const summary = buildSummary({
-        questions: localPayload.questions,
-        answers: localPayload.answers,
+        questions: localQuestions,
+        answers: localAnswers,
       });
       const payload: SanitizedPayload = {
-        mode: typeof localPayload.mode === "string" ? localPayload.mode : "reactions",
+        mode: localMode,
         correctAnswers: summary.correctAnswers,
         totalQuestions: summary.totalQuestions,
         scorePercent: summary.scorePercent,
         categoryBreakdown: buildCanonicalCategoryBreakdown({
-          questions: localPayload.questions,
-          answers: localPayload.answers,
+          questions: localQuestions,
+          answers: localAnswers,
         }),
         subtopicBreakdown: buildSubtopicBreakdown({
-          questions: localPayload.questions,
-          answers: localPayload.answers,
+          questions: localQuestions,
+          answers: localAnswers,
         }),
       };
 

@@ -359,10 +359,19 @@ export function QuizOpenAIFeedbackPanel({
           }
         }
 
+        const bodyPayload: Record<string, unknown> = { mode };
+
+        // For local sessions the server has no persistent store (serverless),
+        // so we ship the full questions + answers in the request body.
+        if (isLocalSessionId(sessionId) && questions && answers) {
+          bodyPayload.questions = questions;
+          bodyPayload.answers = answers;
+        }
+
         const response = await fetch(`/api/e8/quiz/session/${encodeURIComponent(sessionId)}/feedback`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ mode }),
+          body: JSON.stringify(bodyPayload),
         });
         const raw = await response.text();
         const parsed = raw.trim().length > 0 ? (JSON.parse(raw) as OpenAIFeedbackSuccess | OpenAIFeedbackError) : null;

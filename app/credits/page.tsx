@@ -23,6 +23,28 @@
             </a>
           </p>
           <p>
+            Pen circle asset by{" "}
+            <a
+              href="https://www.vecteezy.com/free-png/pen-circle"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-200 underline decoration-cyan-200/45 underline-offset-4 transition-colors hover:text-cyan-100"
+            >
+              Vecteezy
+            </a>
+          </p>
+          <p>
+            Doodle asset by{" "}
+            <a
+              href="https://www.vecteezy.com/free-png/doodle"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-200 underline decoration-cyan-200/45 underline-offset-4 transition-colors hover:text-cyan-100"
+            >
+              Vecteezy
+            </a>
+          </p>
+          <p>
             Critical thinking / AI usage research source:{" "}
             <a
               href="https://www.microsoft.com/en-us/research/wp-content/uploads/2025/01/lee_2025_ai_critical_thinking_survey.pdf"

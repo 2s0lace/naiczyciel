@@ -126,6 +126,20 @@ export function getOwnedLocalSession(sessionId: string, userId: string) {
   return session;
 }
 
+export function getAccessibleLocalSession(sessionId: string, userId?: string | null) {
+  const session = getLocalSession(sessionId);
+
+  if (!session) {
+    return null;
+  }
+
+  if (session.ownerUserId && session.ownerUserId !== (userId ?? null)) {
+    return null;
+  }
+
+  return session;
+}
+
 export function getLocalSessionPayload(sessionId: string) {
   const session = getLocalSession(sessionId);
 

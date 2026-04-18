@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -138,7 +138,7 @@ function buildSessionHref(
   focusSource: string | undefined,
   focusRaw: string | undefined,
 ) {
-  const query = new URLSearchParams({ mode });
+  const query = new URLSearchParams({ mode, sessionId });
 
   if (setId) {
     query.set("set", setId);
@@ -201,12 +201,6 @@ export function QuizSessionBootstrap({ mode, setId, count, modes, focus, focusSo
     const activeSessionId = activeSessions[sessionContextKey]?.sessionId;
 
     if (!activeSessionId) {
-      return false;
-    }
-
-    if (activeSessionId.startsWith("local_")) {
-      delete activeSessions[sessionContextKey];
-      writeActiveSessions(activeSessions);
       return false;
     }
 
@@ -316,7 +310,7 @@ export function QuizSessionBootstrap({ mode, setId, count, modes, focus, focusSo
 
       const data = (await response.json().catch(() => ({}))) as StartSessionResponse;
 
-      if (!response.ok || !data.sessionId) {
+      if (!response.ok || !data.sessionId || data.sessionId === "null" || data.sessionId === "undefined") {
         throw new Error(data.error ?? data.details ?? "Nie udało się rozpocząć sesji.");
       }
 
@@ -331,12 +325,20 @@ export function QuizSessionBootstrap({ mode, setId, count, modes, focus, focusSo
       const nextFocus = normalizeFocus(data.focusLabel) ?? normalizedFocus;
       const nextFocusSource = normalizeFocusSource(data.focusSource) ?? normalizedFocusSource;
       const nextFocusRaw = normalizeFocus(data.focusRaw) ?? normalizedFocusRaw;
+      const activeSessions = readActiveSessions();
+
+      activeSessions[sessionContextKey] = {
+        sessionId: data.sessionId,
+        updatedAt: new Date().toISOString(),
+      };
+
+      writeActiveSessions(activeSessions);
       router.replace(buildSessionHref(data.sessionId, nextMode, nextSetId, nextCount, nextModes, nextFocus, nextFocusSource, nextFocusRaw));
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : "Wystąpił nieznany błąd.");
       setIsStarting(false);
     }
-  }, [effectiveCount, getAuthHeaders, mode, normalizedFocus, normalizedFocusRaw, normalizedFocusSource, normalizedModes, normalizedSetId, router, tryResumeSession]);
+  }, [effectiveCount, getAuthHeaders, mode, normalizedFocus, normalizedFocusRaw, normalizedFocusSource, normalizedModes, normalizedSetId, router, sessionContextKey, tryResumeSession]);
 
   useEffect(() => {
     if (startedRef.current) {

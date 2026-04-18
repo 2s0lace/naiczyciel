@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
-import { buildSummary, fetchSessionAnswers } from "@/lib/quiz/repository";
+import { fetchSessionAnswers } from "@/lib/quiz/repository";
 import {
   completeLocalSession,
   getAccessibleLocalSession,
   isLocalSessionId,
 } from "@/lib/quiz/local-store";
+import {
+  buildCanonicalCategoryBreakdownFromAnswers,
+  buildCanonicalSummaryFromBreakdown,
+  buildCanonicalCategoryBreakdown,
+  upsertSessionCategoryStats,
+} from "@/lib/quiz/session-category-stats";
 import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
 import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
-import { loadQuestionsForOwnedSession } from "@/lib/quiz/session-questions";
 import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 type RouteContext = {
@@ -82,20 +87,19 @@ export async function POST(request: Request, context: RouteContext) {
       );
     }
 
-    const [questions, answers] = await Promise.all([
-      loadQuestionsForOwnedSession({
-        supabase,
-        session: sessionRow,
-        tier: access.tier,
-        role: access.role,
-      }),
-      fetchSessionAnswers({
-        supabase,
-        sessionId,
-      }),
-    ]);
+    const answers = await fetchSessionAnswers({
+      supabase,
+      sessionId,
+    });
 
-    const summary = buildSummary({ questions, answers });
+    const categoryBreakdown =
+      answers.length > 0
+        ? await buildCanonicalCategoryBreakdownFromAnswers({
+            supabase,
+            answers,
+          })
+        : buildCanonicalCategoryBreakdown({ questions: [], answers: [] });
+    const summary = buildCanonicalSummaryFromBreakdown(categoryBreakdown);
     const finishedAt = new Date().toISOString();
     const completedPatch: Record<string, string | number> = {
       status: "completed",
@@ -168,10 +172,24 @@ export async function POST(request: Request, context: RouteContext) {
       }
     }
 
+    const categoryStatsWrite = await upsertSessionCategoryStats({
+      supabase,
+      sessionId,
+      breakdown: categoryBreakdown,
+      syncedAt: finishedAt,
+    });
+
+    if (categoryStatsWrite.error) {
+      console.error("[quiz-complete] category stats write failed", categoryStatsWrite.error);
+    }
+
     return NextResponse.json({
       ok: true,
       sessionId,
-      summary,
+      summary: {
+        ...summary,
+        categoryBreakdown,
+      },
       storage: "supabase",
     });
   } catch (error) {

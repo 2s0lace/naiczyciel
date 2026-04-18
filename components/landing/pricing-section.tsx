@@ -189,6 +189,7 @@ export default function PricingSection() {
                 alt=""
                 aria-hidden
                 fill
+                sizes="(max-width: 900px) 100vw, 60vw"
                 className="absolute inset-0 h-full w-full object-cover object-[center_62%] opacity-[0.96] brightness-[0.46] saturate-[0.8] min-[900px]:scale-[1.64] min-[900px]:brightness-[0.4] min-[900px]:saturate-[0.7]"
               />
               <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(5,7,14,0.52)_0%,rgba(5,7,14,0.3)_28%,rgba(5,7,14,0.58)_100%)] min-[900px]:bg-[linear-gradient(135deg,rgba(0,0,0,0.16)_0%,rgba(0,0,0,0.22)_36%,rgba(0,0,0,0.18)_72%,rgba(0,0,0,0.26)_100%)]" />

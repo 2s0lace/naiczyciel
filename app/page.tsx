@@ -7,6 +7,7 @@ import AuthHeaderActions from "@/components/auth/auth-header-actions";
 import { ParallaxGridLayer } from "@/components/landing/parallax-grid-layer";
 import { RevealOnView } from "@/components/landing/ui/reveal-on-view";
 import { SelectionCard } from "@/components/SelectionCard";
+import { RoadmapCard } from "@/components/RoadmapCard";
 import { MarketingFooter } from "@/components/layout/marketing-footer";
 import bottomCenterAsset from "@/img/8969331.png";
 import landingLogo from "@/img/Bez nazwy-3.png";
@@ -180,17 +181,7 @@ export default function LandingPage() {
 
           <RevealOnView className="h-full" delay={80} threshold={0.2}>
             <div className="h-full">
-              <SelectionCard
-                label="PANEL EDU"
-                title="Nauczyciel"
-                description="Panel do tworzenia quizów i materiałów dla uczniów. Wkrótce udostępnimy pierwszą wersję."
-                buttonText="Powiadom"
-                href={EDU_NOTIFY_MAILTO}
-                altText="Nauczycielka przy komputerze"
-                imageSrc="/assets/teacher-entry.jpg"
-                tone="teacher"
-                statusText="WKRÓTCE"
-              />
+              <RoadmapCard notifyHref={EDU_NOTIFY_MAILTO} />
             </div>
           </RevealOnView>
         </div>
@@ -341,6 +332,7 @@ export default function LandingPage() {
         <Image
           src={bottomCenterAsset}
           alt=""
+          sizes="(max-width: 768px) 110vw, 240rem"
           className="h-auto w-[22rem] max-w-none scale-[5] object-contain opacity-100 [filter:drop-shadow(0_-12px_38px_rgba(0,0,0,0.18))] md:w-[240rem] md:scale-100 xl:w-[300rem]"
         />
       </div>

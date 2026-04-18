@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 import type { DashboardPayload, DashboardSession, DashboardSessionStatus } from "@/lib/quiz/dashboard-types";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
 import {
+  aggregateCategoryBreakdowns,
+  fetchSessionCategoryStatsMap,
+} from "@/lib/quiz/session-category-stats";
+import {
   getLockedSetsForTier,
   getSetAccessConfig,
   getSetsForTier,
@@ -754,6 +758,7 @@ function buildPayload(params: {
   rows: GenericRecord[];
   answerDurationOverrides?: Map<string, number | null>;
   tagPerformance?: TagAggregate[];
+  sessionCategoryBreakdownBySession?: Map<string, DashboardSession["categoryBreakdown"]>;
 }): DashboardPayload {
   const { tier, role, rows } = params;
   const base = createEmptyPayload(tier, role);
@@ -764,14 +769,18 @@ function buildPayload(params: {
     .sort((a, b) => sessionTimestamp(b) - sessionTimestamp(a));
 
   const overrides = params.answerDurationOverrides ?? new Map<string, number | null>();
+  const sessionCategoryBreakdownBySession = params.sessionCategoryBreakdownBySession ?? new Map();
   const sessions = sessionsFromRows.map((session) => {
+    const categoryBreakdown = sessionCategoryBreakdownBySession.get(session.id);
+
     if (!overrides.has(session.id)) {
-      return session;
+      return categoryBreakdown ? { ...session, categoryBreakdown } : session;
     }
 
     return {
       ...session,
       durationMinutes: overrides.get(session.id) ?? null,
+      categoryBreakdown,
     };
   });
 
@@ -786,6 +795,12 @@ function buildPayload(params: {
 
     return session.completedAt !== null || scoreFromSession(session) !== null;
   });
+  const aggregatedCategoryBreakdown = aggregateCategoryBreakdowns(
+    completedSessions.flatMap((session) => session.categoryBreakdown ?? []),
+  );
+  const rankedCategories = aggregatedCategoryBreakdown
+    .filter((item) => item.has_data && item.percent !== null)
+    .sort((left, right) => (right.percent ?? 0) - (left.percent ?? 0));
 
   const scores = completedSessions
     .map((session) => scoreFromSession(session))
@@ -838,8 +853,9 @@ function buildPayload(params: {
   const fallbackStrongestMode = rankedModes[0]?.mode ?? null;
   const fallbackWeakestMode = rankedModes[rankedModes.length - 1]?.mode ?? null;
 
-  const strongestMetric: string | null = strongestTag?.label ?? fallbackStrongestMode ?? null;
-  let weakestMetric: string | null = weakestTag?.label ?? fallbackWeakestMode ?? null;
+  const strongestMetric: string | null = rankedCategories[0]?.label ?? strongestTag?.label ?? fallbackStrongestMode ?? null;
+  let weakestMetric: string | null =
+    rankedCategories[rankedCategories.length - 1]?.label ?? weakestTag?.label ?? fallbackWeakestMode ?? null;
 
   if (sameLabel(strongestMetric, weakestMetric)) {
     const alternateTag =
@@ -872,8 +888,8 @@ function buildPayload(params: {
       solvedQuestions,
       averageScorePercent: average(scores),
       averageDurationMinutes: average(durations),
-      strongestCategory: fallbackStrongestMode ?? null,
-      weakestCategory: fallbackWeakestMode ?? null,
+      strongestCategory: rankedCategories[0]?.label ?? fallbackStrongestMode ?? null,
+      weakestCategory: rankedCategories[rankedCategories.length - 1]?.label ?? fallbackWeakestMode ?? null,
       strongestMode: strongestMetric ?? null,
       weakestMode: weakestMetric ?? null,
       weakestTargetSource: weakestTag?.source ?? null,
@@ -892,6 +908,7 @@ export async function GET(request: Request) {
   }
 
   try {
+    const supabase = getSupabaseUserClient(access.accessToken);
     const rows = await fetchRowsForUser(access.accessToken, access.userId);
     const sessionIds = rows
       .map((row) => asText(row.id))
@@ -916,12 +933,17 @@ export async function GET(request: Request) {
     const answerDerivedStats = deriveSessionStatsFromAnswers(answerAnalytics.answers);
     const fullyHydratedRows = mergeRowsWithDerivedAnswerStats(hydratedRows, answerDerivedStats);
     const tagPerformance = await fetchTagPerformance(access.accessToken, answerAnalytics.answers);
+    const sessionCategoryBreakdownBySession = await fetchSessionCategoryStatsMap({
+      supabase,
+      sessionIds: sortedSessionIds,
+    });
     const payload = buildPayload({
       tier: access.tier,
       role: access.role,
       rows: fullyHydratedRows,
       answerDurationOverrides: answerAnalytics.durationOverrides,
       tagPerformance,
+      sessionCategoryBreakdownBySession,
     });
 
     return NextResponse.json(payload);
@@ -936,7 +958,3 @@ export async function GET(request: Request) {
     );
   }
 }
-
-
-
-

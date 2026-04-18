@@ -11,16 +11,25 @@ import {
   buildCanonicalCategoryBreakdown,
   fetchSessionCategoryStatsMap,
 } from "@/lib/quiz/session-category-stats";
-import type { CategoryBreakdownItem } from "@/lib/quiz/types";
+import type { CategoryBreakdownItem, QuizAnswerSnapshot, QuizQuestion } from "@/lib/quiz/types";
 import { getAccessibleLocalSession, getLocalSessionPayload, isLocalSessionId } from "@/lib/quiz/local-store";
 import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
 import { loadSetCatalogFromDatabase } from "@/lib/quiz/set-catalog-store";
 import { loadQuestionsForOwnedSession } from "@/lib/quiz/session-questions";
+import { resolveQuestionCategoryLabel } from "@/lib/quiz/session-category-stats";
 import { getOpenAIServerClient } from "@/lib/openai/server";
 import { getSupabaseUserClient } from "@/lib/supabase/server";
 
 type RouteContext = {
   params: Promise<{ sessionId: string }>;
+};
+
+type SubtopicBreakdownItem = {
+  area: string;
+  topic: string;
+  attempts: number;
+  correct: number;
+  percent: number;
 };
 
 type SanitizedPayload = {
@@ -29,7 +38,56 @@ type SanitizedPayload = {
   totalQuestions: number;
   scorePercent: number;
   categoryBreakdown: CategoryBreakdownItem[];
+  subtopicBreakdown: SubtopicBreakdownItem[];
 };
+
+function buildSubtopicBreakdown(params: {
+  questions: QuizQuestion[];
+  answers: QuizAnswerSnapshot[];
+}): SubtopicBreakdownItem[] {
+  const answerMap = new Map(params.answers.map((a) => [a.questionId, a]));
+  const aggregates = new Map<string, { area: string; topic: string; attempts: number; correct: number }>();
+
+  for (const question of params.questions) {
+    const area = resolveQuestionCategoryLabel(question) ?? "Reactions";
+    const topic = typeof question.category === "string" && question.category.trim().length > 0
+      ? question.category.trim()
+      : area;
+
+    if (!topic) {
+      continue;
+    }
+
+    const key = `${area}::${topic}`;
+    const current = aggregates.get(key) ?? { area, topic, attempts: 0, correct: 0 };
+
+    const questionIds =
+      question.type === "single_question" ? [question.id] : question.questions.map((item) => item.id);
+
+    current.attempts += questionIds.length;
+
+    for (const id of questionIds) {
+      const answer = answerMap.get(id);
+
+      if (answer?.isCorrect) {
+        current.correct += 1;
+      }
+    }
+
+    aggregates.set(key, current);
+  }
+
+  return Array.from(aggregates.values())
+    .filter((item) => item.attempts > 0)
+    .map((item) => ({
+      area: item.area,
+      topic: item.topic,
+      attempts: item.attempts,
+      correct: item.correct,
+      percent: Math.round((item.correct / item.attempts) * 100),
+    }))
+    .sort((a, b) => a.percent - b.percent);
+}
 
 function isRateLimitInfrastructureUnavailable(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
@@ -45,13 +103,14 @@ function buildPrompt(payload: SanitizedPayload) {
       mode: payload.mode,
       score: `${payload.correctAnswers}/${payload.totalQuestions} (${payload.scorePercent}%)`,
       categories: payload.categoryBreakdown,
+      subtopics: payload.subtopicBreakdown,
     },
     null,
     2,
   );
 
   return [
-    "Jestes nauczycielem jezyka angielskiego. Napisz krotki feedback po sesji quizowej.",
+    "Jestes nauczycielem jezyka angielskiego. Napisz feedback po sesji quizowej.",
     "",
     "Dane sesji (JSON):",
     "```json",
@@ -60,28 +119,26 @@ function buildPrompt(payload: SanitizedPayload) {
     "",
     "Zasady - przeczytaj uwaznie:",
     "- Pisz wylacznie na podstawie powyzszego JSON. Nie zgaduj. Nie wymyslaj.",
-    "- Kategorie z has_data:true pojawily sie w tej sesji - mozesz je opisac.",
-    "- Kategorie z percent:0 i has_data:true pojawily sie, ale wynik byl zerowy - opisz to wprost.",
-    "- Jezeli zadna kategoria nie ma percent>=50, sekcje 'Mocna strona' pomin lub napisz ogolnie o probie.",
-    "- Nie wymyslaj kategorii, ktore nie sa w JSON.",
-    "- Ton: konkretny, spokojny, jak nauczyciel - nie robot, nie coach.",
-    "- Krotkie zdania. Jezyk prosty.",
-    "- ZAKAZ uzywania zwrotow: 'wyniki nie zostaly zarejestrowane', 'sugeruje trudnosci',",
-    "  'pokazuje pewna zdolnosc', 'w tej kategorii', 'na podstawie danych', 'niestety', 'porazka'.",
+    "- 'categories' to 4 gluwne obszary: Reactions, Vocabulary, Grammar, Reading MC.",
+    "- 'subtopics' to szczegolowe tematy w ramach tych obszarow (np. 'Future Simple', 'Modal should',",
+    "  'Podroz pociagiem', 'Wyrazanie opinii'). Pole area wskazuje do ktorego z 4 obszarow nalezy temat.",
+    "- Jezeli Grammar ma niski wynik, WYMIEN Z NAZWY konkretne struktury/czasy z subtopics (area=Grammar)",
+    "  ktore maja najnizszy percent - np. 'Future Simple', 'Present Perfect', 'tryby warunkowe',",
+    "  'czasowniki modalne'. Uzyj dokladnie nazw z pola topic.",
+    "- Jezeli Vocabulary/Reactions/Reading MC ma niski wynik, wymien konkretne topics z tego obszaru.",
+    "- Wspomnij konkretnie co poszlo dobrze (kategoria lub subtopic z wysokim percent), jesli jest.",
+    "- Wspomnij konkretnie co poszlo zle - nie ogolnie 'gramatyka', tylko 'Future Simple i zdania warunkowe'.",
+    "- Na koniec 1 konkretna akcja do nastepnej sesji.",
+    "- Ton: konkretny, spokojny, jak nauczyciel. Krotkie zdania. Jezyk prosty.",
+    "- ZAKAZ zwrotow: 'wyniki nie zostaly zarejestrowane', 'sugeruje trudnosci', 'pokazuje pewna zdolnosc',",
+    "  'na podstawie danych', 'niestety', 'porazka'.",
     "",
-    "Format odpowiedzi - uzyj DOKLADNIE tych naglowkow, w tej kolejnosci:",
-    "",
-    "Ocena ogolna:",
-    "[1 zdanie o ogolnym wyniku]",
-    "",
-    "Mocna strona:",
-    "[1 zdanie - TYLKO jesli jakakolwiek kategoria ma percent>=50, inaczej napisz 'Pierwsza sesja to dobry start.']",
-    "",
-    "Do poprawy:",
-    "[1 zdanie o kategorii z najnizszym percent wsrod has_data:true]",
-    "",
-    "Na teraz:",
-    "[1 konkretna akcja do wykonania w nastepnej sesji]",
+    "Format odpowiedzi:",
+    "- JEDEN ciagly akapit (3-5 zdan).",
+    "- BEZ naglowkow, BEZ etykiet typu 'Ocena ogolna:', 'Do poprawy:', 'Na teraz:'.",
+    "- BEZ list punktowanych, BEZ pogrubien, BEZ markdown.",
+    "- Zacznij od oceny ogolnej zawierajacej konkrety (co bylo dobre, co zle, z nazwami tematow).",
+    "- Zakoncz konkretna akcja na nastepna sesje.",
     "",
     "Napisz sam feedback. Bez komentarzy, bez wyjasniania zasad.",
   ].join("\n");
@@ -124,6 +181,10 @@ export async function POST(request: Request, context: RouteContext) {
         totalQuestions: summary.totalQuestions,
         scorePercent: summary.scorePercent,
         categoryBreakdown: buildCanonicalCategoryBreakdown({
+          questions: localPayload.questions,
+          answers: localPayload.answers,
+        }),
+        subtopicBreakdown: buildSubtopicBreakdown({
           questions: localPayload.questions,
           answers: localPayload.answers,
         }),
@@ -271,6 +332,7 @@ export async function POST(request: Request, context: RouteContext) {
       totalQuestions: summary.totalQuestions,
       scorePercent: summary.scorePercent,
       categoryBreakdown,
+      subtopicBreakdown: buildSubtopicBreakdown({ questions, answers }),
     };
 
     const prompt = buildPrompt(payload);

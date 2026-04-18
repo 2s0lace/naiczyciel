@@ -293,7 +293,37 @@ export async function GET(request: Request, context: RouteContext) {
       }),
     ]);
 
-    let questions = primaryQuestions;
+    const answeredExerciseIds = normalizeIds(
+      answers.map((answer) => {
+        const [exerciseId] = answer.questionId.split("::");
+        return exerciseId ?? answer.questionId;
+      }),
+      effectiveCount,
+    );
+
+    const answeredQuestions =
+      answeredExerciseIds.length > 0
+        ? await fetchQuestionsForExerciseIds({
+            supabase,
+            exerciseIds: answeredExerciseIds,
+            count: answeredExerciseIds.length,
+            includeDraft: includeDraftQuestions,
+          })
+        : [];
+
+    let questions = [...answeredQuestions];
+
+    for (const question of primaryQuestions) {
+      if (questions.some((item) => item.id === question.id)) {
+        continue;
+      }
+
+      questions.push(question);
+
+      if (questions.length >= effectiveCount) {
+        break;
+      }
+    }
 
     if (hasExplicitSetIds && questions.length < effectiveCount) {
       const fallbackByMode = await fetchQuestionsForMode({

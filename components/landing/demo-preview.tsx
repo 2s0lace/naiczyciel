@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { Check, Sparkles, Target, TriangleAlert } from "lucide-react";
+import { Check, CircleHelp, Sparkles, Target, TriangleAlert } from "lucide-react";
 import type { FeatureType } from "@/components/landing/types";
 
 interface DemoPreviewProps {
@@ -24,6 +24,7 @@ export default function DemoPreview({ activeTab, onTabChange }: DemoPreviewProps
   );
   const [showExplanation, setShowExplanation] = useState(activeTab === "explaining");
   const [selectedAnswer, setSelectedAnswer] = useState<"A" | "B" | null>(null);
+  const [showWordHint, setShowWordHint] = useState(false);
   const [phase, setPhase] = useState<TransitionPhase>("idle");
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -288,7 +289,33 @@ export default function DemoPreview({ activeTab, onTabChange }: DemoPreviewProps
             <div className="p-4 md:p-4 lg:p-4">
               <div className="space-y-3">
                 <div className="space-y-1">
-                  <p className="text-sm leading-relaxed font-bold text-white md:text-[0.96rem]">X: I&apos;m sorry I&apos;m late. The bus didn&apos;t arrive.</p>
+                  <p className="text-sm leading-relaxed font-bold text-white md:text-[0.96rem]">
+                    X: I&apos;m sorry I&apos;m late. The bus didn&apos;t{" "}
+                    <span className="relative inline-flex items-center gap-1.5">
+                      <span className="rounded-[0.3rem] bg-[#f9e57c] px-1 text-[#201c0a] shadow-[0_6px_14px_-12px_rgba(249,229,124,0.95)]">
+                        arrive
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowWordHint((current) => !current)}
+                        className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-indigo-300/28 bg-white/5 text-indigo-200 transition-colors duration-200 hover:bg-white/10 hover:text-white"
+                        aria-label="Pokaz tlumaczenie slowa arrive"
+                        aria-expanded={showWordHint}
+                      >
+                        <CircleHelp className="h-3.5 w-3.5" strokeWidth={2} />
+                      </button>
+
+                      <span
+                        className={`pointer-events-none absolute top-1/2 left-[calc(100%+0.55rem)] -translate-y-1/2 overflow-hidden rounded-xl border border-indigo-300/18 bg-[#131329]/96 px-0 text-[10px] font-semibold whitespace-nowrap text-indigo-100 shadow-[0_12px_26px_-20px_rgba(79,70,229,0.9)] transition-all duration-200 ease-out ${
+                          showWordHint
+                            ? "max-w-[8.5rem] px-3 py-2 opacity-100"
+                            : "max-w-0 py-2 opacity-0"
+                        }`}
+                      >
+                        przyjechac
+                      </span>
+                    </span>
+                  </p>
                   <p className="text-sm font-bold text-white md:text-[0.96rem]">Y: ________</p>
                 </div>
 

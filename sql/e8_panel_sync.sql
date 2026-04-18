@@ -185,6 +185,13 @@ create policy quiz_sessions_update_all
   using (true)
   with check (true);
 
+drop policy if exists quiz_sessions_delete_all on public.quiz_sessions;
+create policy quiz_sessions_delete_all
+  on public.quiz_sessions
+  for delete
+  to anon, authenticated
+  using (true);
+
 create table if not exists public.quiz_session_answers (
   session_id text not null,
   question_id text not null,
@@ -241,6 +248,13 @@ create policy quiz_session_answers_update_all
   using (true)
   with check (true);
 
+drop policy if exists quiz_session_answers_delete_all on public.quiz_session_answers;
+create policy quiz_session_answers_delete_all
+  on public.quiz_session_answers
+  for delete
+  to anon, authenticated
+  using (true);
+
 create table if not exists public.quiz_result_stats (
   id bigserial primary key,
   session_id text not null,
@@ -285,6 +299,13 @@ create policy quiz_result_stats_insert_all
   for insert
   to anon, authenticated
   with check (true);
+
+drop policy if exists quiz_result_stats_delete_all on public.quiz_result_stats;
+create policy quiz_result_stats_delete_all
+  on public.quiz_result_stats
+  for delete
+  to anon, authenticated
+  using (true);
 
 create table if not exists public.quiz_exercises (
   id text primary key,

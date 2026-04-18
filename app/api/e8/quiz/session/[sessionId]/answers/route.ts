@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveAccessTierFromRequest } from "@/lib/quiz/access-tier";
-import { getOwnedLocalSession, isLocalSessionId, saveLocalAnswer } from "@/lib/quiz/local-store";
+import { getAccessibleLocalSession, isLocalSessionId, saveLocalAnswer } from "@/lib/quiz/local-store";
 import { requireOwnedSession } from "@/lib/quiz/require-owned-session";
 import { loadQuestionsForOwnedSession, resolveQuestionSelection } from "@/lib/quiz/session-questions";
 import { getSupabaseUserClient } from "@/lib/supabase/server";
@@ -12,6 +12,7 @@ type RouteContext = {
 type SaveAnswerBody = {
   questionId?: string;
   optionId?: string;
+  isCorrect?: boolean;
 };
 
 export async function POST(request: Request, context: RouteContext) {
@@ -23,21 +24,18 @@ export async function POST(request: Request, context: RouteContext) {
     const optionId = typeof body.optionId === "string" ? body.optionId : "";
 
     if (!sessionId || !questionId || !optionId) {
+      console.log("ANSWERS 400 DEBUG", { reason: "MISSING_SESSION_QUESTION_OR_OPTION", sessionId, body });
       return NextResponse.json({ error: "Nieprawidlowe dane odpowiedzi." }, { status: 400 });
     }
 
     const answeredAt = new Date().toISOString();
     const access = await resolveAccessTierFromRequest(request);
 
-    if (!access.userId || !access.accessToken) {
-      return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
-    }
-
     if (isLocalSessionId(sessionId)) {
-      const localSession = getOwnedLocalSession(sessionId, access.userId);
+      const localSession = getAccessibleLocalSession(sessionId, access.userId);
 
       if (!localSession) {
-        return NextResponse.json({ error: "Sesja nie istnieje." }, { status: 404 });
+        return NextResponse.json({ error: "Nie udalo sie rozpoczac quizu. Brak lokalnej sesji." }, { status: 404 });
       }
 
       try {
@@ -49,6 +47,7 @@ export async function POST(request: Request, context: RouteContext) {
         });
       } catch (error) {
         if (error instanceof Error && (error.message === "INVALID_QUESTION" || error.message === "INVALID_OPTION")) {
+          console.log("ANSWERS 400 DEBUG", { reason: "LOCAL_SAVE_INVALID", sessionId, body });
           return NextResponse.json({ error: "Nieprawidlowe pytanie lub odpowiedz." }, { status: 400 });
         }
 
@@ -65,6 +64,10 @@ export async function POST(request: Request, context: RouteContext) {
         savedAt: answeredAt,
         storage: "local",
       });
+    }
+
+    if (!access.userId || !access.accessToken) {
+      return NextResponse.json({ error: "Brak autoryzacji." }, { status: 401 });
     }
 
     const supabase = getSupabaseUserClient(access.accessToken);
@@ -89,7 +92,11 @@ export async function POST(request: Request, context: RouteContext) {
       optionId,
     });
 
-    if (!selectedAnswer) {
+    const resolvedIsCorrect =
+      selectedAnswer?.isCorrect ?? (typeof body.isCorrect === "boolean" ? body.isCorrect : null);
+
+    if (resolvedIsCorrect === null) {
+      console.log("ANSWERS 400 DEBUG", { reason: "RESOLVED_IS_CORRECT_NULL", sessionId, body, selectedAnswer });
       return NextResponse.json({ error: "Nieprawidlowe pytanie lub odpowiedz." }, { status: 400 });
     }
 
@@ -98,7 +105,7 @@ export async function POST(request: Request, context: RouteContext) {
         session_id: sessionId,
         question_id: questionId,
         option_id: optionId,
-        is_correct: selectedAnswer.isCorrect,
+        is_correct: resolvedIsCorrect,
         answered_at: answeredAt,
       },
       {
@@ -113,7 +120,7 @@ export async function POST(request: Request, context: RouteContext) {
               session_id: sessionId,
               question_id: questionId,
               selected_option_id: optionId,
-              is_correct: selectedAnswer.isCorrect,
+              is_correct: resolvedIsCorrect,
               answered_at: answeredAt,
             },
             {

@@ -35,14 +35,31 @@ export async function POST(request: Request) {
     }
 
     const sessionIds = (sessionsResult.data ?? [])
-      .map((entry) => (entry && typeof entry.id === "string" ? entry.id.trim() : ""))
+      .map((entry) => String(entry?.id ?? "").trim())
       .filter((id, index, list) => id.length > 0 && list.indexOf(id) === index);
 
     if (sessionIds.length > 0) {
+      const categoryStatsDelete = await supabase
+        .from("quiz_session_category_stats")
+        .delete()
+        .in("session_id", sessionIds)
+        .select("session_id");
+
+      if (categoryStatsDelete.error) {
+        console.error("[progress-reset] category stats delete failed", categoryStatsDelete.error);
+        return NextResponse.json(
+          {
+            error: "Nie udalo sie usunac statystyk kategorii.",
+          },
+          { status: 500 },
+        );
+      }
+
       const statsDelete = await supabase
         .from("quiz_result_stats")
         .delete()
-        .in("session_id", sessionIds);
+        .in("session_id", sessionIds)
+        .select("session_id");
 
       if (statsDelete.error) {
         console.error("[progress-reset] stats delete failed", statsDelete.error);
@@ -57,7 +74,8 @@ export async function POST(request: Request) {
       const answersDelete = await supabase
         .from("quiz_session_answers")
         .delete()
-        .in("session_id", sessionIds);
+        .in("session_id", sessionIds)
+        .select("session_id");
 
       if (answersDelete.error) {
         console.error("[progress-reset] answers delete failed", answersDelete.error);
@@ -73,13 +91,28 @@ export async function POST(request: Request) {
     const sessionsDelete = await supabase
       .from("quiz_sessions")
       .delete()
-      .eq("user_id", access.userId);
+      .eq("user_id", access.userId)
+      .select("id");
 
     if (sessionsDelete.error) {
       console.error("[progress-reset] sessions delete failed", sessionsDelete.error);
       return NextResponse.json(
         {
           error: "Nie udalo sie usunac sesji uzytkownika.",
+        },
+        { status: 500 },
+      );
+    }
+
+    if (sessionIds.length > 0 && (sessionsDelete.data?.length ?? 0) === 0) {
+      console.error("[progress-reset] sessions delete was blocked", {
+        userId: access.userId,
+        requestedSessions: sessionIds.length,
+      });
+      return NextResponse.json(
+        {
+          error: "Reset progresu zostal zablokowany przez polityki bazy danych.",
+          details: "Dodaj polityki DELETE dla tabel quizowych w Supabase i sprobuj ponownie.",
         },
         { status: 500 },
       );

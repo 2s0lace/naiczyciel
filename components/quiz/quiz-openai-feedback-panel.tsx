@@ -4,16 +4,56 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { Sparkles } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { buildCanonicalCategoryBreakdown } from "@/lib/quiz/session-category-stats";
 function isLocalSessionId(sessionId: string) {
   return sessionId.startsWith("local_");
 }
-import type { QuizSummary } from "@/lib/quiz/types";
+import type { CategoryBreakdownItem, QuizAnswerSnapshot, QuizQuestion, QuizSummary } from "@/lib/quiz/types";
 
 type QuizOpenAIFeedbackPanelProps = {
   sessionId: string;
   mode: string;
   summary: QuizSummary;
+  questions?: QuizQuestion[];
+  answers?: QuizAnswerSnapshot[];
 };
+
+const CANONICAL_LABEL_PL: Record<string, string> = {
+  Reactions: "Reakcje",
+  Vocabulary: "Słownictwo",
+  Grammar: "Gramatyka",
+  "Reading MC": "Czytanie",
+};
+
+const CANONICAL_ORDER = ["Reactions", "Vocabulary", "Grammar", "Reading MC"] as const;
+
+function pickCanonicalBreakdown(
+  questions: QuizQuestion[] | undefined,
+  answers: QuizAnswerSnapshot[] | undefined,
+  fallback: CategoryBreakdownItem[],
+): CategoryBreakdownItem[] {
+  if (questions && questions.length > 0 && answers) {
+    return buildCanonicalCategoryBreakdown({ questions, answers });
+  }
+
+  const byLabel = new Map(fallback.map((item) => [item.label, item]));
+
+  return CANONICAL_ORDER.map((label) => {
+    const match = byLabel.get(label);
+
+    if (match) {
+      return match;
+    }
+
+    return {
+      label,
+      attempts: 0,
+      correct: 0,
+      percent: null,
+      has_data: false,
+    } as CategoryBreakdownItem;
+  });
+}
 
 type StoredOpenAIFeedback = {
   feedback: string;
@@ -190,7 +230,36 @@ function buildMockDiagnosis(parsed: FeedbackBlocks) {
   ].join(" ");
 }
 
-export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAIFeedbackPanelProps) {
+function cleanFeedbackText(value: string): string {
+  return value
+    .replace(/\r/g, "")
+    .split("\n")
+    .map((line) =>
+      line
+        .replace(/^\s*#{1,6}\s*/, "")
+        .replace(/\*\*/g, "")
+        .replace(/[*_`>]/g, "")
+        .replace(/^\s*[-+•]\s*/, "")
+        .replace(/^\s*\d+[.)-]\s*/, "")
+        .replace(
+          /^\s*(ocena\s+og[oó]lna|mocna\s+strona|mocne\s+strony|do\s+poprawy|na\s+teraz|plan(?:\s+na\s+7\s+dni)?|diagnoza|strengths?|improvements?|overall)\s*:\s*/i,
+          "",
+        )
+        .trim(),
+    )
+    .filter((line) => line.length > 0)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function QuizOpenAIFeedbackPanel({
+  sessionId,
+  mode,
+  summary,
+  questions,
+  answers,
+}: QuizOpenAIFeedbackPanelProps) {
   const storageKey = useMemo(() => storageKeyFor(sessionId), [sessionId]);
 
   const [feedback, setFeedback] = useState("");
@@ -203,21 +272,13 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
 
   const requestInFlightRef = useRef(false);
 
-  const parsed = useMemo(() => parseFeedback(feedback), [feedback]);
-  const diagnosisParagraph = useMemo(() => buildMockDiagnosis(parsed), [parsed]);
+  const diagnosisParagraph = useMemo(() => cleanFeedbackText(feedback), [feedback]);
+  const canonicalBreakdown = useMemo(
+    () => pickCanonicalBreakdown(questions, answers, summary.categoryBreakdown),
+    [questions, answers, summary.categoryBreakdown],
+  );
 
-  const copyText = useMemo(() => {
-    if (!feedback) {
-      return "";
-    }
-
-    return [
-      `Ocena ogólna: ${parsed.overall}`,
-      `Mocne strony: ${parsed.strengths}`,
-      `Do poprawy: ${parsed.improvements}`,
-      `Następny krok: ${parsed.plan7}`,
-    ].join("\n");
-  }, [feedback, parsed]);
+  const copyText = useMemo(() => diagnosisParagraph, [diagnosisParagraph]);
 
   const persist = useCallback(
     (payload: StoredOpenAIFeedback) => {
@@ -391,32 +452,30 @@ export function QuizOpenAIFeedbackPanel({ sessionId, mode, summary }: QuizOpenAI
             <p className="mt-1.5 text-[14px] leading-[1.65] text-white/70">{diagnosisParagraph}</p>
           </div>
 
-          {summary.categoryBreakdown.length > 0 && (
+          {canonicalBreakdown.length > 0 && (
             <div className="border-l-2 border-l-white/10 pl-3">
               <ReportLabel>Kategorie</ReportLabel>
               <ul className="mt-2 space-y-1.5">
-                {summary.categoryBreakdown
-                  .sort((a, b) => (b.percent ?? -1) - (a.percent ?? -1))
-                  .map((c) => (
-                    <li key={c.label} className="flex items-center justify-between gap-4">
-                      <span className="text-[13px] text-white/55">{c.label}</span>
-                      <span
-                        className={`text-[13px] tabular-nums font-medium ${
-                          !c.has_data || c.percent === null
-                            ? "text-white/20"
-                            : c.percent === 0
-                              ? "text-white/30"
-                              : c.percent >= 70
-                                ? "text-emerald-400/80"
-                                : c.percent >= 40
-                                  ? "text-amber-400/80"
-                                  : "text-rose-400/80"
-                        }`}
-                      >
-                        {!c.has_data || c.percent === null ? "—" : `${c.percent}%`}
-                      </span>
-                    </li>
-                  ))}
+                {canonicalBreakdown.map((c) => (
+                  <li key={c.label} className="flex items-center justify-between gap-4">
+                    <span className="text-[13px] text-white/55">{CANONICAL_LABEL_PL[c.label] ?? c.label}</span>
+                    <span
+                      className={`text-[13px] tabular-nums font-medium ${
+                        !c.has_data || c.percent === null
+                          ? "text-white/20"
+                          : c.percent === 0
+                            ? "text-white/30"
+                            : c.percent >= 70
+                              ? "text-emerald-400/80"
+                              : c.percent >= 40
+                                ? "text-amber-400/80"
+                                : "text-rose-400/80"
+                      }`}
+                    >
+                      {!c.has_data || c.percent === null ? "—" : `${c.percent}%`}
+                    </span>
+                  </li>
+                ))}
               </ul>
             </div>
           )}

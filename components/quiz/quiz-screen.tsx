@@ -955,6 +955,13 @@ export function QuizScreen({
           });
 
           if (!response.ok) {
+            if (response.status === 400) {
+              delete failedSavesRef.current[payload.questionId];
+              markSaveState(payload.questionId, "error");
+              setFailedSaveCount(Object.keys(failedSavesRef.current).length);
+              return;
+            }
+
             throw new Error("save_failed");
           }
 
@@ -995,11 +1002,23 @@ export function QuizScreen({
 
       void (async () => {
         try {
-          // Wait for in-flight answer saves to drain before completing (max 4s).
-          // The /complete route recomputes score from DB — answers must be persisted first.
-          const deadline = Date.now() + 4000;
-          while (Object.keys(inFlightSavesRef.current).length > 0 && Date.now() < deadline) {
+          // Keep retrying queued answer saves before completing.
+          // The /complete route recomputes score from DB, so pending saves must settle first.
+          const deadline = Date.now() + 6000;
+          while (
+            (Object.keys(inFlightSavesRef.current).length > 0 || Object.keys(failedSavesRef.current).length > 0) &&
+            Date.now() < deadline
+          ) {
+            if (Object.keys(failedSavesRef.current).length > 0) {
+              flushFailedSaves();
+            }
+
             await new Promise<void>((resolve) => window.setTimeout(resolve, 80));
+          }
+
+          if (Object.keys(inFlightSavesRef.current).length > 0 || Object.keys(failedSavesRef.current).length > 0) {
+            didCompleteRef.current = false;
+            return;
           }
 
           const authHeaders = await getAuthHeaders();
@@ -1017,11 +1036,12 @@ export function QuizScreen({
             }),
           });
         } catch {
+          didCompleteRef.current = false;
           // Keep local completion state even if sync fails.
         }
       })();
     },
-    [getAuthHeaders, mode, normalizedSetId, sessionId],
+    [flushFailedSaves, getAuthHeaders, mode, normalizedSetId, sessionId],
   );
 
   const hydrateSession = useCallback(async () => {
@@ -1383,6 +1403,15 @@ export function QuizScreen({
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [failedSaveCount, flushFailedSaves]);
+
+  useEffect(() => {
+    if (isLoading || reviewModeActive || sessionStatus !== "finished" || failedSaveCount > 0 || didCompleteRef.current) {
+      return;
+    }
+
+    completeSessionSync(summary);
+  }, [completeSessionSync, failedSaveCount, isLoading, reviewModeActive, sessionStatus, summary]);
+
   useEffect(() => {
     if (
       isLoading ||
@@ -1915,7 +1944,13 @@ export function QuizScreen({
         </div>
         <div className="mx-auto w-full max-w-[1300px] px-4 pb-8 md:px-6 xl:px-8 min-[1440px]:max-w-[1380px] min-[1440px]:px-10 2xl:max-w-[1520px] min-[2200px]:max-w-[1680px] min-[2200px]:px-12">
           <ResultsHeader backHref="/e8" />
-          <QuizSummaryCard summary={summary} sessionId={sessionId} mode={mode} />
+          <QuizSummaryCard
+            summary={summary}
+            sessionId={sessionId}
+            mode={mode}
+            questions={questions}
+            answers={Object.values(answers)}
+          />
         </div>
       </main>
     );

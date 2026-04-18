@@ -426,3 +426,594 @@ Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
 [browser] Image with src "/_next/static/media/kalendarz.e065888f.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
 [browser] Image with src "/_next/static/media/torn-paper-vector-vintage-sticker-with-design-space.8279e6de.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
 Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/teacher-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Nie znaleziono sessionId w URL ani localStorage 
+    at <unknown> (<anonymous>:21:13)
+    at <unknown> (<anonymous>:33:3) (<anonymous>:21:13)
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/e8" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <RootLayout>
+                        <html lang="pl">
+                          <body
++                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+-                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+                          >
+                  ...
+ 
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <RootLayout>
+                        <html lang="pl">
+                          <body
++                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+-                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+                          >
+                  ...
+ 
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/register" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <RootLayout>
+                        <html lang="pl">
+                          <body
++                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+-                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+                          >
+                  ...
+ 
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/e8" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <RootLayout>
+                        <html lang="pl">
+                          <body
++                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+-                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+                          >
+                  ...
+ 
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/e8/quiz/u..." notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <RootLayout>
+                        <html lang="pl">
+                          <body
++                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+-                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+                          >
+                  ...
+ 
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/torn-paper-vector-vintage-sticker-with-design-space.8279e6de.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/e8/sets" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <RootLayout>
+                        <html lang="pl">
+                          <body
++                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+-                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+                          >
+                  ...
+ 
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <HotReload globalError={[...]} webSocket={WebSocket} staticIndicatorState={{pathname:null, ...}}>
+      <AppDevOverlayErrorBoundary globalError={[...]}>
+        <ReplaySsrOnlyErrors>
+        <DevRootHTTPAccessFallbackBoundary>
+          <HTTPAccessFallbackBoundary notFound={<NotAllowedRootHTTPFallbackError>}>
+            <HTTPAccessFallbackErrorBoundary pathname="/login" notFound={<NotAllowedRootHTTPFallbackError>} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <Head>
+                  <__next_root_layout_boundary__>
+                    <SegmentViewNode type="layout" pagePath="layout.tsx">
+                      <SegmentTrieNode>
+                      <link>
+                      <RootLayout>
+                        <html lang="pl">
+                          <body
++                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+-                           className="__className_0f6301 __variable_868219 __variable_c4e140 __variable_a10525 __vari..."
+                          >
+                  ...
+ 
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/assets/student-entry.jpg" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[ai-summary] OpenAI unexpected error Error: Could not find the table 'public.rate_limits' in the schema cache
+    at consumeCounter (lib\ai\rate-limit.ts:118:11)
+    at async enforceAiRateLimit (lib\ai\rate-limit.ts:231:20)
+    at async GET (app\api\e8\dashboard\ai-summary\route.ts:296:23)
+  116 |
+  117 |   if (existing.error) {
+> 118 |     throw new Error(existing.error.message ?? "Rate limit read failed.");
+      |           ^
+  119 |   }
+  120 |
+  121 |   const currentCount = asCount(existing.data?.count);
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[quiz-feedback] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[quiz-feedback] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[quiz-feedback] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[quiz-feedback] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[quiz-feedback] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[browser] Image with src "/_next/static/media/logonaiczyciel_white.8352a7a2.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[quiz-feedback] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}
+[ai-summary] Rate limit unavailable, skipping enforcement {
+  message: "Could not find the table 'public.rate_limits' in the schema cache"
+}

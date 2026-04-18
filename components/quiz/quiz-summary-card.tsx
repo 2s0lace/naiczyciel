@@ -4,13 +4,15 @@ import Link from "next/link";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { QuizOpenAIFeedbackPanel } from "@/components/quiz/quiz-openai-feedback-panel";
-import type { QuizSummary } from "@/lib/quiz/types";
+import type { QuizAnswerSnapshot, QuizQuestion, QuizSummary } from "@/lib/quiz/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 
 type QuizSummaryCardProps = {
   summary: QuizSummary;
   sessionId: string;
   mode: string;
+  questions?: QuizQuestion[];
+  answers?: QuizAnswerSnapshot[];
 };
 
 type AccessTier = "unregistered" | "registered" | "premium" | "premium_plus";
@@ -152,7 +154,7 @@ function QuizPremiumUpsell({ visible, summary }: { visible: boolean; summary: Qu
   );
 }
 
-export function QuizSummaryCard({ summary, sessionId, mode }: QuizSummaryCardProps) {
+export function QuizSummaryCard({ summary, sessionId, mode, questions, answers }: QuizSummaryCardProps) {
   const reviewHref = `/e8/quiz/${encodeURIComponent(sessionId)}?mode=${encodeURIComponent(mode)}&review=1`;
   const newSessionHref = `/e8/quiz?mode=${encodeURIComponent(mode)}`;
   const panelHref = "/e8";
@@ -268,7 +270,13 @@ export function QuizSummaryCard({ summary, sessionId, mode }: QuizSummaryCardPro
         </div>
 
         <div>
-          <QuizOpenAIFeedbackPanel sessionId={sessionId} mode={mode} summary={summary} />
+          <QuizOpenAIFeedbackPanel
+            sessionId={sessionId}
+            mode={mode}
+            summary={summary}
+            questions={questions}
+            answers={answers}
+          />
         </div>
       </div>
 

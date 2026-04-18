@@ -64,7 +64,9 @@ export function QuizStartScreen({ mode }: QuizStartScreenProps) {
         throw new Error("Nieprawidłowa odpowiedź serwera.");
       }
 
-      router.push(`/e8/quiz/${encodeURIComponent(data.sessionId)}?mode=${encodeURIComponent(data.mode ?? mode)}`);
+      router.push(
+        `/e8/quiz/${encodeURIComponent(data.sessionId)}?mode=${encodeURIComponent(data.mode ?? mode)}&sessionId=${encodeURIComponent(data.sessionId)}`,
+      );
     } catch (startError) {
       setError(startError instanceof Error ? startError.message : "Wystąpił nieznany błąd.");
     } finally {

@@ -4,7 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { Sparkles } from "lucide-react";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
-import { isLocalSessionId } from "@/lib/quiz/local-store";
+function isLocalSessionId(sessionId: string) {
+  return sessionId.startsWith("local_");
+}
 import type { QuizSummary } from "@/lib/quiz/types";
 
 type QuizOpenAIFeedbackPanelProps = {

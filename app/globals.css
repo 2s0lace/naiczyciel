@@ -26,11 +26,17 @@
   --color-primary-glow:    #4f46e5;
   --color-primary-soft:    #312e81;
 
-  /* quiz-specific */
-  --color-option-bg:       rgba(255,255,255,0.018);
-  --color-option-border:   rgba(255,255,255,0.08);
-  --color-option-hover:    rgba(255,255,255,0.04);
-  --color-option-selected: rgba(99,102,241,0.14);
+  /* quiz options */
+  --color-option-bg:          rgba(255,255,255,0.022);
+  --color-option-border:      rgba(255,255,255,0.12);
+  --color-option-hover-bg:    rgba(255,255,255,0.04);
+  --color-option-hover-ring:  rgba(255,255,255,0.18);
+  --color-option-selected:    rgba(99,102,241,0.12);
+  --color-option-selected-ring: rgba(165,180,252,0.42);
+  /* quiz badge (A/B/C/D) */
+  --color-badge-bg:           rgba(99,102,241,0.08);
+  --color-badge-text:         #a5b4fc;
+  --color-badge-border:       rgba(165,180,252,0.16);
 
   /* status */
   --color-success:         #10b981;
@@ -77,11 +83,17 @@
   --color-primary-glow:    #4f46e5;
   --color-primary-soft:    #ede9ff;
 
-  /* quiz-specific */
-  --color-option-bg:       rgba(255,255,255,0.9);
-  --color-option-border:   rgba(0,0,0,0.08);
-  --color-option-hover:    rgba(0,0,0,0.03);
-  --color-option-selected: rgba(91,91,214,0.09);
+  /* quiz options */
+  --color-option-bg:          rgba(255,255,255,0.92);
+  --color-option-border:      rgba(0,0,0,0.09);
+  --color-option-hover-bg:    rgba(255,255,255,1);
+  --color-option-hover-ring:  rgba(0,0,0,0.14);
+  --color-option-selected:    rgba(91,91,214,0.08);
+  --color-option-selected-ring: rgba(91,91,214,0.38);
+  /* quiz badge (A/B/C/D) */
+  --color-badge-bg:           #edf2ff;
+  --color-badge-text:         #5d72ae;
+  --color-badge-border:       rgba(93,114,174,0.22);
 
   /* status */
   --color-success:         #16a34a;

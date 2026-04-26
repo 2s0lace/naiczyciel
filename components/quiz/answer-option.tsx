@@ -1,4 +1,4 @@
-﻿import { Check, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import type { QuizOption } from "@/lib/quiz/types";
 
 type AnswerVisualState = "default" | "selected" | "correct" | "revealed_correct" | "wrong" | "disabled" | "eliminated";
@@ -12,19 +12,29 @@ type AnswerOptionProps = {
 function getClasses(state: AnswerVisualState) {
   switch (state) {
     case "selected":
-      return "bg-indigo-500/12 text-white ring-indigo-300/42";
+      return [
+        "bg-[var(--color-option-selected)]",
+        "text-[var(--color-app)]",
+        "ring-[var(--color-option-selected-ring)]",
+      ].join(" ");
     case "correct":
-      return "bg-emerald-500/[0.12] text-white ring-emerald-300/24";
+      return "bg-emerald-500/[0.12] text-[var(--color-app)] ring-emerald-300/24";
     case "revealed_correct":
-      return "bg-emerald-500/[0.06] text-white ring-emerald-300/18";
+      return "bg-emerald-500/[0.06] text-[var(--color-app)] ring-emerald-300/18";
     case "wrong":
-      return "bg-rose-500/[0.08] text-white ring-rose-300/16";
+      return "bg-rose-500/[0.08] text-[var(--color-app)] ring-rose-300/16";
     case "disabled":
       return "bg-transparent text-gray-400 ring-white/8 opacity-60";
     case "eliminated":
-      return "bg-white/[0.012] text-gray-500 ring-white/8 opacity-45";
+      return "bg-[var(--color-option-bg)] text-gray-500 ring-[var(--color-option-border)] opacity-45";
     default:
-      return "bg-white/[0.022] text-gray-100 ring-white/12 hover:bg-white/[0.04] hover:ring-white/18";
+      return [
+        "bg-[var(--color-option-bg)]",
+        "text-[var(--color-app)]",
+        "ring-[var(--color-option-border)]",
+        "hover:bg-[var(--color-option-hover-bg)]",
+        "hover:ring-[var(--color-option-hover-ring)]",
+      ].join(" ");
   }
 }
 
@@ -39,11 +49,15 @@ function getBadgeClasses(state: AnswerVisualState) {
     case "selected":
       return "border border-indigo-300/35 bg-indigo-500/22 text-indigo-50";
     case "disabled":
-      return "border border-white/10 bg-white/6 text-gray-300";
+      return "border border-[var(--color-border)] bg-[var(--color-option-bg)] text-[var(--color-app-muted)]";
     case "eliminated":
-      return "border border-white/10 bg-white/6 text-gray-400";
+      return "border border-[var(--color-border)] bg-[var(--color-option-bg)] text-[var(--color-app-muted)]";
     default:
-      return "border border-indigo-300/16 bg-indigo-500/[0.08] text-indigo-100";
+      return [
+        "border border-[var(--color-badge-border)]",
+        "bg-[var(--color-badge-bg)]",
+        "text-[var(--color-badge-text)]",
+      ].join(" ");
   }
 }
 

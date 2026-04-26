@@ -49,7 +49,7 @@ function SocialIconButton({
   href: string;
   icon: ReactNode;
   disableHover?: boolean;
-  variant?: "dark" | "light";
+  variant?: "dark" | "light" | "muted";
 }) {
   const isConfigured = href.trim().length > 0;
   const baseClassName =

@@ -3,6 +3,7 @@ import { Figtree, Gloria_Hallelujah, Inter, Prompt } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { SiteNavbar } from "@/components/layout/site-navbar";
+import { ThemeScript } from "@/components/ui/theme-script";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
@@ -47,8 +48,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pl">
-      <body className={`${inter.className} ${prompt.variable} ${figtree.variable} ${gloriaHallelujah.variable} bg-app text-app antialiased`}>
+    <html lang="pl" data-theme="dark">
+      <head>
+        <ThemeScript />
+      </head>
+      <body className={`${inter.className} ${prompt.variable} ${figtree.variable} ${gloriaHallelujah.variable} antialiased`}>
         <div className="min-h-screen">
           <SiteNavbar />
           <main>{children}</main>

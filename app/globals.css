@@ -1,44 +1,123 @@
 @import "tailwindcss";
 
-:root {
-  --color-bg: #070b14;
-  --color-surface: #0f1626;
-  --color-surface-muted: #111b30;
-  --color-border: #263452;
-  --color-app: #eef3ff;
-  --color-app-muted: #a0b1d2;
-  --color-student: #6c86ff;
-  --color-student-soft: #3f4f91;
-  --color-teacher: #57d4a0;
-  --color-teacher-soft: #2f765a;
-  --color-focus: #90a5ff;
-  --color-background: #050510;
-  --color-primary: #6366f1;
-  --color-primary-glow: #4f46e5;
-  --color-success: #10b981;
-  --color-error: #ef4444;
-  --radius-card: 1.25rem;
-  --space-section: 3.25rem;
-  --ease-premium: cubic-bezier(0.22, 1, 0.36, 1);
+/* ── Dark theme (default) ──────────────────────────────────── */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* page + surfaces */
+  --color-bg:              #050510;
+  --color-bg-gradient:     radial-gradient(circle at 10% -20%, #182443 0%, #070b14 52%);
+  --color-surface:         #0f1626;
+  --color-surface-muted:   #111b30;
+  --color-surface-raised:  #141e35;
+
+  /* text */
+  --color-app:             #eef3ff;
+  --color-app-muted:       #a0b1d2;
+  --color-app-subtle:      #5a6a8a;
+
+  /* borders */
+  --color-border:          #263452;
+  --color-border-soft:     #1a2540;
+
+  /* brand / accent */
+  --color-primary:         #6366f1;
+  --color-primary-glow:    #4f46e5;
+  --color-primary-soft:    #312e81;
+
+  /* quiz-specific */
+  --color-option-bg:       rgba(255,255,255,0.018);
+  --color-option-border:   rgba(255,255,255,0.08);
+  --color-option-hover:    rgba(255,255,255,0.04);
+  --color-option-selected: rgba(99,102,241,0.14);
+
+  /* status */
+  --color-success:         #10b981;
+  --color-success-soft:    #064e3b;
+  --color-error:           #ef4444;
+  --color-error-soft:      #7f1d1d;
+
+  /* legacy / compat */
+  --color-background:      #050510;
+  --color-student:         #6c86ff;
+  --color-student-soft:    #3f4f91;
+  --color-teacher:         #57d4a0;
+  --color-teacher-soft:    #2f765a;
+  --color-focus:           #90a5ff;
 }
 
+/* ── Light theme ───────────────────────────────────────────── */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* page + surfaces */
+  --color-bg:              #edeae2;
+  --color-bg-gradient:     none;
+  --color-surface:         #ffffff;
+  --color-surface-muted:   #f5f2ec;
+  --color-surface-raised:  #faf8f5;
+
+  /* text */
+  --color-app:             #1a1826;
+  --color-app-muted:       #6b6480;
+  --color-app-subtle:      #a89eb8;
+
+  /* borders */
+  --color-border:          #ddd8ce;
+  --color-border-soft:     #e8e4dc;
+
+  /* brand / accent (keep indigo) */
+  --color-primary:         #5b5bd6;
+  --color-primary-glow:    #4f46e5;
+  --color-primary-soft:    #ede9ff;
+
+  /* quiz-specific */
+  --color-option-bg:       rgba(255,255,255,0.9);
+  --color-option-border:   rgba(0,0,0,0.08);
+  --color-option-hover:    rgba(0,0,0,0.03);
+  --color-option-selected: rgba(91,91,214,0.09);
+
+  /* status */
+  --color-success:         #16a34a;
+  --color-success-soft:    #dcfce7;
+  --color-error:           #dc2626;
+  --color-error-soft:      #fee2e2;
+
+  /* legacy / compat */
+  --color-background:      #edeae2;
+  --color-student:         #5b5bd6;
+  --color-student-soft:    #ede9ff;
+  --color-teacher:         #16a34a;
+  --color-teacher-soft:    #dcfce7;
+  --color-focus:           #7c7ce8;
+}
+
+/* ── Tailwind token bridge ─────────────────────────────────── */
 @theme inline {
-  --color-bg: var(--color-bg);
-  --color-surface: var(--color-surface);
-  --color-surface-muted: var(--color-surface-muted);
-  --color-border: var(--color-border);
-  --color-app: var(--color-app);
-  --color-app-muted: var(--color-app-muted);
-  --color-student: var(--color-student);
-  --color-teacher: var(--color-teacher);
-  --color-background: var(--color-background);
-  --color-primary: var(--color-primary);
-  --color-primary-glow: var(--color-primary-glow);
-  --color-success: var(--color-success);
-  --color-error: var(--color-error);
-  --radius-card: var(--radius-card);
+  --color-bg:              var(--color-bg);
+  --color-surface:         var(--color-surface);
+  --color-surface-muted:   var(--color-surface-muted);
+  --color-surface-raised:  var(--color-surface-raised);
+  --color-border:          var(--color-border);
+  --color-border-soft:     var(--color-border-soft);
+  --color-app:             var(--color-app);
+  --color-app-muted:       var(--color-app-muted);
+  --color-app-subtle:      var(--color-app-subtle);
+  --color-primary:         var(--color-primary);
+  --color-primary-glow:    var(--color-primary-glow);
+  --color-primary-soft:    var(--color-primary-soft);
+  --color-success:         var(--color-success);
+  --color-success-soft:    var(--color-success-soft);
+  --color-error:           var(--color-error);
+  --color-error-soft:      var(--color-error-soft);
+  --color-student:         var(--color-student);
+  --color-teacher:         var(--color-teacher);
+  --color-background:      var(--color-background);
+  --radius-card: 1.25rem;
 }
 
+/* ── Base ──────────────────────────────────────────────────── */
 * {
   border-color: var(--color-border);
 }
@@ -46,7 +125,7 @@
 html,
 body {
   min-height: 100%;
-  background-color: #050510;
+  background-color: var(--color-bg);
 }
 
 body {
@@ -54,7 +133,7 @@ body {
   min-height: 100vh;
   min-height: 100svh;
   min-height: 100dvh;
-  background: radial-gradient(circle at 10% -20%, #182443 0%, #070b14 52%);
+  background: var(--color-bg-gradient, var(--color-bg));
   color: var(--color-app);
 }
 
@@ -288,7 +367,7 @@ p[class*="tracking-[0.14em]"][class*="text-cyan-300/90"][class*="uppercase"] {
   min-height: 100vh;
   min-height: 100svh;
   min-height: 100dvh;
-  background-color: #050510;
+  background-color: var(--color-bg);
   padding-bottom: env(safe-area-inset-bottom);
 }
 

@@ -38,6 +38,10 @@
   --color-error:           #ef4444;
   --color-error-soft:      #7f1d1d;
 
+  /* misc ui */
+  --color-social-icon:     #ffffff;
+  --color-footer-fade:     #050510;
+
   /* legacy / compat */
   --color-background:      #050510;
   --color-student:         #6c86ff;
@@ -83,6 +87,10 @@
   --color-success-soft:    #dcfce7;
   --color-error:           #dc2626;
   --color-error-soft:      #fee2e2;
+
+  /* misc ui */
+  --color-social-icon:     #515151;
+  --color-footer-fade:     #ffffff;
 
   /* legacy / compat */
   --color-background:      #edeae2;
@@ -250,6 +258,11 @@ a {
 }
 
 @keyframes motion-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -257,15 +270,15 @@ a {
 }
 
 .motion-fade-up {
-  opacity: 0;
-  transform: translateY(14px);
-  animation: motion-fade-up var(--motion-duration, 500ms) var(--ease-premium) forwards;
+  opacity: 1;
+  transform: translateY(0);
+  animation: motion-fade-up var(--motion-duration, 500ms) var(--ease-premium) both;
   animation-delay: var(--motion-delay, 0ms);
 }
 
 .motion-scroll-reveal {
-  opacity: 0;
-  transform: translateY(16px);
+  opacity: 1;
+  transform: translateY(0);
   transition:
     opacity var(--motion-duration, 600ms) ease-out,
     transform var(--motion-duration, 600ms) ease-out;

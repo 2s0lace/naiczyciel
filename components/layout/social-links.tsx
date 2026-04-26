@@ -56,7 +56,7 @@ function SocialIconButton({
     variant === "light"
       ? "inline-flex h-8 w-8 items-center justify-center rounded-full text-white drop-shadow-[0_4px_12px_rgba(255,255,255,0.18)] min-[1100px]:h-9 min-[1100px]:w-9 min-[1600px]:h-11 min-[1600px]:w-11"
       : variant === "muted"
-        ? "inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center text-[#515151] min-[1100px]:h-6 min-[1100px]:w-6 min-[1600px]:h-9 min-[1600px]:w-9"
+        ? "inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center text-[--color-social-icon] min-[1100px]:h-6 min-[1100px]:w-6 min-[1600px]:h-9 min-[1600px]:w-9"
         : "inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center text-black min-[1100px]:h-6 min-[1100px]:w-6 min-[1600px]:h-9 min-[1600px]:w-9";
 
   if (!isConfigured) {
@@ -88,7 +88,7 @@ export function SocialLinks({ className, disableHover = false, variant = "dark" 
     variant === "light"
       ? "h-4 w-4 text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.34)] min-[1100px]:h-[17px] min-[1100px]:w-[17px] min-[1600px]:h-5 min-[1600px]:w-5"
       : variant === "muted"
-        ? "h-[11px] w-[11px] text-[#515151] min-[1100px]:h-[13px] min-[1100px]:w-[13px] min-[1600px]:h-[17px] min-[1600px]:w-[17px]"
+        ? "h-[11px] w-[11px] text-[--color-social-icon] min-[1100px]:h-[13px] min-[1100px]:w-[13px] min-[1600px]:h-[17px] min-[1600px]:w-[17px]"
         : "h-[11px] w-[11px] text-black min-[1100px]:h-[13px] min-[1100px]:w-[13px] min-[1600px]:h-[17px] min-[1600px]:w-[17px]";
 
   return (

@@ -2064,7 +2064,8 @@ export default function E8AuthenticatedDashboard({
         ) : null}
 <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent via-white/50 to-white"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-20"
+          style={{ background: "linear-gradient(to bottom, transparent, color-mix(in srgb, var(--color-footer-fade) 50%, transparent), var(--color-footer-fade))" }}
         />
       </div>
 

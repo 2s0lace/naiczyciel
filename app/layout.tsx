@@ -48,11 +48,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pl" data-theme="dark">
-      <head>
-        <ThemeScript />
-      </head>
+    <html lang="pl" data-theme="dark" suppressHydrationWarning>
       <body className={`${inter.className} ${prompt.variable} ${figtree.variable} ${gloriaHallelujah.variable} antialiased`}>
+        <ThemeScript />
         <div className="min-h-screen">
           <SiteNavbar />
           <main>{children}</main>

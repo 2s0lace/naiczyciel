@@ -5,6 +5,7 @@ import Link from "next/link";
 import logoNaiczycielWhite from "@/img/logonaiczyciel_white.png";
 import { useEffect, useState } from "react";
 import AuthHeaderActions from "@/components/auth/auth-header-actions";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 
 export default function MobileHeader() {
@@ -84,12 +85,15 @@ export default function MobileHeader() {
           />
         </Link>
 
-        <AuthHeaderActions
-          containerClassName={cn("flex items-center gap-2 md:translate-y-0", isDetached ? "translate-y-[5px]" : "translate-y-0")}
-          loginClassName="h-9 min-w-[8.75rem] rounded-xl px-4 text-xs md:h-10 md:px-5 md:text-sm"
-          loginVariant="box"
-          accountClassName="h-9 w-9 p-1 rounded-full"
-        />
+        <div className={cn("flex items-center gap-1 md:translate-y-0", isDetached ? "translate-y-[5px]" : "translate-y-0")}>
+          <ThemeToggle />
+          <AuthHeaderActions
+            containerClassName="flex items-center gap-2"
+            loginClassName="h-9 min-w-[8.75rem] rounded-xl px-4 text-xs md:h-10 md:px-5 md:text-sm"
+            loginVariant="box"
+            accountClassName="h-9 w-9 p-1 rounded-full"
+          />
+        </div>
       </div>
     </header>
   );

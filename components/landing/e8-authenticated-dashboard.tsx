@@ -1252,7 +1252,7 @@ export default function E8AuthenticatedDashboard({
   );
 
   return (
-    <main className="viewport-shell max-w-full touch-pan-y overflow-x-hidden bg-[#050510] [background-image:radial-gradient(circle,rgba(255,255,255,0.04)_1px,transparent_1px)] [background-size:24px_24px] text-white selection:bg-indigo-500/30">
+    <main className="viewport-shell max-w-full touch-pan-y overflow-x-hidden [background-color:var(--color-bg)] [background-image:radial-gradient(circle,var(--color-dot)_1px,transparent_1px)] [background-size:24px_24px] text-[--color-app] selection:bg-indigo-500/30">
       <MobileHeader />
 
       <div className="relative mx-auto w-full max-w-full overflow-x-clip px-4 pt-8 pb-12 md:max-w-[88rem] md:px-6 md:pt-10 lg:px-9 lg:pb-14 xl:px-10 2xl:max-w-[104rem] 2xl:px-12 min-[2200px]:max-w-[124rem] min-[2200px]:px-16">

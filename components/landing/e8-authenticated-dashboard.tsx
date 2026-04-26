@@ -2064,13 +2064,13 @@ export default function E8AuthenticatedDashboard({
         ) : null}
 <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent via-[#050510]/50 to-[#050510]"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-b from-transparent via-white/50 to-white"
         />
       </div>
 
       <footer className="mx-auto w-full max-w-[88rem] px-5 pb-8 md:px-6 lg:px-9 xl:px-10 2xl:max-w-[104rem] 2xl:px-12 min-[2200px]:max-w-[124rem] min-[2200px]:px-16">
         <div className="flex items-center justify-center pt-4">
-          <SocialLinks variant="light" />
+          <SocialLinks variant="muted" />
         </div>
       </footer>
 

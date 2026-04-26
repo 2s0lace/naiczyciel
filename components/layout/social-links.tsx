@@ -13,7 +13,7 @@ const SOCIAL_URLS = {
 type SocialLinksProps = {
   className?: string;
   disableHover?: boolean;
-  variant?: "dark" | "light";
+  variant?: "dark" | "light" | "muted";
 };
 
 function TikTokIcon({ className }: { className?: string }) {
@@ -55,7 +55,9 @@ function SocialIconButton({
   const baseClassName =
     variant === "light"
       ? "inline-flex h-8 w-8 items-center justify-center rounded-full text-white drop-shadow-[0_4px_12px_rgba(255,255,255,0.18)] min-[1100px]:h-9 min-[1100px]:w-9 min-[1600px]:h-11 min-[1600px]:w-11"
-      : "inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center text-black min-[1100px]:h-6 min-[1100px]:w-6 min-[1600px]:h-9 min-[1600px]:w-9";
+      : variant === "muted"
+        ? "inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center text-[#515151] min-[1100px]:h-6 min-[1100px]:w-6 min-[1600px]:h-9 min-[1600px]:w-9"
+        : "inline-flex h-[1.125rem] w-[1.125rem] items-center justify-center text-black min-[1100px]:h-6 min-[1100px]:w-6 min-[1600px]:h-9 min-[1600px]:w-9";
 
   if (!isConfigured) {
     return (
@@ -85,7 +87,9 @@ export function SocialLinks({ className, disableHover = false, variant = "dark" 
   const iconClassName =
     variant === "light"
       ? "h-4 w-4 text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.34)] min-[1100px]:h-[17px] min-[1100px]:w-[17px] min-[1600px]:h-5 min-[1600px]:w-5"
-      : "h-[11px] w-[11px] text-black min-[1100px]:h-[13px] min-[1100px]:w-[13px] min-[1600px]:h-[17px] min-[1600px]:w-[17px]";
+      : variant === "muted"
+        ? "h-[11px] w-[11px] text-[#515151] min-[1100px]:h-[13px] min-[1100px]:w-[13px] min-[1600px]:h-[17px] min-[1600px]:w-[17px]"
+        : "h-[11px] w-[11px] text-black min-[1100px]:h-[13px] min-[1100px]:w-[13px] min-[1600px]:h-[17px] min-[1600px]:w-[17px]";
 
   return (
     <div className={cn("flex items-center gap-0.5 min-[1100px]:gap-1 min-[1600px]:gap-2", className)}>

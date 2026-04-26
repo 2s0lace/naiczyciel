@@ -84,10 +84,10 @@
   --color-primary-soft:    #ede9ff;
 
   /* quiz options */
-  --color-option-bg:          rgba(255,255,255,0.92);
-  --color-option-border:      rgba(0,0,0,0.09);
-  --color-option-hover-bg:    rgba(255,255,255,1);
-  --color-option-hover-ring:  rgba(0,0,0,0.14);
+  --color-option-bg:          rgba(255,255,255,0.34);
+  --color-option-border:      rgba(0,0,0,0.07);
+  --color-option-hover-bg:    rgba(255,255,255,0.58);
+  --color-option-hover-ring:  rgba(0,0,0,0.12);
   --color-option-selected:    rgba(91,91,214,0.08);
   --color-option-selected-ring: rgba(91,91,214,0.38);
   /* quiz badge (A/B/C/D) */
